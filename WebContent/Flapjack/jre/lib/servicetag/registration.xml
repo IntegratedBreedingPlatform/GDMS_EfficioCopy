@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<registration_data version="1.0">
+   <environment>
+      <hostname>hannes-PC</hostname>
+      <hostId/>
+      <osName>Windows 7</osName>
+      <osVersion>6.1</osVersion>
+      <osArchitecture>x86</osArchitecture>
+      <systemModel>System Product Name</systemModel>
+      <systemManufacturer>System manufacturer</systemManufacturer>
+      <cpuManufacturer>GenuineIntel</cpuManufacturer>
+      <serialNumber>System Serial Number</serialNumber>
+   </environment>
+   <registry urn="urn:st:168ea723-d4d3-4c54-88b4-bdd8380546a3" version="1.0">
+      <service_tag>
+         <instance_urn>urn:st:b176481a-9ed3-436d-8609-151b68df4b72</instance_urn>
+         <product_name>Java SE 7 Runtime Environment</product_name>
+         <product_version>1.7.0_04</product_version>
+         <product_urn>JSERE-007-ZZZZ</product_urn>
+         <product_parent_urn>urn:uuid:dc1704fe-264f-11dc-9482-080020a9ed93</product_parent_urn>
+         <product_parent>Java Platform Standard Edition 7 (Java SE 7)</product_parent>
+         <product_defined_inst_id>id=1.7.0_04-b20 x86,dir=C:\Program Files (x86)\Java\jre7</product_defined_inst_id>
+         <product_vendor>Oracle Corporation</product_vendor>
+         <platform_arch>x86</platform_arch>
+         <timestamp>2012-04-27 09:59:39 GMT</timestamp>
+         <container>global</container>
+         <source>Windows JRE installer</source>
+         <installer_uid>-1</installer_uid>
+      </service_tag>
+   </registry>
+</registration_data>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated Jun 27, 2011 10:42:42 AM by Hibernate Tools 3.4.0.CR1 -->
+<hibernate-mapping package="org.icrisat.gdms.login">
+    <class name="LoginForm" table="users">
+        <id name="userid" column="userid"></id>
+   		<property name="uname" column="uname"/>
+  		<property name="upswd" column="upswd"/>
+    </class>
+</hibernate-mapping>
