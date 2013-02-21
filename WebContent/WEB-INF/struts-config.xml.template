@@ -6,8 +6,8 @@
   <data-source>
    <set-property property="driverClass" value="com.mysql.jdbc.Driver"/>
    <set-property property="url" value="jdbc:mysql://%s:%d/%s"/>
-   <set-property property="password" value="%s"/>
    <set-property property="user" value="%s"/>
+   <set-property property="password" value="%s"/>
    <set-property property="minCount" value="1"/>
    <set-property property="maxCount" value="20"/>
   </data-source>
