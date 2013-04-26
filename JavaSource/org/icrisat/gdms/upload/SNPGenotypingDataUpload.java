@@ -31,31 +31,21 @@ import org.icrisat.gdms.common.MaxIdValue;
 
 public class SNPGenotypingDataUpload {
 	String strupl="";
-	private Session session;
 	
-	private Transaction tx;
-	HttpServletRequest request;
-
-	/*public SNPGenotypingDataUpload(){
-		//session=HibernateSessionFactory.currentSession();
-		session = HibernateSessionFactory.currentSession(crop);
-		tx=session.beginTransaction();
-	
-	}*/
 	//getUpload method is used to insert the SNP Genotyping data from SNPGenotyping Template to database.	
-
+	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();  
+	
+	
 	public String getUpload(HttpServletRequest request, String fname) throws SQLException{
+		final Session session;		
+		final Transaction tx;
 		
 		session = HibernateSessionFactory.currentSession();
 		tx=session.beginTransaction();
 		
-		/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
-		DatabaseConnectionParameters central = new DatabaseConnectionParameters("localhost", "3306", "ibdb_ivis", "root", "root");*/
-		
-		
 		ManagerFactory factory =null;
 		DatasetBean ub=new DatasetBean();
-		UsersBean u=new UsersBean();
+		//UsersBean u=new UsersBean();
 		GenotypeUsersBean usb=new GenotypeUsersBean();	
 		ConditionsBean ubConditions=new ConditionsBean();
 		
@@ -110,7 +100,8 @@ public class SNPGenotypingDataUpload {
 			 GermplasmDataManager manager = factory.getGermplasmDataManager();
 			MaxIdValue uptMethod=new MaxIdValue();
 			int maxDatasetId=uptMethod.getMaxIdValue("dataset_id","gdms_dataset",session);
-			int dataset_id=maxDatasetId+1;
+			//int dataset_id=maxDatasetId+1;
+			int dataset_id=maxDatasetId-1;
 			//System.out.println("....................:"+dataset_id);
 			
 			BufferedReader bReader = new BufferedReader(new FileReader(fname)); 
@@ -194,6 +185,11 @@ public class SNPGenotypingDataUpload {
 					if(len==2){
 						//System.out.println("******************IP"+len);
 						strDatasetName=datavalue[1];
+						if(strDatasetName.length()>30){
+							ErrMsg = "Dataset Name value exceeds max char size.";
+							request.getSession().setAttribute("indErrMsg", ErrMsg);							
+							return "ErrMsg";
+						}
 					}else if(len==1){
 						//System.out.println("Length = 1 and null");
 						ErrMsg = "Please provide the Dataset Name ";
@@ -292,7 +288,17 @@ public class SNPGenotypingDataUpload {
 				}			
 				//if((len==2)&&(datavalue[0].contains("Missing_Data"))) strMissData=datavalue[1];
 				if(line.startsWith("Creation_Date")){
-					if(len==2) strDate=datavalue[1];		
+					if(len==2){ 
+						boolean dFormat=uptMethod.isValidDate(datavalue[1]);
+						if(dFormat==false){
+							ErrMsg = "Creation_Date should be in yyyy-mm-dd format";
+							request.getSession().setAttribute("indErrMsg", ErrMsg);
+							return "ErrMsg";
+						}else{
+							strDate=datavalue[1];
+						}
+						
+					}
 					if(len==1){
 						//System.out.println("Length = 1 and null");
 						ErrMsg = "Please provide the Creation_Date";
@@ -345,19 +351,15 @@ public class SNPGenotypingDataUpload {
 			}
 			
 			ArrayList NamesList=new ArrayList();
-			int user_id=uptMethod.getUserId("userid", "users", "uname", session,strPI);
+			
+			
+			//int user_id=uptMethod.getUserId("userid", "users", "uname", session,strPI);
+			String username=request.getSession().getAttribute("user").toString();
+			int user_id=uptMethod.getUserId("userid", "users", "uname", session,username);
+			
+			
 			//System.out.println("user_id="+user_id);
-			if(user_id==0){
-				int maxUid=uptMethod.getMaxIdValue("userid","users",session);
-				/*String ErrMsg = "PI doesnot exists in the database";
-				request.getSession().setAttribute("indErrMsg", ErrMsg);
-				return "ErrMsg";*/
-				u.setUserid(maxUid+1);
-				u.setUname(strPI);
-				u.setUpswd("gdms");
-				session.save(u);
-				
-			}
+			
 			if(gids.length!=genotype.length){
 				strupl="notInserted";
 			}if(gids.length!=genotype.length){
@@ -381,7 +383,7 @@ public class SNPGenotypingDataUpload {
 	            }
 	            gidsForQuery=gidsForQuery.substring(0, gidsForQuery.length()-1);
 	            
-	         System.out.println("....:"+gidsAList);
+	            System.out.println("....:"+gidsAList);
 	            for(int d=1;d<genotype.length;d++){	               
 	            	gNames = gNames +"'"+genotype[d]+"',";
 	            	
@@ -401,31 +403,22 @@ public class SNPGenotypingDataUpload {
 				List<Name> names = null;
 				for(int n=0;n<gidsAList.size();n++){
 					names = manager.getNamesByGID(Integer.parseInt(gidsAList.get(n).toString()), null, null);
-					for (Name name : names) {					
-						 lstgermpName.add(name.getGermplasmId());
-						 map.put(name.getGermplasmId(), name.getNval());	            
-			        }
+					for (Name name : names) {
+						//System.out.println("........:"+name.getGermplasmId()+"  ,"+name.getNval()+" :  "+name.getNid());
+						lstgermpName.add(name.getGermplasmId());
+						map.put(name.getGermplasmId(), name.getNval());
+						addValues(name.getGermplasmId(), name.getNval().toLowerCase());	
+					}
 				}
-	            
-	           /* SortedMap map = new TreeMap();
-	            List lstgermpName = new ArrayList();
-	            for(int w=0;w<lstGIDs.size();w++){
-	                 Object[] strMareO= (Object[])lstGIDs.get(w);
-	                 lstgermpName.add(strMareO[0]);
-	                 String strMa123 = (String)strMareO[1];
-	                 map.put(strMareO[0], strMa123);
-	                 
-	            }*/
-	            //Iterator iterator = map.keySet().iterator();
-		        //Iterator iterator1 = sortedMap.keySet().iterator();
-	           //System.out.println("map=:"+map.size());
+	           
 	           if(map.size()==0){
 	        	   alertGID="yes";
 	        	   size=0;
 	           }
 	           int gidToCompare=0;
 	           String gNameToCompare="";
-	           String gNameFromMap="";
+	           //String gNameFromMap="";
+	           ArrayList gNameFromMap=new ArrayList();
 	           if(map.size()>0){
 		           for(int gi=0;gi<gidNamesList.size();gi++){
 		        	   String arrP[]=new String[3];
@@ -440,10 +433,12 @@ public class SNPGenotypingDataUpload {
 		        	  
 		        	   //System.out.println("...."+gidToCompare+"   "+lstgermpName.contains(gidToCompare));
 		        	   if(lstgermpName.contains(gidToCompare)){
-		        		   gNameFromMap=map.get(gidToCompare).toString();
+		        		   //gNameFromMap=map.get(gidToCompare).toString();
+		        		   gNameFromMap=hashMap.get(gidToCompare);
 		        		   //System.out.println("...."+gNameToCompare+"   "+map.get(gidToCompare).equals(gNameToCompare)+"  from map: "+map.get(gidToCompare));
-		        		   if(!(gNameFromMap.toLowerCase().equals(gNameToCompare.toLowerCase()))){
-		        			   notMatchingData=notMatchingData+gidToCompare+"   "+map.get(gidToCompare)+"\n\t";
+		        		   //if(!(gNameFromMap.toLowerCase().equals(gNameToCompare.toLowerCase()))){
+		        		   if(!(gNameFromMap.contains(gNameToCompare.toLowerCase()))){
+		        			   notMatchingData=notMatchingData+gidToCompare+"   "+hashMap.get(gidToCompare)+"\n\t";
 			        		   alertGN="yes"; 
 		        		   }			        			   
 		        	   }else{
@@ -576,7 +571,8 @@ public class SNPGenotypingDataUpload {
            maxMid=uptMethod.getMaxIdValue("marker_id","gdms_marker",session);		
            /*******************   END   *****************************/		
            intAC_ID=uptMethod.getMaxIdValue("ac_id","gdms_char_values",session);		
-           intAC_ID=intAC_ID+1;
+           //intAC_ID=intAC_ID+1;
+           intAC_ID=intAC_ID-1;
            //ArrayList mids=new ArrayList();
            ArrayList midsList = new ArrayList();
 			SortedMap mids=new TreeMap();
@@ -595,7 +591,8 @@ public class SNPGenotypingDataUpload {
 							midsList.add(intRMarkerId);
 							
 						}else{
-							maxMid=maxMid+1;
+							//maxMid=maxMid+1;
+							maxMid=maxMid-1;
 							intRMarkerId=maxMid;
 							mids.put(marker, intRMarkerId);
 							midsList.add(intRMarkerId);	
@@ -618,7 +615,7 @@ public class SNPGenotypingDataUpload {
         	   
            }
            
-           
+           String finalAlleleCall="";
            int marker_id=0;
 			for(int d=0;d<genoData.size();d++){					
 				MarkerInfoBean mb=new MarkerInfoBean();				
@@ -642,18 +639,45 @@ public class SNPGenotypingDataUpload {
 						cack.setAc_id(intAC_ID);
 						chb.setComKey(cack);
                         //System.out.println("........................"+str.get(s));
-						if((str.get(s).equalsIgnoreCase("A"))||(str.get(s).equalsIgnoreCase("AA"))){
-							charData="A:A";	
-						}else if((str.get(s).equalsIgnoreCase("C"))||(str.get(s).equalsIgnoreCase("CC"))){	
-							charData="C:C";
-						}else if((str.get(s).equalsIgnoreCase("G"))||(str.get(s).equalsIgnoreCase("GG"))){
-							charData="G:G";
-						}else if((str.get(s).equalsIgnoreCase("T"))||(str.get(s).equalsIgnoreCase("TT"))){
-							charData="T:T";
-						}else if((str.get(s).equalsIgnoreCase("B"))||(str.get(s).equalsIgnoreCase("BB"))){
-							charData="B:B";
-						}else{
-							charData=str.get(s);
+						//System.out.println("str="+str.get(s).length());
+						
+						if(str.get(s).length()>2){
+							String charStr=str.get(s);
+							if(charStr.contains(":")){
+								String str1="";
+								String str2="";
+								//String charStr=str.get(s);
+								str1=charStr.substring(0, charStr.length()-2);
+								str2=charStr.substring(2, charStr.length());
+								charData=str1+"/"+str2;
+							}else if(charStr.contains("/")){
+								charData=charStr;
+							}else{
+								 ErrMsg = "Heterozygote data representation should be either : or /";
+								 request.getSession().setAttribute("indErrMsg", ErrMsg);
+								 return "ErrMsg";	 
+							}
+							
+						}else if(str.get(s).length()==2){
+							String str1="";
+							String str2="";
+							String charStr=str.get(s);
+							str1=charStr.substring(0, charStr.length()-1);
+							str2=charStr.substring(1);
+							charData=str1+"/"+str2;
+							//System.out.println(".....:"+str.get(s).substring(1));
+						}else if(str.get(s).length()==1){
+							if(str.get(s).equalsIgnoreCase("A")){
+								charData="A/A";	
+							}else if(str.get(s).equalsIgnoreCase("C")){	
+								charData="C/C";
+							}else if(str.get(s).equalsIgnoreCase("G")){
+								charData="G/G";
+							}else if(str.get(s).equalsIgnoreCase("T")){
+								charData="T/T";
+							}else{
+								charData=str.get(s);
+							}							
 						}
 						//System.out.println(charData+"   "+gids[s]+"   "+intRMarkerId+"   "+genotype[s]);
 						chb.setChar_value(charData);
@@ -664,7 +688,8 @@ public class SNPGenotypingDataUpload {
 						session.save(chb);
 						
 						
-						intAC_ID++;
+						//intAC_ID++;
+						intAC_ID--;
 												
 						if (d % 1 == 0){
 							session.flush();
@@ -724,6 +749,20 @@ public class SNPGenotypingDataUpload {
 		}
 		
 		return strupl;
+	}
+	
+	private static void addValues(int key, String value){
+		ArrayList<String> tempList = null;
+		if(hashMap.containsKey(key)){
+			tempList=hashMap.get(key);
+			if(tempList == null)
+				tempList = new ArrayList<String>();
+			tempList.add(value);
+		}else{
+			tempList = new ArrayList();
+			tempList.add(value);
+		}
+		hashMap.put(key,tempList);
 	}
 
 }

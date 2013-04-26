@@ -24,14 +24,13 @@ import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GenotypicDataManager;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.Name;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
 
 public class DataRetrieveDirectingAction extends Action{
-	private Session hsession;	
-	private Transaction tx;
 	List listValues=null;
 	List list1=null;
 	Query query=null;
@@ -51,8 +50,9 @@ public class DataRetrieveDirectingAction extends Action{
 		//System.out.println("**********************************"+req.getQueryString());
 		String op=req.getQueryString();
 		System.out.println("**********************************"+op);
-		hsession = HibernateSessionFactory.currentSession();
+		/*hsession = HibernateSessionFactory.currentSession();
 		tx=hsession.beginTransaction();
+		*/
 		DynaActionForm df = (DynaActionForm) af;
 		Connection con=null;
 		ResultSet rs=null;
@@ -65,6 +65,7 @@ public class DataRetrieveDirectingAction extends Action{
 		ArrayList gids =new ArrayList();
 		int count=0;
 		ManagerFactory factory=null;
+		int mapCount=0;
 		try{
 			//crop=req.getSession().getAttribute("crop").toString();
 			/*Class.forName("com.mysql.jdbc.Driver");
@@ -73,13 +74,16 @@ public class DataRetrieveDirectingAction extends Action{
 			ServletContext context = servlet.getServletContext();
 			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
 			con=dataSource.getConnection();	
-			
+			session.setAttribute("mapsCount", mapCount);
 			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
 			DatabaseConnectionParameters central = new DatabaseConnectionParameters("localhost", "3306", "ibdb_ivis", "root", "root");*/
-			DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
-			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
+			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
+			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");*/
 			
-			factory = new ManagerFactory(local, central);
+			//factory = new ManagerFactory(local, central);
+			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
+			GermplasmDataManager manager = factory.getGermplasmDataManager();
+			GenotypicDataManager manager1 = factory.getGenotypicDataManager();
 			
 			String datasetId="";
 			Statement stmt=con.createStatement();
@@ -92,7 +96,7 @@ public class DataRetrieveDirectingAction extends Action{
 				 * under retrievals  
 				 *  **/
 				String option=req.getParameter("reportType");
-				if (option.equalsIgnoreCase("genotyping"))
+				/*if (option.equalsIgnoreCase("genotyping"))
 					query=hsession.createQuery("select distinct species from DatasetBean ORDER BY species asc");
 				else
 					query=hsession.createQuery("select distinct species from MarkerInfoBean ORDER BY species asc");
@@ -100,7 +104,7 @@ public class DataRetrieveDirectingAction extends Action{
 				//itList=listValues.iterator();
 				session.setAttribute("listValues", listValues);
 				System.out.println(".................... "+listValues);
-				str="retSpecies";
+				*/str="retSpecies";
 			}else if(op.equalsIgnoreCase("second")){
 				//crop=(String)df.get("crop");
 				String option=req.getParameter("reportType");
@@ -170,7 +174,7 @@ public class DataRetrieveDirectingAction extends Action{
 						}
 					}
 					//System.out.println(".......... nidsList=:"+nidsList);
-					GermplasmDataManager manager = factory.getGermplasmDataManager();
+					//GermplasmDataManager manager = factory.getGermplasmDataManager();
 					//List<Name> names = null;
 					Name names = null;
 					for(int n=0;n<nidsList.size();n++){
@@ -227,7 +231,7 @@ public class DataRetrieveDirectingAction extends Action{
 				//rsDS=stmtDS.executeQuery("select dataset_desc from dataset where dataset_type !='QTL'");
 				int sta=1;
 				int retRows=12;
-				GenotypicDataManager m=factory.getGenotypicDataManager();
+				//GenotypicDataManager m=factory.getGenotypicDataManager();
 				//m.getDatasetNames(sta, retRows, );
 				rsDS=stmtDS.executeQuery("select dataset_name from gdms_dataset where dataset_type !='QTL'");
 				while(rsDS.next()){
@@ -255,7 +259,7 @@ public class DataRetrieveDirectingAction extends Action{
 				while(rsMap.next()){
 					mapList.add(rsMap.getString(1)+" ("+rsMap.getInt(2)+")");
 				}
-				System.out.println("mapList="+mapList);								
+				//System.out.println("mapList="+mapList);								
 				session.setAttribute("mapList", mapList);
 				str="retMaps";
 				
@@ -293,11 +297,10 @@ public class DataRetrieveDirectingAction extends Action{
 			}
 		}catch(Exception e){
 			e.printStackTrace();
-			hsession.clear();		
-			tx.rollback();
+			
 			factory.close();
 		}finally{
-			hsession.clear();
+			
 			try{		      		
 	      		if(con!=null) con.close();
 	      		factory.close();

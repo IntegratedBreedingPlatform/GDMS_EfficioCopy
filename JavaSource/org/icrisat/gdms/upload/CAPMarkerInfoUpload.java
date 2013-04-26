@@ -181,14 +181,16 @@ public class CAPMarkerInfoUpload {
 			//int productSize=0;
 			String expectedProductSize="";
 			int maxMarkerId=uptMDsetId.getMaxIdValue("marker_id","gdms_marker",session);
-			maxMarkerId++;				
+			//maxMarkerId++;
+			maxMarkerId--;				
 			boolean	exists=false;			
 				//System.out.println("maxMarkerId="+maxMarkerId+"    listNewMarkers="+listNewMarkers);
 			for(int r=1;r<intSRC;r++){	
 				exists=false;				
 				String str=sheetMarkerDetails.getCell(0,r).getContents().trim()+"!`!"+sheetMarkerDetails.getCell(3,r).getContents().trim()+"!`!CAP";					
 				if(listNewMarkers.contains(str.toLowerCase())){
-					MarkerID=maxMarkerId++;
+					//MarkerID=maxMarkerId++;
+					MarkerID=maxMarkerId--;
 				}else{
 					//retrieving MarkerID for the already existing marker from MarkerInfo table
 					List listValues=session.createQuery("select markerId from MarkerInfoBean where Lower(marker_name) ='"+(String)sheetMarkerDetails.getCell(0,r).getContents().trim().toLowerCase()+"' and Lower(species)='"+(String)sheetMarkerDetails.getCell(3,r).getContents().trim().toLowerCase()+"' and marker_type='CAP'").list();

@@ -5,7 +5,7 @@
 <%@ page import="java.util.ArrayList;" %>
 <html:html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+
 		<title>GDMS</title>
 		<script>
 			function stopRKey(evt) { 
@@ -36,6 +36,7 @@
 				<br>
 				<br>
 				<%
+				String map_unit=session.getAttribute("map_unit").toString();
 				int actualCount=Integer.parseInt(session.getAttribute("recCount").toString());
 				//int retCount=mdata.length;
 				int retCount=Integer.parseInt(request.getSession().getAttribute("retCount").toString());
@@ -46,11 +47,14 @@
 				<%} else if(retCount==actualCount){%>
 				<div align="center" class="displayText"><b><%=actualCount%> polymorphic markers on Map</b></div>
 				<%} %>
+				<html:hidden property="mapUnit" value='<%=map_unit%>'/>
 				<br>
 				<table width="60%" border=0 align="center">
 					<tr class="displayText">
-					<%if(showTraits.equalsIgnoreCase("yes")){ %>
-						<td align="right">Bin size:</td><td><html:text property="binSize" onkeyup="funCheckMarkers(this)" value=""/>cM</td>
+					<%
+					System.out.println(".................:"+session.getAttribute("map_unit"));
+					if(showTraits.equalsIgnoreCase("yes")){ %>
+						<td align="right">Bin size:</td><td><html:text property="binSize" onkeyup="funCheckMarkers(this)" value=""/>&nbsp;<%=map_unit%></td>
 						
 						<%--<td align="right">Trait:</td><td><html:checkbox property="traitM" onclick="funCheckMarkers(binSize)"/></td>--%>
 						<td align="right"><html:select property="traits" size="3" multiple="true" onchange="getSelectedOptions(this)">
@@ -63,7 +67,7 @@
 						
 						<td><html:checkbox property="traitM" onclick="funCheckMarkers(binSize)"/></td><td>Check Trait(s)</td>
 					<%}else{ %>
-						<td align="right">Bin size:</td><td><html:text property="binSize" onkeyup="funCheckMarkers1(this)" value=""/>cM</td>
+						<td align="right">Bin size:</td><td><html:text property="binSize" onkeyup="funCheckMarkers1(this)" value=""/>&nbsp;<%=map_unit%></td>
 						
 					<%} %>
 				</table>
@@ -106,7 +110,7 @@
  				</center>
 			</logic:notEmpty>
 			<logic:empty name="map_data">
-			<br><br><br><br><br><div class="errorMsgs" align="center">
+				<br><br><br><br><br><div class="errorMsgs" align="center">
 				Map(s) NOT uploaded</div>
 				<center>
 				<br>
@@ -124,6 +128,7 @@
 	</html:html>
 	
 <script>
+var mapUnit=document.forms[0].mapUnit.value;
 	function refreshPage(){
 		var str='<%=request.getQueryString()%>';
 		//alert(str);
@@ -137,7 +142,7 @@
 		document.forms[0].action="genotypingpage.do?poly";		
 		document.forms[0].submit();
 	}
-
+	
 	function funCheckMarkers(val){
 		if(document.forms[0].elements['traitM'].checked==true){	
 			//alert("....:"+document.forms[0].hTraits.value);
@@ -167,7 +172,7 @@
 				//alert(parseFloat(splitValues[2])+">="+parseFloat(arg));
 				if(parseFloat(splitValues[2])>=parseFloat(arg)){
 					document.forms[0].elements['markers'+a].checked=true;
-					document.forms[0].elements['hmarkers'+a].value=document.forms[0].elements['markers'+a].name+"!~!"+document.forms[0].elements['markers'+a].value+"!~!"+binSize+"cM"+"!~!"+splitValues[1]+"!~!"+splitValues[3]+"!~!"+splitValues[2]+"!~!"+splitValues[4];
+					document.forms[0].elements['hmarkers'+a].value=document.forms[0].elements['markers'+a].name+"!~!"+document.forms[0].elements['markers'+a].value+"!~!"+binSize+mapUnit+"!~!"+splitValues[1]+"!~!"+splitValues[3]+"!~!"+splitValues[2]+"!~!"+splitValues[4];
 					arg=parseFloat(splitValues[2])+binSize;
 				}else{
 					document.forms[0].elements['markers'+a].checked=false;
@@ -236,7 +241,7 @@
 				//alert(parseFloat(splitValues[2])+">="+parseFloat(arg));
 				if(parseFloat(splitValues[2])>=parseFloat(arg)){
 					document.forms[0].elements['markers'+a].checked=true;
-					document.forms[0].elements['hmarkers'+a].value=document.forms[0].elements['markers'+a].name+"!~!"+document.forms[0].elements['markers'+a].value+"!~!"+binSize+"cM"+"!~!"+splitValues[1]+"!~!"+splitValues[3]+"!~!"+splitValues[2];
+					document.forms[0].elements['hmarkers'+a].value=document.forms[0].elements['markers'+a].name+"!~!"+document.forms[0].elements['markers'+a].value+"!~!"+binSize+mapUnit+"!~!"+splitValues[1]+"!~!"+splitValues[3]+"!~!"+splitValues[2];
 					arg=parseFloat(splitValues[2])+binSize;
 				}else{
 					document.forms[0].elements['markers'+a].checked=false;
@@ -253,7 +258,8 @@
 		}
 		
 	}
-	function submitPage(){		
+	function submitPage(){	
+		//alert(mapUnit);	
 		var count=0;
 		var strData="";
 		for(var i=0; i<document.forms[0].elements.length; i++){
@@ -264,13 +270,16 @@
 				count=count+1;
 			}			    		          
 		}
+		//alert(strData);
 		if(count<1){
 			alert("None of them are selected");
 			return false;
 		}else{
 			document.forms[0].elements['dataToExp'].value=strData;
+			//alert(document.forms[0].elements['dataToExp'].value);	
 			document.forms[0].submit();
-		}	
+		}
+		
 	}
 	
 </script>

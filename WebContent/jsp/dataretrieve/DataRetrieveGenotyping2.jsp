@@ -22,6 +22,7 @@
 						<td align="left" class="displaysmallText" colspan=2> </td>
 					</tr>
 				</table>
+				
 	  			<br>
 	  			<%
 	  				int missingCount=0;
@@ -91,7 +92,7 @@
 												rowCount=0;%>
 												<tr class="displaysmallText">
 											<%}	%>															
-											<td class="displaysmallText"><%=missingMarkers.get(j)%></td>											
+											<td class="displaysmallText">&nbsp;<%=missingMarkers.get(j)%>&nbsp;</td>											
 											<%rowCount++;										
 										}
 								//}%>			
@@ -102,13 +103,43 @@
 					</table>
 				</logic:notEmpty>
 				<br><br>
-			</logic:notEmpty>	
-				
+				<logic:notEmpty name="maps">
+					<html:hidden property="mapsH" value="yes"/>
+					<html:select property="maps">
+						<html:option value="">-- select Map --</html:option>
+					  	<logic:iterate name="maps" id="maps" type="java.lang.String">
+					  		<html:option value="<%=maps %>" />
+					   	</logic:iterate>
+					</html:select>
+				</logic:notEmpty>
+				<logic:empty name="maps">
+					<html:hidden property="mapsH" value="noMaps"/>
+				</logic:empty>
+				<br><br>
 			<center>
  				<html:button property="backButton" value="Back" onclick="javascript:history.back()"/>
- 				<html:submit property="nextButton" value="View On Map"/>
- 				
+ 				<logic:notEmpty name="maps">
+ 				<html:button property="nextButton" onclick="funcSubmitPage()" value="View On Map"/>
+ 				</logic:notEmpty>
  			</center>
+ 			</center>
+ 			
+ 			</logic:notEmpty>
 		</html:form>
 	</body>
 </html:html>
+<script>
+function funcSubmitPage(){
+	if(document.forms[0].mapsH.value=="yes"){
+		if(document.forms[0].maps.value==""){
+			alert("Please select the Map");
+		}else{
+			document.forms[0].action="retrieveMap.do?polymap";
+			document.forms[0].submit();
+		}
+	}else{
+		document.forms[0].action="retrieveMap.do?polymap";
+		document.forms[0].submit();
+	}
+}
+</script>

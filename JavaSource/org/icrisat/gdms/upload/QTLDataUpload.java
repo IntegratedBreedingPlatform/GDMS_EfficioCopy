@@ -88,7 +88,8 @@ public class QTLDataUpload {
 			int rowCount=sheetData.getRows();
 			int colCount=sheetData.getColumns();	
 			int intDatasetId=uptMId.getMaxIdValue("dataset_id","gdms_dataset",session);
-			int dataset_id=intDatasetId+1;
+			//int dataset_id=intDatasetId+1;
+			int dataset_id=intDatasetId-1;
 			///timestamp code
 			String mon="";
 			Calendar cal = new GregorianCalendar();
@@ -101,13 +102,15 @@ public class QTLDataUpload {
 				mon="0"+(month+1);
 			  
 			 String curDate=year+"-"+mon+"-"+day;
-			/* ArrayList traitList=new ArrayList();
+			 
+			 // validating traits
+			 ArrayList traitList=new ArrayList();
 			 
 			 String alertT="no";
-		        String alertGN="no";
-		        //String notMatchingData="";
-		        String notExisTraits="";
-		        //String notMatchingDataExists="";
+		     String alertGN="no";
+		     //String notMatchingData="";
+		     String notExisTraits="";
+		     //String notMatchingDataExists="";
 			 
 			 int size=0;
 			 String traits="";
@@ -135,24 +138,24 @@ public class QTLDataUpload {
 	        }
             if(map.size()>0){
             	for(int t=0;t<traitList.size();t++){
-		        	   /*String arrP[]=new String[3];
-						 StringTokenizer stzP = new StringTokenizer(traitList.get(t).toString(), ",");
-						 int iP=0;
-						 while(stzP.hasMoreTokens()){
-							 arrP[iP] = stzP.nextToken();
-							 iP++;
-						 }	*/
+		        	   String arrP[]=new String[3];
+		        	   StringTokenizer stzP = new StringTokenizer(traitList.get(t).toString(), ",");
+		        	   int iP=0;
+		        	   while(stzP.hasMoreTokens()){
+		        		   arrP[iP] = stzP.nextToken();
+		        		   iP++;
+		        	   }	
 		        	  
 		        	   //gNameToCompare=arrP[1].toString();
 		        	   //System.out.println("...."+gidToCompare+"   "+lstgermpName.contains(gidToCompare));
-		        	 /*  if(retTraits.contains(traitList.get(t).toString())){
+		        	   if(retTraits.contains(traitList.get(t).toString())){
 		        		   alertT="no"; 		        		  		        			   
 		        	   }else{
 		        		   alertT="yes";
 		        		   size=map.size();
 		        		   notExisTraits=notExisTraits+traitList.get(t).toString()+", ";
 		        	   }
-		           }
+            	}
             }
             
             if(alertT.equalsIgnoreCase("yes")){
@@ -163,11 +166,17 @@ public class QTLDataUpload {
 	     	   	}
 	            request.getSession().setAttribute("indErrMsg", ErrMsg);
 	        	return "ErrMsg";
+            }         
+            String dname=sheetSource.getCell(1,2).getContents().trim();
+            if(dname.length()>30){
+            	ErrMsg = "Error : Dataset Name value exceeds max char size.";
+            	request.getSession().setAttribute("indErrMsg", ErrMsg);							
+				return "ErrMsg";
             }
-           
+            
 			/** inserting to 'dataset' table  **/
 			ub.setDataset_id(dataset_id);
-			ub.setDataset_name((String)sheetSource.getCell(1,2).getContents().trim());
+			ub.setDataset_name(dname);
 			ub.setDataset_desc((String)sheetSource.getCell(1,3).getContents().trim());
 			ub.setDataset_type(dataset_type);
 			ub.setGenus(sheetSource.getCell(1,4).getContents().trim());
@@ -177,22 +186,10 @@ public class QTLDataUpload {
 			ub.setDatatype(datatype);
 			//System.out.println("dataset id = ");
 			session.save(ub);
-			
-			int user_id=uptMId.getUserId("userid", "users", "uname", session,sheetSource.getCell(1,1).getContents().trim());
+			String username=request.getSession().getAttribute("user").toString();
+			int user_id=uptMId.getUserId("userid", "users", "uname", session,username);
 			//System.out.println("user_id="+user_id);
-			
-			if(user_id==0){
-				int maxUid=uptMId.getMaxIdValue("userid","users",session);
-				/*String ErrMsg = "PI doesnot exists in the database";
-				request.getSession().setAttribute("indErrMsg", ErrMsg);
-				return "ErrMsg";*/
-				u.setUserid(maxUid+1);
-				u.setUname(sheetSource.getCell(1,1).getContents().trim());
-				u.setUpswd("gdms");
-				session.save(u);
-				
-			}
-			
+						
 			
 			//*************  dataset_users*************
 			usb.setDataset_id(dataset_id);
@@ -206,18 +203,21 @@ public class QTLDataUpload {
 			
 			int intqtlId=uptMId.getMaxIdValue("qtl_id","gdms_qtl",session);
 			//System.out.println("user_id="+user_id);
-			int qtlId=intqtlId+1;
+			//int qtlId=intqtlId+1;
+			int qtlId=intqtlId-1;
 			
-			
+			System.out.println("rowCount=:"+rowCount);
 			for (int i=1;i<rowCount;i++){
-				mapId=uptMId.getMapId("map_id", "gdms_map", "map_name", session,sheetData.getCell(2,i).getContents().trim());
-				//System.out.println("mapId="+mapId);
-				if(mapId!=0){
-					linkMapId=linkMapId+mapId+",";	
-				}else{
-					ErrMsg = "Map does not exists.\nPlease Upload the corresponding Map";
-					request.getSession().setAttribute("indErrMsg", ErrMsg);
-					return "ErrMsg";
+				if(sheetData.getCell(1,i).getContents().trim()!=""){
+					mapId=uptMId.getMapId("map_id", "gdms_map", "map_name", session,sheetData.getCell(2,i).getContents().trim());
+					System.out.println("mapId="+mapId);
+					if(mapId!=0){
+						linkMapId=linkMapId+mapId+",";	
+					}else{
+						ErrMsg = "Map does not exists.\nPlease Upload the corresponding Map";
+						request.getSession().setAttribute("indErrMsg", ErrMsg);
+						return "ErrMsg";
+					}
 				}
 			}
 
@@ -226,6 +226,7 @@ public class QTLDataUpload {
 			String[] linkageMapID=linkMapId.split(",");
 			for(int i=1;i<rowCount;i++){	
 				/** reading from datasheet of template & writing to 'qtl' table  **/
+				if(sheetData.getCell(1,i).getContents().trim()!=""){
 				QTLBean qb=new QTLBean();				
 				qb.setQtl_id(qtlId);
 				qb.setDataset_id(dataset_id);
@@ -254,10 +255,12 @@ public class QTLDataUpload {
 				l++;
 						
 				session.save(qtlb);
-				qtlId++;
+				//qtlId++;
+				qtlId--;
 				if (i % 1 == 0){
 					session.flush();
 					session.clear();
+				}
 				}
 			}
 			

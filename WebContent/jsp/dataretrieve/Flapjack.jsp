@@ -6,12 +6,12 @@
 <%
 	try{
 		int exitval =1;		
-		System.out.println("Str value="+request.getParameter("str"));
+		//System.out.println("Str value="+request.getParameter("str"));
 		String batchType=request.getParameter("str");
 		String realPath=request.getSession().getServletContext().getRealPath("//");
 		String batchFileName="";
 		String flapjakStatus="";
-		System.out.println("realPath in flapjack.jsp:"+realPath);
+		//System.out.println("realPath in flapjack.jsp:"+realPath);
 		if(batchType.equals("View in CMTV")){
 			batchFileName=realPath+"jsp\\dataretrieve\\cmtvrun.bat";
 			System.out.println("batch file path/...."+batchFileName);
@@ -22,8 +22,12 @@
 			
 		}else if(batchType.equals("Run Flapjack")){
 			batchFileName=realPath+"\\jsp\\dataretrieve\\flapjackrun.bat";
-			System.out.println("batch file path/...."+batchFileName);
-			
+			//System.out.println("batch file path/...."+batchFileName);
+			//System.out.println("realPath=:"+realPath);
+			File fexists=new File(realPath+"/Flapjack/Flapjack.flapjack");
+			if(fexists.exists()) { fexists.delete(); 
+			//System.out.println("proj exists and deleted");
+			}
 			//Process p = Runtime.getRuntime().exec("cmd.exe /c start " + batchFileName);
 			String[] cmd = {"cmd.exe", "/c", "start", "\""+"flapjack"+"\"", batchFileName};
 			Runtime rt = Runtime.getRuntime();

@@ -196,7 +196,8 @@ public class CISRMarkerInfoUpload{
 				//ChromosomeBean chromosome=null;
 				
 				int maxMarkerId=uptMDsetId.getMaxIdValue("marker_id","gdms_marker",session);
-				maxMarkerId++;
+				//maxMarkerId++;
+				maxMarkerId--;
 				System.out.println("Max Marker Id =="+maxMarkerId);
 					//maxMarkerId++;
 				String MarkerType="",annealing_temp="",reverse_primer_temp="",forward_primer_temp="";
@@ -215,7 +216,8 @@ public class CISRMarkerInfoUpload{
 					
 					String str=sheetMarkerDetails.getCell(0,r).getContents().trim()+"!`!"+sheetMarkerDetails.getCell(3,r).getContents().trim()+"!`!CISR";					
 					if(listNewMarkers.contains(str.toLowerCase())){						
-						MarkerID=maxMarkerId++;
+						//MarkerID=maxMarkerId++;
+						MarkerID=maxMarkerId--;
 						System.out.println(MarkerID);
 					}else{
 						//retrieving MarkerID for the already existing marker from MarkerInfo table

@@ -185,14 +185,16 @@ private Session session;
 			String productSize="";
 			String expectedProductSize="";
 			int maxMarkerId=uptMDsetId.getMaxIdValue("marker_id","gdms_marker",session);
-			maxMarkerId++;				
+			//maxMarkerId++;				
+			maxMarkerId--;			
 			boolean	exists=false;			
 				
 			for(int r=1;r<intSRC;r++){	
 				exists=false;				
 				String str=sheetMarkerDetails.getCell(0,r).getContents().trim()+"!`!"+sheetMarkerDetails.getCell(2,r).getContents().trim()+"!`!SNP";					
 				if(listNewMarkers.contains(str.toLowerCase())){
-					MarkerID=maxMarkerId++;
+					//MarkerID=maxMarkerId++;
+					MarkerID=maxMarkerId--;
 				}else{
 					//retrieving MarkerID for the already existing marker from MarkerInfo table
 					List listValues=session.createQuery("select markerId from MarkerInfoBean where Lower(marker_name) ='"+(String)sheetMarkerDetails.getCell(0,r).getContents().trim().toLowerCase()+"' and Lower(species)='"+(String)sheetMarkerDetails.getCell(2,r).getContents().trim().toLowerCase()+"' and marker_type='SNP'").list();

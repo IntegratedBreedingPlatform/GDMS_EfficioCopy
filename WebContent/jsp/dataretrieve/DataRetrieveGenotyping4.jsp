@@ -39,7 +39,12 @@
 		 		<td nowrap="nowrap">&nbsp;<%=arg[2] %></td><td nowrap="nowrap">&nbsp;<%=arg[3] %></td>
 		 		<td nowrap="nowrap">&nbsp;<%=arg[4] %></td>
 		 		
+		 		<%if(!(arg[14].toString().equals(" "))){ %>
 		 		<td nowrap="nowrap">&nbsp;<a href='<%=OntPath%>' target="new"><%=arg[5] %></a></td>
+		 		<%}else{ %>
+		 		<td nowrap="nowrap">&nbsp;<%=arg[5] %></td>
+		 		<%} %>
+		 		
 		 		
 		 		<td nowrap="nowrap">&nbsp;<%=arg[6] %></td>
 		 		<td nowrap="nowrap">&nbsp;<%=arg[7] %></td><td nowrap="nowrap">&nbsp;<%=arg[8] %></td>

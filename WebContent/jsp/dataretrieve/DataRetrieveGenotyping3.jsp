@@ -169,9 +169,12 @@
 								String path="";
 								String label3="";
 								String path2="";
+								
 								String ExportFormats=session.getAttribute("exportFormat").toString();
-								System.out.println("  >>>>>>>>>>>>>>>  in jsp :"+ExportFormats);
+								//System.out.println("  >>>>>>>>>>>>>>>  in jsp :"+ExportFormats+" (^!^)^^^^^^^^^^^  "+qtl);
 								if(ExportFormats.equals("Flapjack")) {
+									String qtl=session.getAttribute("qtlExistsSes").toString();
+								
 									label1="Flapjack data file";
 									label2="Flapjack Map file";
 									label3="Flapjack QTL file";
@@ -201,7 +204,9 @@
 												</a>													
 											</td>
 										</tr>
-										
+										<%if(qtl.equals("true")) {
+										//System.out.println("QTL TRUE");
+										%>
 										<tr>
 											<td width="15%" align=right>
 												<img src="jsp/Images/bullet2.gif"  border=0 >
@@ -212,7 +217,7 @@
 												</a>													
 											</td>
 										</tr>
-										
+										<%} %>
 										<tr><td colspan="2"> &nbsp;</td></tr>
 										<tr>
 											<td colspan="2" align="center"> 				
@@ -332,7 +337,7 @@
 							<tr align="center">
 								<td colspan=2>
 								<%--<input type=submit value="View in CMTV" onclick="funcFlapjack(this.value)">&nbsp;&nbsp;--%>
-								<input type="button" name="Back" value=" Back " onclick="funcBack()"/></td>
+								<input type="button" name="Back" value=" Back " onclick="funcBackCMTV()"/></td>
 							</tr>
 						<%} %>
 					</table>	  		
@@ -383,6 +388,7 @@
 											}else 
 											*/	
 											if(ExportFormats.equals("Flapjack")){
+											
 												label1="Flapjack data file";
 												label2="Flapjack Map file";
 												label3="Flapjack QTL file";
@@ -487,6 +493,10 @@ function funcFlapjack(a){
 }
 function funcBack(){
 	document.forms[0].action="genotypingpage.do?second";
+	document.forms[0].submit();	
+}
+function funcBackCMTV(){
+	document.forms[0].action="jsp/dataretrieve/DataRetrieve1.jsp";
 	document.forms[0].submit();	
 }
 function sub(type){

@@ -46,7 +46,7 @@ public class RetrieveDatasetMapsAction extends Action{
 			ServletContext context = servlet.getServletContext();
 			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
 			con=dataSource.getConnection();	
-			
+			int mapCount=0;
 			
 			String markers="";
 			ResultSet rs=null;
@@ -71,6 +71,7 @@ public class RetrieveDatasetMapsAction extends Action{
 			pr.println("<details><![CDATA[- Select -]]></details>");
 			while(rs1.next()){
 				//mapList.add(rs1.getString(1)+" ("+rs1.getInt(2)+")");
+				mapCount++;
 				String str = rs1.getString(1)+" ("+rs1.getInt(2)+")";	
 				System.out.println(str);
 				pr.println("<details><![CDATA[" + str + "]]></details>");
@@ -78,7 +79,7 @@ public class RetrieveDatasetMapsAction extends Action{
 			}
 			
 			pr.println("</data>");	 
-			
+			session.setAttribute("mapsCount", mapCount);
 			return null;		
 			
 			//System.out.println("mapList="+mapList);								

@@ -24,6 +24,7 @@ import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GenotypicDataManager;
 import org.generationcp.middleware.pojos.gdms.DatasetElement;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 
 public class DataDeletionRetrievalAction extends Action{
 
@@ -52,12 +53,13 @@ public class DataDeletionRetrievalAction extends Action{
 			con=dataSource.getConnection();	
 			
 			
-			DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
+			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
 			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
 			
-			factory = new ManagerFactory(local, central);
+			factory = new ManagerFactory(local, central);*/
+			/*factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
 			GenotypicDataManager gdms=factory.getGenotypicDataManager();
-			
+			*/
 			
 			ResultSet rs=null;
 			ResultSet rs1=null;

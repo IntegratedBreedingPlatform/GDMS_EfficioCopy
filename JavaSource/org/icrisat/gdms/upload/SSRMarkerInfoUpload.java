@@ -200,7 +200,8 @@ public class SSRMarkerInfoUpload {
 				int MarkerID=0;
 				int maxMarkerId=uptMDsetId.getMaxIdValue("marker_id","gdms_marker",session);
 				//System.out.println("Max Marker Id =="+maxMarkerId);
-				maxMarkerId++;
+				//maxMarkerId++;
+				maxMarkerId=maxMarkerId-1;
 				String MarkerType="",annealing_temp="",reverse_primer_temp="",forward_primer_temp="";
 				boolean	exists=false;
 				int No_of_repeats,Sequence_length,Min_allele,Max_allele,Ssr_nr,Size_of_repeat_motif,Primer_length,Fragment_size_expected,Fragment_size_observed;
@@ -217,7 +218,8 @@ public class SSRMarkerInfoUpload {
 					
 					String str=sheetMarkerDetails.getCell(0,r).getContents().trim()+"!`!"+sheetMarkerDetails.getCell(2,r).getContents().trim()+"!`!SSR";					
 					if(listNewMarkers.contains(str.toLowerCase())){						
-						MarkerID=maxMarkerId++;
+						//MarkerID=maxMarkerId++;
+						MarkerID=maxMarkerId--;
 					}else{
 						//retrieving MarkerID for the already existing marker from MarkerInfo table
 						List listValues=session.createQuery("select markerId from MarkerInfoBean where Lower(marker_name) ='"+(String)sheetMarkerDetails.getCell(0,r).getContents().trim().toLowerCase()+"' and Lower(species)='"+(String)sheetMarkerDetails.getCell(2,r).getContents().trim().toLowerCase()+"' and marker_type='SSR'").list();

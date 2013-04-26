@@ -26,6 +26,7 @@ import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.Name;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -40,8 +41,6 @@ import org.icrisat.gdms.upload.IntArrayBean;
  */
 public class RetrieveGenotypesAction extends Action{
 	Connection con=null;
-	private Session hsession;	
-	private Transaction tx;
 	
 	public ActionForward execute(ActionMapping am, ActionForm af, HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
@@ -67,11 +66,12 @@ public class RetrieveGenotypesAction extends Action{
 			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
 			con=dataSource.getConnection();	
 			
-			DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
+			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
 			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
 			
 			factory = new ManagerFactory(local, central);
-			
+			*/
+			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
 			
 			ArrayList gidsT=new ArrayList();
 			ResultSet rs=null;

@@ -4,15 +4,18 @@
 package org.icrisat.gdms.retrieve;
 
 import java.io.File;
-import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -29,15 +32,12 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.DynaActionForm;
-import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.Name;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.icrisat.gdms.common.ExportFormats;
-import org.icrisat.gdms.common.HibernateSessionFactory;
 import org.icrisat.gdms.common.MaxIdValue;
 
 
@@ -48,27 +48,25 @@ public class RetrieveExportFormatAction extends Action{
 	String mapData="";
 	ArrayList list=new ArrayList();
 	ArrayList mlist=new ArrayList();
-	private Session hsession;	
-	private Transaction tx;
-	
+	//private Session hsession;	
+	//private Transaction tx;
+	boolean qtlExists=false;
 	public ActionForward execute(ActionMapping am, ActionForm af,
 			HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
 		
 		//String crop=req.getSession().getAttribute("crop").toString();
 		ManagerFactory factory = null;
-		hsession = HibernateSessionFactory.currentSession();
-		tx=hsession.beginTransaction();
+		
 		HttpSession session = req.getSession(true);
-		/*if(session!=null){
-			session.removeAttribute("strdata");
-			
-		}*/
+		if(session!=null){
+			session.removeAttribute("qtlExistsSes");
+		}
 		MaxIdValue r=new MaxIdValue();
 		ArrayList gListExp=new ArrayList();
 		ArrayList mListExp=new ArrayList();
-		
-		
+		DecimalFormat decfor = new DecimalFormat("#.0");
+		int qtlCount=0;
 		String chValues="";
 		Query charQuery=null;
 		String markers="";
@@ -123,12 +121,14 @@ public class RetrieveExportFormatAction extends Action{
 			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
 			con=dataSource.getConnection();
 			
-			DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
+			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
 			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
-			
-			factory = new ManagerFactory(local, central);
+			*/
+		//	factory = new ManagerFactory(local, central);
+			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
 			GermplasmDataManager manager = factory.getGermplasmDataManager();
 			
+			String parentsListToWrite="";
 			
 			ArrayList gidsList=new ArrayList();
 			ArrayList midsList=new ArrayList();
@@ -163,13 +163,13 @@ public class RetrieveExportFormatAction extends Action{
 			String mType="";
 			ArrayList parentsList = new ArrayList();
 			ArrayList gidList=new ArrayList();
-			System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^op="+op);
+			//System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^op="+op);
 			
 			String exportOpType="";
 			
 			if(format.equalsIgnoreCase("flapjack")){
 				exportOpType=df.get("exportTypeH").toString();
-				System.out.println(",,,,,,,,,,,,,,,:"+df.get("exportTypeH"));
+				//System.out.println(",,,,,,,,,,,,,,,:"+df.get("exportTypeH"));
 			}
 			
 			
@@ -235,7 +235,8 @@ public class RetrieveExportFormatAction extends Action{
 						parentBint=rsP.getInt(2);
 					}
 					//if(format.equalsIgnoreCase("flapjack")){
-						if((mapping_type.equalsIgnoreCase("allelic"))||(format.equalsIgnoreCase("flapjack"))){
+						//if((mapping_type.equalsIgnoreCase("allelic"))||(format.equalsIgnoreCase("flapjack"))){
+						if(mapping_type.equalsIgnoreCase("allelic")){
 							/*if(!exportOpType.equals("gname")){
 							
 							if(!gListExp.contains(parentAint))
@@ -256,6 +257,7 @@ public class RetrieveExportFormatAction extends Action{
 							
 							
 						}
+						//System.out.println("SELECT nid from gdms_acc_metadataset where dataset_id="+datasetId+" and gid not in("+parentsNames+") order by nid");
 						rs2=stmt2.executeQuery("SELECT nid from gdms_acc_metadataset where dataset_id="+datasetId+" and gid not in("+parentsNames+") order by nid");
 						int count=0;
 						while(rs2.next()){
@@ -276,7 +278,7 @@ public class RetrieveExportFormatAction extends Action{
 							count=count+1;
 						}
 					}*/
-					//System.out.println("gid in between -==:"+gidList);
+					//System.out.println("gid in between ==:"+gidList);
 					ArrayList pgidsList=new ArrayList();
 					
 					ArrayList nids=new ArrayList();
@@ -294,37 +296,43 @@ public class RetrieveExportFormatAction extends Action{
 							gMap.put(names.getGermplasmId(), names.getNval());
 							//gids=gids+names.getGermplasmId()+",";
 						}
+						if(pgidsList.contains(parentAint)){
+							parents=parents+gMap.get(parentAint)+"!~!";
+							parentsListToWrite=parentsListToWrite+parentAint+";;"+gMap.get(parentAint)+"!~!";
+						}
+						if(pgidsList.contains(parentBint)){
+							parents=parents+gMap.get(parentBint);
+							parentsListToWrite=parentsListToWrite+parentBint+";;"+gMap.get(parentBint)+"!~!";
+						}
 						
 						/*System.out.println("select gid,nval from names where nid in (select nid from acc_metadataset where gid in("+parentsNames+"))");
 						rsN=stmtN.executeQuery("select gid,nval from names where nid in (select nid from acc_metadataset where gid in("+parentsNames+"))");*/
 					}else{
-						List<Name> names = null;
+						//List<Name> names = null;
+						Name names = null;
 						for(int p=0;p<parentsList.size();p++){
-							names = manager.getNamesByGID(Integer.parseInt(parentsList.get(p).toString()), null, null);
-							for (Name name : names) {
-								pgids=pgids+name.getGermplasmId()+",";
-								if(!(pgidsList.contains(name.getGermplasmId())))
-									pgidsList.add(name.getGermplasmId());
-								gMap.put(name.getGermplasmId(), name.getNval());
-					            
-					        }
+							//names = manager.getNamesByGID(Integer.parseInt(parentsList.get(p).toString()), null, null);
+							names=manager.getGermplasmNameByID(Integer.parseInt(parentsList.get(p).toString()));
+							//for (Name name : names) {
+								pgids=pgids+names.getGermplasmId()+",";
+								if(!(pgidsList.contains(names.getGermplasmId())))
+									pgidsList.add(names.getGermplasmId());
+								///gMap.put(names.getGermplasmId(), names.getNval());
+								parentsListToWrite=parentsListToWrite+names.getGermplasmId()+";;"+names.getNval()+"!~!";
+					        //}
 						}			
 						
 						/*System.out.println("select gid,nval from names where gid in ("+parentsNames+")");
 						rsN=stmtN.executeQuery("select gid,nval from names where gid in ("+parentsNames+")");*/
 					}
 					
-				
+					
 					//if(mapping_type.equalsIgnoreCase("allelic")){
 						/*for(int p=0; p<pgidsList.size();p++){
 							
 						}*/
-						if(pgidsList.contains(parentAint)){
-							parents=parents+gMap.get(parentAint)+"!~!";
-						}
-						if(pgidsList.contains(parentBint)){
-							parents=parents+gMap.get(parentBint);
-						}
+					
+						
 					//}
 						//System.out.println(",,,,,,,,,,,,,,,,,,,,,,,,,,,  parents:"+parents);
 					/*System.out.println(",,,,,,,,,,,,,,,,,,,,,,,,,,,  parents:"+parents);
@@ -402,7 +410,7 @@ public class RetrieveExportFormatAction extends Action{
 				
 				//System.out.println("strL="+strL);
 				//System.out.println("mid="+mid);
-				//System.out.println("..................... gid="+gidList);
+				//System.out.println("..................... nid="+gidList);
 				
 				//rsG=stmtG.executeQuery("select distinct gid,nval from names where nid in("+ gid.substring(0,gid.length()-1) +") order by gid DESC");
 				
@@ -416,40 +424,35 @@ public class RetrieveExportFormatAction extends Action{
 					names=manager.getGermplasmNameByID(Integer.parseInt(gidList.get(n).toString()));
 					//gids=gids+names.getGermplasmId()+",";
 					
-					
+					//System.out.println("&&&&&&&&&&&&&&&&  :"+names.getGermplasmId()+"  "+names.getNval());
 					if(!(gMap.containsKey(names.getGermplasmId())))
 						gMap.put(names.getGermplasmId(), names.getNval());
 					 //gidsList.add(rsG.getString(1));
 					
-					if((format.contains("Flapjack"))&&(exportOpType.equals("gname"))){
+					/*if((format.contains("Flapjack"))&&(exportOpType.equals("gname"))){
 						if(!(gListExp.contains(names.getNval())))
 							 gListExp.add(names.getNval());
 					}else{
 						if(!(gListExp.contains(names.getGermplasmId())))
 							 gListExp.add(names.getGermplasmId());
 					}
-					
-					
-					 
-					
+					*/					
 				}
-				//System.out.println("gListExp-=:"+gListExp);
-				
-				
-				
+				//System.out.println("gMap=:"+gMap);
+								
 				//System.out.println("select marker_id, marker_name from marker where marker_id in("+ mid.substring(0,mid.length()-1) +") order by marker_id ASC");
 				rsM=stmtM.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in("+ mid.substring(0,mid.length()-1) +") order by marker_id ASC");
 				
 				if(datasetType.equalsIgnoreCase("SNP")){
-					System.out.println("select gid, marker_id, char_value from gdms_char_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					//System.out.println("select gid, marker_id, char_value from gdms_char_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
 					rsD=st.executeQuery("select gid, marker_id, char_value from gdms_char_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
 					
 				}else if((datasetType.equalsIgnoreCase("SSR"))||(datasetType.equalsIgnoreCase("DArT"))){
-					System.out.println("select gid, marker_id, allele_bin_value from gdms_allele_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					//System.out.println("select gid, marker_id, allele_bin_value from gdms_allele_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
 					rsD=st.executeQuery("select gid, marker_id, allele_bin_value from gdms_allele_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
 					
 				}else if(datasetType.equalsIgnoreCase("mapping")){
-					System.out.println("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					//System.out.println("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
 					rsD=st.executeQuery("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
 					
 					session.setAttribute("dataset", datasetId);
@@ -508,18 +511,27 @@ public class RetrieveExportFormatAction extends Action{
 					if(!(mListExp.contains(rsM.getString(2))))
 					mListExp.add(rsM.getString(2));
 				}
-				//System.out.println("Queries exicuted");
 				Map<Object, String> sortedMap = new TreeMap<Object, String>(gMap);
 				Map<Object, String> sortedMarkerMap = new TreeMap<Object, String>(mMap);
-	           // System.out.println("mMap=:"+sortedMarkerMap);				
-	            //System.out.println(" strL="+strL);
-				//System.out.println("sortedMap="+sortedMap);
+	           	Set keys = sortedMap.keySet();
+
+
+				for (Iterator i = keys.iterator(); i.hasNext(); ){
+					int key = Integer.parseInt(i.next().toString());
+					String value=(String) sortedMap.get(key);
+					//System.out.println(".....:"+key+"   "+value);
+					if((format.contains("Flapjack"))&&(exportOpType.equals("gname"))){
+						if(!(gListExp.contains(value)))
+							gListExp.add(value);
+					}else{
+						if(!(gListExp.contains(key)))
+							 gListExp.add(key);
+					}
+				}
+				//System.out.println("gListExp-=:"+gListExp);
 				//System.out.println(strL.size());
 				list.clear();
-				/*for(int l=0; l<strL.size();l++){
-					 System.out.println(".l=."+l+"....."+strL.get(l));
-				}*/
-				//String[] strL1=strL.split("!~!");
+				
 				for(int l=0; l<strL.size();l++){
 					String arr[]=new String[3];
 					//String[] data=strL.get(l).toString().split(",");
@@ -560,21 +572,26 @@ public class RetrieveExportFormatAction extends Action{
 					//rsQ=stQ.executeQuery("");
 					while(rsMap.next()){
 						//System.out.println("..............:"+rsMap.getInt(1));
+						qtlCount++;
 						qtl_id=qtl_id+rsMap.getInt(1)+",";
 					}
-					System.out.println("................;"+qtl_id);
-					System.out.println("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
-					rsQ=stQ.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
-					while(rsQ.next()){
-						/*String Fmarkers=rsQ.getString(13)+"/"+rsQ.getString(14);
-						//float pos=(rsQ.getFloat(3)+rsQ.getFloat(4))/2;
-						//System.out.println(",,,,,,,,,,,,,,,,,,,,,,  :"+rsQ.getString(5));
-						qtlData.add(rsQ.getString(16)+"!~!"+rsQ.getString(11)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getFloat(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getFloat(10)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(8));*/
-						String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);
-						qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7));
+					if(qtlCount>0){
+						qtlExists=true;
+						//System.out.println("................;"+qtl_id);
+						//System.out.println("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
+						rsQ=stQ.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
+						while(rsQ.next()){
+							/*String Fmarkers=rsQ.getString(13)+"/"+rsQ.getString(14);
+							//float pos=(rsQ.getFloat(3)+rsQ.getFloat(4))/2;
+							//System.out.println(",,,,,,,,,,,,,,,,,,,,,,  :"+rsQ.getString(5));
+							qtlData.add(rsQ.getString(16)+"!~!"+rsQ.getString(11)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getFloat(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getFloat(10)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(8));*/
+							String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);
+							qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7));
 						
-					}
-					
+						}
+					}else
+						qtlExists=false;
+					session.setAttribute("qtlExistsSes", qtlExists);
 				}
 				
 				//System.out.println("*************qtlData="+qtlData);
@@ -583,13 +600,13 @@ public class RetrieveExportFormatAction extends Action{
 				//System.out.println("........list="+list);
 				//System.out.println(gListExp);
 				//System.out.println("List="+list);
-				System.out.println(" gListExp="+ gListExp);
-				System.out.println(" mListExp="+ mListExp);
+				//System.out.println(" gListExp="+ gListExp);
+				//System.out.println(" mListExp="+ mListExp);
 				session.setAttribute("datasetType", datasetType);
 				if((format.contains("Genotyping X Marker Matrix"))&&(datasetType.equalsIgnoreCase("SNP"))){
 					ef.MatrixDataSNP(list, filePath, req, gListExp, mListExp, sortedMap);
 				}else if((format.contains("Genotyping X Marker Matrix"))&&(datasetType.equalsIgnoreCase("mapping"))){
-					ef.mapMatrix(list, filePath, req, gListExp, mListExp, parents, sortedMap);			
+					ef.mapMatrix(list, filePath, req, gListExp, mListExp, parentsListToWrite, sortedMap);			
 				
 				}else if((format.contains("Genotyping X Marker Matrix"))&&(datasetType.equalsIgnoreCase("SSR"))){
 					ef.MatrixDataSNP(list, filePath, req, gListExp, mListExp, sortedMap);
@@ -607,7 +624,7 @@ public class RetrieveExportFormatAction extends Action{
 					String fSession=req.getSession().getAttribute("msec").toString();
 					String FlapjackPath=filePath+"/Flapjack";
 					
-					ef.MatrixDat(list, mapData, FlapjackPath, req, gListExp, mListExp, qtlData, exportOpType);
+					ef.MatrixDat(list, mapData, FlapjackPath, req, gListExp, mListExp, qtlData, exportOpType, qtlExists);
 					//ef.MatrixDat(list, mapData, filePath, req);
 					//ef.Matrix(list, filePath, request);
 					session.setAttribute("FlapjackPath", FlapjackPath);
@@ -634,13 +651,13 @@ public class RetrieveExportFormatAction extends Action{
 				if(type.equals("map")){
 					String[] mapStr=null;
 					//session.setAttribute("mapsSess", df.get("selMaps"));
-					System.out.println("***********************************  "+df.get("selMaps"));
+					//System.out.println("***********************************  "+df.get("selMaps"));
 					mapStr=df.get("selMaps").toString().split(",");
 					if(session!=null){
 						session.removeAttribute("msec");			
 					}
 					//float distance=0;
-					System.out.println(",,,,,,,,,,,,,,,,,,,,,,,  :"+mapStr.length);
+					//System.out.println(",,,,,,,,,,,,,,,,,,,,,,,  :"+mapStr.length);
 					//Calendar now = Calendar.getInstance();
 					filePath=req.getSession().getServletContext().getRealPath("//");
 					if(!new File(filePath+"/jsp/analysisfiles").exists())
@@ -651,7 +668,7 @@ public class RetrieveExportFormatAction extends Action{
 							session.removeAttribute("msec");			
 						}
 						mSec=now.getTimeInMillis()+"";
-						System.out.println("msec="+mapStr[c]);			
+						//System.out.println("msec="+mapStr[c]);			
 						f1=f1+mapStr[c]+"!~!"+mSec+c+";;";
 						ArrayList dist=new ArrayList();
 						ArrayList CD=new ArrayList();
@@ -660,12 +677,22 @@ public class RetrieveExportFormatAction extends Action{
 						//String filePath="";
 						//ExportFormats ef=new ExportFormats();
 						//MaxIdValue r=new MaxIdValue();
-						
+						String mapUnit="";
+						rs1=stmt1.executeQuery("select map_unit from gdms_mapping_data WHERE map_name="+mapStr[c]);
+						while (rs1.next()){
+							mapUnit=rs1.getString(1);
+						}
+						//System.out.println("mapUnit=:"+mapUnit);
 						System.out.println("SELECT marker_name, linkage_group, start_position,map_name FROM gdms_mapping_data WHERE map_name=("+mapStr[c]+") ORDER BY linkage_group, start_position asc, marker_id,map_name");
 						rs=stmt.executeQuery("SELECT marker_name, linkage_group, start_position,map_name FROM gdms_mapping_data WHERE map_name =("+mapStr[c]+") ORDER BY linkage_group, start_position asc, marker_id, map_name");
 						while(rs.next()){
-							mapData=mapData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getFloat(3)+"!~!"+rs.getString(4)+"~~!!~~";
-							CD.add(rs.getString(2)+"!~!"+rs.getFloat(3)+"!~!"+rs.getString(1)+"!~!"+rs.getString(4));
+							//mapData=mapData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getDouble(3)+"!~!"+rs.getString(4)+"~~!!~~";
+							//CD.add(rs.getString(2)+"!~!"+rs.getDouble(3)+"!~!"+rs.getString(1)+"!~!"+rs.getString(4));
+							if(mapUnit.equalsIgnoreCase("bp")){
+								CD.add(rs.getString(2)+"!~!"+new BigDecimal(rs.getString(3))+"!~!"+rs.getString(1)+"!~!"+rs.getString(4));
+							}else{
+								CD.add(rs.getString(2)+"!~!"+decfor.format(rs.getDouble(3))+"!~!"+rs.getString(1)+"!~!"+rs.getString(4));
+							}
 							count=count+1;
 							//CD.add(rs.getFloat(3));
 						}
@@ -680,23 +707,49 @@ public class RetrieveExportFormatAction extends Action{
 						}*/
 						//System.out.println("CDistance="+CD);
 						String[] strArr=CD.get(0).toString().split("!~!");
-						float dis=Float.parseFloat(strArr[1]);
+						double dis=Double.parseDouble(strArr[1]);
 						String chr=strArr[0];
 						count=0;
+						int dis1=0;
 						for(int a=0;a<CD.size();a++){
 							String[] str1=CD.get(a).toString().split("!~!");						
 							if(str1[0].equals(chr)){							
-								float distance=Float.parseFloat(str1[1])-dis;							
-								dist.add(str1[0]+"!~!"+str1[2]+"!~!"+count+"!~!"+r.roundThree(distance)+"!~!"+str1[1]);
+								double distance=Double.parseDouble(str1[1])-dis;
+								//System.out.println("....:"+distance);
+								distance=r.roundThree(distance);
+								if(mapUnit.equalsIgnoreCase("bp")){
+									dist.add(str1[0]+"!~!"+str1[2]+"!~!"+count+"!~!"+new BigDecimal(distance)+"!~!"+str1[1]);
+								}else{
+									if(distance==0.0){
+										dis1=0;
+										//distance=dis1;
+										//System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<:"+distance+ "   "+dis1);	
+										dist.add(str1[0]+"!~!"+str1[2]+"!~!"+count+"!~!"+dis1+"!~!"+dis1);
+									}else{
+										dist.add(str1[0]+"!~!"+str1[2]+"!~!"+count+"!~!"+distance+"!~!"+str1[1]);
+									}
+								}
 								count=count+1;
 								//dis=distance;
-								dis=Float.parseFloat(str1[1]);
+								dis=Double.parseDouble(str1[1]);
 							}else{	
 								count=0;
 								//float distance=Float.parseFloat(str1[1])-dis;
-								dis=Float.parseFloat(str1[1]);
-								chr=str1[0];					
-								dist.add(str1[0]+"!~!"+str1[2]+"!~!"+count+"!~!"+dis+"!~!"+str1[1]);
+								dis=Double.parseDouble(str1[1]);
+								chr=str1[0];
+								if(mapUnit.equalsIgnoreCase("bp")){
+									dist.add(str1[0]+"!~!"+str1[2]+"!~!"+count+"!~!"+new BigDecimal(dis)+"!~!"+str1[1]);
+								}else{
+									if(dis==0.0){
+										dis1=0;
+										//dis=dis1;
+										//System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<:"+dis);	
+										dist.add(str1[0]+"!~!"+str1[2]+"!~!"+count+"!~!"+dis1+"!~!"+dis1);
+									}else{
+										dist.add(str1[0]+"!~!"+str1[2]+"!~!"+count+"!~!"+dis+"!~!"+str1[1]);
+									}
+									
+								}
 								count=count+1;	
 							}
 						}
@@ -707,7 +760,7 @@ public class RetrieveExportFormatAction extends Action{
 					//System.out.println("f1="+f1);
 					session.setAttribute("f1", f1);
 				}else{
-					System.out.println("type="+type);
+					//System.out.println("type="+type);
 					ArrayList gList1=new ArrayList();
 					if(type.equals("GermplasmName")){
 						gidslist=df.get("markersSel").toString();
@@ -733,7 +786,7 @@ public class RetrieveExportFormatAction extends Action{
 						for(int g=0;g<g1.length;g++){
 							gList1.add(g1[g]);
 						}
-						System.out.println("gid="+gids);
+						//System.out.println("gid="+gids);
 						String[] mList=markers.split(";;");
 						for(int m=0;m<mList.length;m++){
 							//System.out.println(m+"="+mList[m]);
@@ -752,8 +805,8 @@ public class RetrieveExportFormatAction extends Action{
 					int mapCharCount=0;
 					
 					ArrayList nidList=new ArrayList();
-					System.out.println(".... gid="+gid);
-					System.out.println("gList1="+gList1);
+					//System.out.println(".... gid="+gid);
+					//System.out.println("gList1="+gList1);
 					try{
 						String data="";
 						String nid="";
@@ -764,7 +817,7 @@ public class RetrieveExportFormatAction extends Action{
 							nid=nid+rs.getString(1)+",";
 						}
 						
-						System.out.println("select count(*) from gdms_allele_values where gid in ("+gid+")");
+						//System.out.println("select count(*) from gdms_allele_values where gid in ("+gid+")");
 						ResultSet rsa=stmt1.executeQuery("select count(*) from gdms_allele_values where gid in ("+gid+")");
 						while (rsa.next()){
 							alleleCount=rsa.getInt(1);
@@ -779,7 +832,7 @@ public class RetrieveExportFormatAction extends Action{
 						while(rsMap.next()){
 							mapCharCount=rsMap.getInt(1);
 						}
-						System.out.println(alleleCount+"    "+charCount+"    "+mapCharCount);
+						//System.out.println(alleleCount+"    "+charCount+"    "+mapCharCount);
 						if(charCount>0){							
 							rsDet=st.executeQuery("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value as data,gdms_marker.marker_name"+
 									" FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id"+
@@ -812,7 +865,7 @@ public class RetrieveExportFormatAction extends Action{
 							String parentBData="";
 							String data1="";
 							String[] p1=parents.split(",");
-							System.out.println("#############################################  :"+mapping_type);
+							//System.out.println("#############################################  :"+mapping_type);
 							//for(int p=0;p<p1.length;p++){
 								parentAint=Integer.parseInt(p1[0].toString());
 								parentBint=Integer.parseInt(p1[1].toString());
@@ -951,7 +1004,7 @@ public class RetrieveExportFormatAction extends Action{
 						System.out.println("..........."+gidsList);
 						System.out.println("*************:"+gListExp);*/
 						//System.out.println(",,,,"+data);
-						System.out.println(",,,,"+gidsList);
+						//System.out.println(",,,,"+gidsList);
 						String[] dataArr=data.split("!~!");
 						for(int d=0;d<dataArr.length;d++){
 							String[] arrData=dataArr[d].split("~!~");
@@ -993,19 +1046,25 @@ public class RetrieveExportFormatAction extends Action{
 						//rsQ=stQ.executeQuery("");
 						while(rsMap.next()){
 							//System.out.println("..............:"+rsMap.getInt(1));
+							qtlCount++;
 							qtl_id=qtl_id+rsMap.getInt(1)+",";
 						}
-						System.out.println("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
-						rsQ=stQ.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
-						while(rsQ.next()){
-							/*String Fmarkers=rsQ.getString(13)+"/"+rsQ.getString(14);
-							//System.out.println(",,,,,,,,,,,,,,,,,,,,,,  :"+rsQ.getString(5));
-							//qtlData.add(rsQ.getString(15)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getString(15)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(12)+"/"+rsQ.getString(13)+"!~!"+rsQ.getString(7));
-							qtlData.add(rsQ.getString(16)+"!~!"+rsQ.getString(11)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getFloat(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getFloat(10)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(8));*/
-							String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);
-							qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7));
+						if(qtlCount>0){
+							qtlExists=true;
+							//System.out.println("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
+							rsQ=stQ.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
+							while(rsQ.next()){
+								/*String Fmarkers=rsQ.getString(13)+"/"+rsQ.getString(14);
+								//System.out.println(",,,,,,,,,,,,,,,,,,,,,,  :"+rsQ.getString(5));
+								//qtlData.add(rsQ.getString(15)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getString(15)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(12)+"/"+rsQ.getString(13)+"!~!"+rsQ.getString(7));
+								qtlData.add(rsQ.getString(16)+"!~!"+rsQ.getString(11)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getFloat(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getFloat(10)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(8));*/
+								String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);
+								qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7));
 							
-						}
+							}
+						}else
+							qtlExists=false;
+						session.setAttribute("qtlExistsSes", qtlExists);
 						
 					}			
 				}
@@ -1038,7 +1097,7 @@ public class RetrieveExportFormatAction extends Action{
 						new File(filePath+"/Flapjack/OutputFiles").mkdir();
 					if(!new File(filePath+"/Flapjack/OutputFiles/"+req.getSession().getAttribute("msec")+req.getSession().getAttribute("user")).exists())
 				   		new File(filePath+"/Flapjack/OutputFiles/"+req.getSession().getAttribute("msec")+req.getSession().getAttribute("user")).mkdir();*/
-					ef.MatrixDat(list, mapData, FlapjackPath, req, gListExp, mListExp, qtlData, exportOpType);
+					ef.MatrixDat(list, mapData, FlapjackPath, req, gListExp, mListExp, qtlData, exportOpType, qtlExists);
 					
 					session.setAttribute("FlapjackPath", FlapjackPath);
 					//ef.MatrixDat(list, mapData, filePath, req, gListExp, mListExp);

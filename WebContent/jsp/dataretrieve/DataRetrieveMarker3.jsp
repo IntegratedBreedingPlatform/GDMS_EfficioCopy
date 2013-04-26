@@ -45,9 +45,9 @@
 <center>
 <img src="jsp/Images/GDMS.gif" border=0 usemap="#Map2">
 	<!--<map name="Map2">
-		<area shape="rect" coords="13,90,60,109" href="../../" alt="Home" target="_top">
-	 	<area shape="rect" coords="88,90,142,109" href="jsp/common/GDMSLayout.jsp?upl" alt="Upload" target="_top">
-	  	<area shape="rect" coords="172,90,235,109" href="jsp/common/GDMSLayout.jsp?ret" alt="Retrieve" target="_top">
+		<area shape="rect" coords="13,90,60,109" href="../../" alt="Home" target="_parent">
+	 	<area shape="rect" coords="88,90,142,109" href="jsp/common/GDMSLayout.jsp?upl" alt="Upload" target="_parent">
+	  	<area shape="rect" coords="172,90,235,109" href="jsp/common/GDMSLayout.jsp?ret" alt="Retrieve" target="_parent">
 	</map>
 	
 -->

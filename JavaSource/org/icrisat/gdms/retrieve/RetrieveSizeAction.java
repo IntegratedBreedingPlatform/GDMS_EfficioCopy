@@ -24,6 +24,7 @@ import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.GidNidElement;
 import org.generationcp.middleware.pojos.Name;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 
 public class RetrieveSizeAction extends Action{
 	Connection con=null;
@@ -56,10 +57,11 @@ public class RetrieveSizeAction extends Action{
 			//p.load(new FileInputStream(session.getServletContext().getRealPath("//")+"\\DatabaseConfig.properties"));
 			System.out.println("......:"+p.getProperty("local.host"));		
 			
-			DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
+			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
 			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
 			
-			factory = new ManagerFactory(local, central);
+			factory = new ManagerFactory(local, central);*/
+			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
 			GermplasmDataManager manager = factory.getGermplasmDataManager();
 			
 			Statement stmt=con.createStatement();

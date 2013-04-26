@@ -7,7 +7,7 @@
 	<head>
 		<title>GDMS</title>
 		<link rel="stylesheet" type="text/css" href="<html:rewrite forward='GDMSStyleSheet'/>">
-
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 		<script>
 			function pageRefresh(){
 				var op='<%=request.getQueryString()%>';
@@ -83,13 +83,13 @@
 			</table>
 			--><br><br>
 			<center>
-				<table width="70%" align="center" border=0>
+				<table width="40%" align="center" border=0>
 					<%--<tr style="font-size: medium;font-weight: bold;"><td colspan=3>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Retrieve</td></tr>
 					<tr><td>&nbsp;</td></tr>--%>
 					<tr class="displayText">
-						<td width="35%" align="right"><html:radio property="retrievalType" value="Output" onclick="retrieveOPData(this)">Genotyping Matrix</html:radio></td>
-						<td width="35%" align="center"><html:radio property="retrievalType" value="polymorphic" onclick="retrieveOPData(this)">Polymorphic Markers</html:radio></td>
-						<td width="30%" align="left"><html:radio property="retrievalType" value="QTL/Map" onclick="retrieveOPData(this)">Map/QTL Data</html:radio></td>
+						<td width="50%" align="center"><html:radio property="retrievalType" value="Output" onclick="retrieveOPData(this)">Genotyping Matrix</html:radio></td>
+						<td width="50%" align="left"><html:radio property="retrievalType" value="polymorphic" onclick="retrieveOPData(this)">Polymorphic Markers</html:radio></td>
+						<%--<td width="30%" align="left"><html:radio property="retrievalType" value="QTL/Map" onclick="retrieveOPData(this)">Map/QTL Data</html:radio></td>--%>
 						
 					</tr>
 					
@@ -106,35 +106,8 @@
 					</table>
 				<%} %>
 				<input type=hidden name="hResult" value='<%=strResult %>'>
-				<%if(request.getQueryString().equals("QTL")){%>
-				<br>
-				<br>
-				<html:errors/>
-				<br>
-				<br>
 				
-				<table border=0 width="45%">
-					<tr class="displayText" align="center">
-						<td>Search by &nbsp;&nbsp;&nbsp;
-							<select name="maps" id="maps" onclick="onClickOption(this.name)">
-								<option value="maps">Map Name</option>
-								<option value="QTLName">QTL Name</option>
-								<option value="Trait">Trait</option>								
-							</select>
-							&nbsp;&nbsp;&nbsp;<html:text property="qtl" value="" style="COLOR:#666;"/>
-						</td>
-					</tr>
-						
-					
-					<tr><td>&nbsp;</td></tr>
-					<tr><td>&nbsp;</td></tr>
-					<tr class="displayText" align="center">
-						<td align="center"><html:submit property="qtlsub" value="Submit" onclick="return sub('qtl')"/></td>
-					</tr>
-				</table>
-				<input type=hidden name="retType" value="">
-				
-				<%} 
+				<%
 				if(request.getQueryString().equals("lines")){				
 				%>
 				<br>
@@ -303,6 +276,9 @@
 							    	 <td colspan=3>
 							    	
 							    	 <span id="map" style="visibility: hidden;">
+							    	 <%//int mcount=Integer.parseInt(session.getAttribute("mapsCount").toString()); 
+							    	// if(mcount>0){
+							    	 %>
 									 	<table width=100% align="left" border=0>
 											<tr>												
 												<th width="40%">Please select the map</th>
@@ -325,7 +301,7 @@
 								    	 		</td>
 								    	 	</tr>
 										 </table>									 	
-										
+									
 									</span>
 							    	 </td>
 						    	 </tr>
@@ -587,6 +563,7 @@ function subExport(){
 		return false;
 	}
 	if(temp1=="Flapjack"){
+		//alert("....:"+document.forms[0].maps.value);
 		if(document.forms[0].maps.value==""){
 			alert("Please select the Map");
 			return false;

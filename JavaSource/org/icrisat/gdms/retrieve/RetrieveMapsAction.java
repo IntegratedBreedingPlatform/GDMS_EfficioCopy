@@ -19,6 +19,7 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.DynaActionForm;
 
 public class RetrieveMapsAction extends Action{
 	Connection con=null;
@@ -33,7 +34,7 @@ public class RetrieveMapsAction extends Action{
 			session.removeAttribute("map_data");
 		}
 		
-		
+		DynaActionForm df = (DynaActionForm) af;
 		try{
 			//String crop=req.getSession().getAttribute("crop").toString();
 			//System.out.println("****************************"+marker);
@@ -41,6 +42,9 @@ public class RetrieveMapsAction extends Action{
 			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
 			con=dataSource.getConnection();	
 			String traitsExists="yes";
+			
+			String fromPage=req.getQueryString();
+			
 			
 			ResultSet rs=null;
 			ResultSet rs1=null;
@@ -54,23 +58,57 @@ public class RetrieveMapsAction extends Action{
 			
 			ArrayList map_data= new ArrayList();
 			ArrayList retMarkers=new ArrayList();
-			ArrayList markers=(ArrayList)session.getAttribute("result");	
-			//System.out.println(".........."+markers);
-			String marker="";
+			ArrayList markers=new ArrayList();
+			String map="";
+			String mapName ="";
+			String marker="";String markersforQuery="";
+			map=df.get("maps").toString();
+			if(fromPage.equalsIgnoreCase("polymap")){
+				markers=(ArrayList)session.getAttribute("result");	
+				mapName  = map.substring(0,map.lastIndexOf("("));
+				for(int m=0;m<markers.size();m++){
+					//System.out.println(".....**************....."+markers.get(m));
+					marker=marker+"'"+markers.get(m)+"',";
+				}
+				markersforQuery=marker.substring(0, marker.length()-1);
+			}else{
+				mapName=map;
+			}
 			
+			
+			//System.out.println(".........."+markers);
+
+			
+			
+			//System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   :"+map);
 			ArrayList traitsList=new ArrayList();
 			String traitsData="";
 			HashMap traitsmap = new HashMap();
 			//System.out.println("*******  :"+markers.size());
-			for(int m=1;m<markers.size();m++){
-				marker=marker+"'"+markers.get(m)+"',";
-			}
+			
 			String fData="";
 			ArrayList mapData=new ArrayList();
 			ArrayList finalMapData=new ArrayList();
-			//System.out.println("SELECT distinct marker_name, map_name, start_position, linkage_group FROM gdms_mapping_data where marker_name in("+marker.substring(0,marker.length()-1)+") order BY map_name, linkage_group,start_position asc");
-			rs1=stmtR.executeQuery("SELECT distinct marker_name, map_name, start_position, linkage_group FROM gdms_mapping_data where marker_name in("+marker.substring(0,marker.length()-1)+") order BY map_name, linkage_group,start_position asc");
-			while(rs1.next()){					
+			String map_unit="";
+			if(fromPage.equalsIgnoreCase("polymap")){
+				System.out.println("SELECT distinct marker_name, map_name, start_position, linkage_group FROM gdms_mapping_data where marker_name in("+markersforQuery+") and map_name='"+mapName+"' order BY map_name, linkage_group,start_position asc");
+				rs1=stmtR.executeQuery("SELECT distinct marker_name, map_name, start_position, linkage_group, map_unit FROM gdms_mapping_data where marker_name in("+markersforQuery+") and map_name='"+mapName+"' order BY map_name, linkage_group,start_position asc");
+				System.out.println("SELECT DISTINCT gdms_mapping_data.marker_name, gdms_mapping_data.map_name, gdms_mapping_data.start_position, gdms_mapping_data.linkage_group, gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.marker_name IN("+markersforQuery+") and gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id AND gdms_mapping_data.linkage_group=gdms_qtl_details.linkage_group AND gdms_mapping_data.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_name ASC, trait");
+				rs=stmt.executeQuery("SELECT DISTINCT gdms_mapping_data.marker_name, gdms_mapping_data.map_name, gdms_mapping_data.start_position, gdms_mapping_data.linkage_group, gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.marker_name IN("+markersforQuery+") and gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id AND gdms_mapping_data.linkage_group=gdms_qtl_details.linkage_group AND gdms_mapping_data.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_name ASC, trait");
+				
+			}else{
+				System.out.println("SELECT distinct marker_name, map_name, start_position, linkage_group FROM gdms_mapping_data where map_name='"+mapName+"' order BY map_name, linkage_group,start_position asc");
+				rs1=stmtR.executeQuery("SELECT distinct marker_name, map_name, start_position, linkage_group, map_unit FROM gdms_mapping_data where map_name='"+mapName+"' order BY map_name, linkage_group,start_position asc");
+				System.out.println("SELECT DISTINCT gdms_mapping_data.marker_name, gdms_mapping_data.map_name, gdms_mapping_data.start_position, gdms_mapping_data.linkage_group, gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id AND gdms_mapping_data.linkage_group=gdms_qtl_details.linkage_group AND gdms_mapping_data.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_name ASC, trait");
+				rs=stmt.executeQuery("SELECT DISTINCT gdms_mapping_data.marker_name, gdms_mapping_data.map_name, gdms_mapping_data.start_position, gdms_mapping_data.linkage_group, gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id AND gdms_mapping_data.linkage_group=gdms_qtl_details.linkage_group AND gdms_mapping_data.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_name ASC, trait");
+				
+			}
+				
+			//System.out.println("SELECT distinct marker_name, map_name, start_position, linkage_group FROM gdms_mapping_data where marker_name in("+marker.substring(0,marker.length()-1)+") and map_name='"+mapName+"' order BY map_name, linkage_group,start_position asc");
+			//System.out.println("SELECT distinct marker_name, map_name, start_position, linkage_group FROM gdms_mapping_data where marker_name in("+markersforQuery+") and map_name='"+mapName+"' order BY map_name, linkage_group,start_position asc");
+			//rs1=stmtR.executeQuery("SELECT distinct marker_name, map_name, start_position, linkage_group, map_unit FROM gdms_mapping_data where marker_name in("+markersforQuery+") and map_name='"+mapName+"' order BY map_name, linkage_group,start_position asc");
+			while(rs1.next()){	
+				map_unit=rs1.getString(5);
 				mapData.add(rs1.getString(1)+"!~!"+rs1.getString(2)+"!~!"+rs1.getString(3)+"!~!"+rs1.getString(4));
 				fData=fData+rs1.getString(1)+"!~!"+rs1.getString(2)+"!~!"+rs1.getString(3)+"!~!"+rs1.getString(4)+"~~!!~~";
 				if(!(retMarkers.contains(rs1.getString(1))))
@@ -81,15 +119,15 @@ public class RetrieveMapsAction extends Action{
 			while(rs.next()){
 				traitsList.add(rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getString(4)+"!~!"+rs.getString(5));
 			}*/
-			
-			rs=stmt.executeQuery("SELECT DISTINCT gdms_mapping_data.marker_name, gdms_mapping_data.map_name, gdms_mapping_data.start_position, gdms_mapping_data.linkage_group, gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.marker_name IN("+marker.substring(0,marker.length()-1)+") AND gdms_mapping_data.map_id=gdms_qtl_details.map_id AND gdms_mapping_data.linkage_group=gdms_qtl_details.linkage_group AND gdms_mapping_data.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_name ASC, trait");
+			//System.out.println("SELECT DISTINCT gdms_mapping_data.marker_name, gdms_mapping_data.map_name, gdms_mapping_data.start_position, gdms_mapping_data.linkage_group, gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.marker_name IN("+markersforQuery+") and gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id AND gdms_mapping_data.linkage_group=gdms_qtl_details.linkage_group AND gdms_mapping_data.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_name ASC, trait");
+			//rs=stmt.executeQuery("SELECT DISTINCT gdms_mapping_data.marker_name, gdms_mapping_data.map_name, gdms_mapping_data.start_position, gdms_mapping_data.linkage_group, gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.marker_name IN("+markersforQuery+") and gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id AND gdms_mapping_data.linkage_group=gdms_qtl_details.linkage_group AND gdms_mapping_data.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_name ASC, trait");
 			while(rs.next()){
 				traitsList.add(rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getString(4)+"!~!"+rs.getString(5));
 			}
 			
 			
-			/*System.out.println(".............."+traitsList.size());
-			System.out.println(".............."+mapData.size());*/
+			System.out.println(".............."+traitsList.size());
+			System.out.println(".............."+mapData.size());
 			ArrayList fList=new ArrayList();
 			
 			if(traitsList.size()>0){
@@ -159,7 +197,14 @@ public class RetrieveMapsAction extends Action{
 				}
 				
 				//System.out.println("finalMapData="+finalMapData);
-				rsT=st.executeQuery("select distinct trait from gdms_qtl_details order by trait");
+				//rsT=st.executeQuery("select distinct trait from gdms_qtl_details order by trait");
+				if(fromPage.equalsIgnoreCase("polymap")){
+					System.out.println("SELECT DISTINCT gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.marker_name IN ("+markersforQuery+") AND gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id ORDER BY trait ASC");
+					rsT=st.executeQuery("SELECT DISTINCT gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.marker_name IN ("+markersforQuery+") AND gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id ORDER BY trait ASC");
+				} else{
+					System.out.println("SELECT DISTINCT gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id ORDER BY trait ASC");
+					rsT=st.executeQuery("SELECT DISTINCT gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id ORDER BY trait ASC");
+				}
 				while(rsT.next()){
 					traits.add(rsT.getString(1));
 				}
@@ -176,7 +221,7 @@ public class RetrieveMapsAction extends Action{
 			}
 			//req.getSession().setAttribute("map_data", mapData);
 			
-			
+			session.setAttribute("map_unit", map_unit);
 			//return null;
 			session.setAttribute("recCount", markers.size());
 			session.setAttribute("missingCount", req.getParameter("missCount"));

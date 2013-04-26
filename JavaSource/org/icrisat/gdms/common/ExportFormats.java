@@ -170,7 +170,7 @@ public class ExportFormats {
 	
 	
 /**	Writing genotyping .dat file for FlapJack */
-	public void MatrixDat(ArrayList a, String mapData, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, ArrayList qtlData, String expOp){
+	public void MatrixDat(ArrayList a, String mapData, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, ArrayList qtlData, String expOp, boolean qtlexists){
 		
 		try{
 			boolean condition=false;
@@ -182,7 +182,8 @@ public class ExportFormats {
 			
 			int noOfAccs=accList.size();
 			int noOfMarkers=markList.size();			
-			
+			File fexists=new File(filePath+("//")+"/Flapjack.txt");
+			if(fexists.exists()) { fexists.delete(); }
 			int accIndex=1,markerIndex=1;
 			int i;String chVal="";
 			//(String)req.getSession().getAttribute("msec");
@@ -205,7 +206,7 @@ public class ExportFormats {
 			    		//System.out.println("al="+al+"    "+a.get(al));
 			    		String strList5=a.get(al).toString();
 			    		// String[] arrList6=strList5.split(",");
-			    		// System.out.println(strList5);
+			    		 //System.out.println(k+":"+strList5);
 			    		StringTokenizer stz = new StringTokenizer(strList5.toString(), ",");
 			    		//arrList6 = new String[stz.countTokens()];
 			    		int i1=0;				  
@@ -272,43 +273,43 @@ public class ExportFormats {
 			 * 	consisting of marker chromosome & position
 			 * 
 			 * **/
-			
-			FileWriter flapjackQTLstream = new FileWriter(filePath+("//")+"/Flapjack.txt");
-			BufferedWriter fjackQTL = new BufferedWriter(flapjackQTLstream);
-			//String[] qtlData=qtlData.split("~~!!~~");
-			fjackQTL.write("QTL\tChromosome\tPosition\tMinimum\tMaximum\tTrait\tExperiment\tTrait Group\tLOD\tR2\tfavallele\tFlanking markers in original publication\teffect");
-			fjackQTL.write("\n");
-			for(int q=0;q<qtlData.size();q++){					
-				String[] strMData=qtlData.get(q).toString().split("!~!");
-				fjackQTL.write(strMData[0]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[1]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[2]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[3]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[4]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[5]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[6]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[7]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[8]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[9]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[10]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[11]);
-				fjackQTL.write("\t");
-				fjackQTL.write(strMData[12]);
-				fjackQTL.write("\n");		
+			if(qtlexists){
+				FileWriter flapjackQTLstream = new FileWriter(filePath+("//")+"/Flapjack.txt");
+				BufferedWriter fjackQTL = new BufferedWriter(flapjackQTLstream);
+				//String[] qtlData=qtlData.split("~~!!~~");
+				fjackQTL.write("QTL\tChromosome\tPosition\tMinimum\tMaximum\tTrait\tExperiment\tTrait Group\tLOD\tR2\tfavallele\tFlanking markers in original publication\teffect");
+				fjackQTL.write("\n");
+				for(int q=0;q<qtlData.size();q++){					
+					String[] strMData=qtlData.get(q).toString().split("!~!");
+					fjackQTL.write(strMData[0]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[1]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[2]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[3]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[4]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[5]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[6]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[7]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[8]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[9]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[10]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[11]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[12]);
+					fjackQTL.write("\n");		
+				}
+				fjackQTL.close();
 			}
-			fjackQTL.close();
-			
 			
 			
 		}catch(Exception e){
@@ -338,8 +339,8 @@ public class ExportFormats {
 	//Matrix for SNP data
 	public void MatrixDataSNP(ArrayList a, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, Map gMap){		
 		try{
-					System.out.println("...a;:"+a);
-					System.out.println("   accList:"+accList);
+					/*System.out.println("...a;:"+a);
+					System.out.println("   accList:"+accList);*/
 			req.getSession().setAttribute("mCount", markList.size());
 			req.getSession().setAttribute("genCount", accList.size());				
 			
@@ -387,16 +388,16 @@ public class ExportFormats {
 				   //System.out.println(arrList6[0]+".equals(   "+accList.get(j)+"  )) &&   "+arrList6[1]+"   .equals(  "+markList.get(k));
 				   if((Integer.parseInt(arrList6[0])==Integer.parseInt(accList.get(j).toString())) && arrList6[1].equals(markList.get(k))){	
 					   //System.out.println("..........  if condition   ");
-					   if(arrList6[2].contains(":")){
+					   /*if(arrList6[2].contains(":")){
 						   String[] ChVal1=arrList6[2].split(":");
 						   if(ChVal1[0].equalsIgnoreCase(ChVal1[1])){
 							   chVal=ChVal1[0];
 						   }else{
 							   chVal=ChVal1[0]+"/"+ChVal1[1];
 						   }					
-						}else{
+						}else{*/
 							chVal=arrList6[2];
-						}
+						//}
 					   //System.out.println(chVal);
 					   SNPMatrix.write("\t"+chVal);	
 					  
@@ -416,7 +417,7 @@ public class ExportFormats {
 	
 //	 To write matrix for mapping data
 	
-	public void mapMatrix(ArrayList a,String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, String parents, Map gMap){
+	public void mapMatrix(ArrayList a,String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, String parentsList, Map gMap){
 		int columns=2;
 		int row=2;
 		String MarkernameId="";
@@ -429,21 +430,51 @@ public class ExportFormats {
 			WritableWorkbook workbook=Workbook.createWorkbook(new File(filePath+"/jsp/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".xls"));
 			WritableSheet sheet=workbook.createSheet("DataSheet",0);
 			
-			int accIndex=3,markerIndex=2;
+			int accIndex=5,markerIndex=2;
+			int PmarkerIndex=2;
 			int i;
 			
 			req.getSession().setAttribute("mCount", markList.size());
 			req.getSession().setAttribute("genCount", accList.size());
 			int gid=0;
 			String gname="";
-			
+			System.out.println(".........parents=:"+parentsList);
 			int noOfAccs=accList.size();
 			int noOfMarkers=markList.size();
-			String[] p=parents.split("!~!");
-			Label l=new Label(0,0,"Parent A = "+p[0]+" & Parent B = "+p[1]);
-			sheet.addCell(l);
+			String[] parents=parentsList.split("!~!");
+			String[] parentsToWrite=null;
+			Label l=null;
+			//sheet.addCell(l);
+			int pr=3;
+			for(int p1=0;p1<parents.length;p1++){
+				parentsToWrite=parents[p1].split(";;");
+				l=new Label(0,pr,parentsToWrite[0]+"");
+				sheet.addCell(l);
+				//accIndex--;
+				l=new Label(1,pr,parentsToWrite[1]);
+				sheet.addCell(l);
+				pr++;
+				
+			}
+			
 			/*Label l=new Label(0,0," ");
 			sheet.addCell(l);*/
+			/*l=new Label(0,3,gid+"");
+			sheet.addCell(l);
+			//accIndex--;
+			l=new Label(1,3,p[0]);
+			sheet.addCell(l);
+			l=new Label(0,4,gid+"");
+			sheet.addCell(l);
+			//accIndex--;
+			l=new Label(1,4,p[1]);
+			sheet.addCell(l);*/
+			
+			for(i=0;i<noOfMarkers;i++){					
+				l=new Label(markerIndex++,2,(String)markList.get(i));
+				sheet.addCell(l);				
+			}	
+			
 			
 //			 To write accessions
 			for(i=0;i<noOfAccs;i++){
@@ -464,8 +495,12 @@ public class ExportFormats {
 			
 			//To write markers
 			for(i=0;i<noOfMarkers;i++){					
-				l=new Label(markerIndex++,2,(String)markList.get(i));
-				sheet.addCell(l);				
+				l=new Label(PmarkerIndex++,3,"A");
+				sheet.addCell(l);
+				PmarkerIndex--;
+				l=new Label(PmarkerIndex++,4,"B");
+				sheet.addCell(l);
+				
 			}			
 			MarkerIdNameList=MarkerNameIdList(markList);
 			row=2;

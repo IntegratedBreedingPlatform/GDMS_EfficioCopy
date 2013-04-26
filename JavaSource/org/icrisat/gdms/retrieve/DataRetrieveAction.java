@@ -2,15 +2,19 @@ package org.icrisat.gdms.retrieve;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.SortedMap;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -27,30 +31,29 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.DynaActionForm;
 import org.apache.struts.upload.FormFile;
 import org.generationcp.middleware.manager.Database;
-import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GenotypicDataManager;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
+import org.generationcp.middleware.manager.api.TraitDataManager;
 import org.generationcp.middleware.pojos.GidNidElement;
 import org.generationcp.middleware.pojos.Name;
+import org.generationcp.middleware.pojos.Trait;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.icrisat.gdms.common.FileUploadToServer;
-import org.icrisat.gdms.common.HibernateSessionFactory;
 
 public class DataRetrieveAction extends Action{
 	
 	Connection con;
-	private Session hsession;	
-	private Transaction tx;
+	Connection conn;
+	
 	String str="";
 	String strVal="";
 	String str1="";
 	String type="";
 	ArrayList  markerList=new ArrayList();
 	ArrayList genotypesList=new ArrayList();
-	List mapList=null;
+	ArrayList mapList=new ArrayList();
 	ArrayList mList=new ArrayList();
 	String gids="";
 	String upRes="";
@@ -67,9 +70,7 @@ public class DataRetrieveAction extends Action{
 		// TODO Auto-generated method stub
 		
 		//String crop=req.getSession().getAttribute("crop").toString();
-		//hsession = HibernateSessionFactory.currentSession(crop);
-		hsession = HibernateSessionFactory.currentSession();
-		tx=hsession.beginTransaction();
+		
 		DynaActionForm df = (DynaActionForm) af;
 		
 		String retrieveOP=(String)df.get("retrieveOP");	
@@ -89,41 +90,46 @@ public class DataRetrieveAction extends Action{
 		try{
 			ServletContext context = servlet.getServletContext();
 			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
-			
-		 	
-			
 			con=dataSource.getConnection();	
-			Properties p=new Properties();
-			String server="";
-			String cc="";
-			//p.load(new FileInputStream(session.getServletContext().getRealPath("//")+"\\DatabaseConfig.properties"));
-			System.out.println("......:"+p.getProperty("local.host"));		
-			
-			
-			
-			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
-			DatabaseConnectionParameters central = new DatabaseConnectionParameters("localhost", "3306", "ibdb_ivis", "root", "root");*/
-			DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
-			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
-			
-			factory = new ManagerFactory(local, central);
-			GermplasmDataManager manager = factory.getGermplasmDataManager();
-			GenotypicDataManager gdms=factory.getGenotypicDataManager();
-			
 			ResultSet rs=null;
 			ResultSet rs1=null;
+			ResultSet rsMp=null;
+			Statement stmtMp=con.createStatement();
 			Statement stmt=con.createStatement();
 			Statement stmtR=con.createStatement();
 			ResultSet rsN=null;
 			Statement stmtN=con.createStatement();
+			Statement stA=con.createStatement();
+			Statement stC=con.createStatement();
+			Statement stM=con.createStatement();
+			Statement stmtC=con.createStatement();
+			Statement stmtA=con.createStatement();
+			Statement stmtM=con.createStatement();
+			Properties p=new Properties();
+			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
+			DatabaseConnectionParameters central = new DatabaseConnectionParameters("localhost", "3306", "ibdb_ivis", "root", "root");*/
+			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
+			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
+			*/
+//			factory = new ManagerFactory(local, central);
+			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
+			GermplasmDataManager manager = factory.getGermplasmDataManager();
+			
+			GenotypicDataManager gdms=factory.getGenotypicDataManager();
+			//System.out.println("maps     ====  :"+gdms.getAllMaps(0, 5, Database.LOCAL));
+			
 		
 			if(retrieveOP.equalsIgnoreCase("first")){
 				if(session!=null){
 					session.removeAttribute("indErrMsg");	
 				}
-				query2=hsession.createQuery("select distinct map_name from MapBean");
-				mapList=query2.list();
-				session.setAttribute("mapList", mapList);
+				/*rs=stmt.executeQuery("select distinct map_name from gdms_map");
+				while(rs.next()){
+					mapList.add(rs.getString(1));
+				}
+				//query2=hsession.createQuery("select distinct map_name from MapBean");
+				//mapList=query2.list();
+				session.setAttribute("mapList", mapList);*/
 				str="qtlPage";
 			}else if(retrieveOP.equalsIgnoreCase("Submit")){
 				/** for retrieving polymorphic markers between 2 lines **/
@@ -156,7 +162,7 @@ public class DataRetrieveAction extends Action{
 				int alleleCount=0;
 				int charCount=0;
 				int mapCharCount=0;
-			
+				Statement stmtMap=con.createStatement();
 				/**
 				 * Query for retrieving the gid of the respective germplasm_name using middleware
 				 */			
@@ -169,7 +175,7 @@ public class DataRetrieveAction extends Action{
 				while(rs.next()){				
 					gids1 = gids1+rs.getString(1)+",";
 				}*/
-				System.out.println("...........   :"+gids1);
+				//System.out.println("...........   :"+gids1);
 				String nid="";
 				ArrayList nidList=new ArrayList();
 				
@@ -204,18 +210,13 @@ public class DataRetrieveAction extends Action{
 				String[] gidsO=gids.split(",");
 				int gid1=Integer.parseInt(gidsO[0]);
 				int gid2=Integer.parseInt(gidsO[1]);
-				System.out.println("gids="+gids);
+				//System.out.println("gids="+gids);
 				
 				
-				Statement stA=con.createStatement();
-				Statement stC=con.createStatement();
-				Statement stM=con.createStatement();
-				Statement stmtC=con.createStatement();
-				Statement stmtA=con.createStatement();
-				Statement stmtM=con.createStatement();
+				
 				
 				String polyType=session.getAttribute("polyType").toString();
-				System.out.println("....:"+polyType);
+			//	System.out.println("....:"+polyType);
 				
 				if(polyType.equalsIgnoreCase("fingerprinting")){
 				
@@ -267,6 +268,7 @@ public class DataRetrieveAction extends Action{
 					
 					//ResultSet rsDet=stmtM.executeQuery("SELECT mapping_pop_values.dataset_id,mapping_pop_values.gid,germplasm_temp.germplasm_name,marker.species,mapping_pop_values.marker_id,marker.marker_name,mapping_pop_values.map_char_value as data FROM mapping_pop_values,germplasm_temp,marker WHERE mapping_pop_values.gid in ("+gids+") AND mapping_pop_values.gid=germplasm_temp.gid AND marker.marker_id = mapping_pop_values.marker_id ORDER BY germplasm_name, marker_name");
 					//System.out.println("SELECT allele_values.dataset_id,allele_values.gid,names.nval,marker.crop,allele_values.marker_id,marker.marker_name,allele_values.allele_bin_value as data FROM allele_values,names,marker WHERE allele_values.gid in ("+gids+") AND allele_values.gid=names.gid AND marker.marker_id = allele_values.marker_id ORDER BY nval, marker_name");
+					System.out.println("SELECT gdms_mapping_pop_values.dataset_id,gdms_mapping_pop_values.gid,gdms_marker.marker_name,gdms_mapping_pop_values.map_char_value as data FROM gdms_mapping_pop_values,gdms_marker WHERE gdms_mapping_pop_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_mapping_pop_values.marker_id ORDER BY gid, marker_name");
 					ResultSet rsDet=stmtM.executeQuery("SELECT gdms_mapping_pop_values.dataset_id,gdms_mapping_pop_values.gid,gdms_marker.marker_name,gdms_mapping_pop_values.map_char_value as data FROM gdms_mapping_pop_values,gdms_marker WHERE gdms_mapping_pop_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_mapping_pop_values.marker_id ORDER BY gid, marker_name");
 					
 					while(rsDet.next()){
@@ -283,6 +285,7 @@ public class DataRetrieveAction extends Action{
 				 int s=0;
 				 geno1.clear();geno2.clear();mark1.clear(); mark2.clear();ch1.clear();ch2.clear();
 				 for(int c=0;c<chVal.size();c++){	
+					// System.out.println(".............:"+chVal.get(c));
 					 String arr[]=new String[3];
 						StringTokenizer stz = new StringTokenizer(chVal.get(c).toString(), "!~!");
 			    		//arrList6 = new String[stz.countTokens()];
@@ -310,14 +313,15 @@ public class DataRetrieveAction extends Action{
 				missingList=new ArrayList();
 				String geno="";
 				String markers="";
+				//System.out.println(mark1);
 				for(int k=0;k<geno1.size();k++){
-					if((!(ch2.get(k).equals("N")||ch2.get(k).equals("?")||ch2.get(k).equals("-")))&&(!(ch1.get(k).equals("N")||ch1.get(k).equals("?")||ch1.get(k).equals("-")))&&(!(ch1.get(k).equals(ch2.get(k))))){
+					if((!(ch2.get(k).equals("0:0")||ch2.get(k).equals("N")||ch2.get(k).equals("?")||ch2.get(k).equals("-")))&&(!(ch1.get(k).equals("0:0")||ch1.get(k).equals("N")||ch1.get(k).equals("?")||ch1.get(k).equals("-")))&&(!(ch1.get(k).equals(ch2.get(k))))){
 						if(!finalList.contains(mark1.get(k))){
 							finalList.add(mark1.get(k));
-							markers=markers+mark1.get(k)+"!~!";	
+							markers=markers+"'"+mark1.get(k)+"',";	
 						}
 					}
-					if((ch1.get(k).equals("?"))||(ch2.get(k).equals("?"))||(ch1.get(k).equals("N"))||(ch2.get(k).equals("N"))||(ch1.get(k).equals("-"))||(ch2.get(k).equals("-"))){
+					if((ch1.get(k).equals("0:0"))||(ch2.get(k).equals("0:0"))||(ch1.get(k).equals("?"))||(ch2.get(k).equals("?"))||(ch1.get(k).equals("N"))||(ch2.get(k).equals("N"))||(ch1.get(k).equals("-"))||(ch2.get(k).equals("-"))){
 						if(!missingList.contains(mark1.get(k))){
 							missingList.add(mark1.get(k));
 						}
@@ -325,7 +329,26 @@ public class DataRetrieveAction extends Action{
 				}
 				String recCount=finalList.size()+"";
 				String mcount=missingList.size()+"";
+				ArrayList mapList1=new ArrayList();
+				String markerIDs="";
+				System.out.println("select marker_id from gdms_marker where marker_name in("+markers.substring(0, markers.length()-1)+")");
+				ResultSet RM=stmt.executeQuery("select marker_id from gdms_marker where marker_name in("+markers.substring(0, markers.length()-1)+")");
+				while (RM.next()){
+					markerIDs=markerIDs+RM.getInt(1)+",";
+				}
 				
+				String markerIDsN=markerIDs.substring(0, markerIDs.length()-1);
+				//markers=markers.substring(0, markers.length()-1);
+				//System.out.println(markers);
+				System.out.println("SELECT gdms_map.map_name, COUNT(gdms_markers_onmap.marker_id) FROM gdms_markers_onmap JOIN gdms_map ON gdms_map.map_id=gdms_markers_onmap.map_id WHERE gdms_markers_onmap.marker_id IN("+markerIDsN+") GROUP BY gdms_map.map_name");
+				ResultSet rsMap=stmtMap.executeQuery("SELECT gdms_map.map_name, COUNT(gdms_markers_onmap.marker_id) FROM gdms_markers_onmap JOIN gdms_map ON gdms_map.map_id=gdms_markers_onmap.map_id WHERE gdms_markers_onmap.marker_id IN("+markerIDsN+") GROUP BY gdms_map.map_name");
+				while(rsMap.next()){
+					mapList1.add(rsMap.getString(1)+" ("+rsMap.getInt(2)+")");
+				}
+				//System.out.println("mapList="+mapList1);								
+				session.setAttribute("maps", mapList1);
+				//System.out.println("missing list=:"+missingList);
+				//System.out.println("final list=:"+finalList);
 				//req.getSession().setAttribute("map", map);
 				//req.getSession().setAttribute("lines", geno);
 				req.getSession().setAttribute("MissingData", missingList);
@@ -355,7 +378,7 @@ public class DataRetrieveAction extends Action{
 				String fileName="";String saveFtoServer="";String saveF="";
 				String[] splitStr=null;
 				String op1=req.getParameter("opTypeMarkers");
-				System.out.println("...................."+op1);
+				//System.out.println("...................."+op1);
 				if(op1.equalsIgnoreCase("file")){
 					FileUploadToServer fus = null;
 				
@@ -390,12 +413,12 @@ public class DataRetrieveAction extends Action{
 					}
 				}else if(op1.equalsIgnoreCase("textbox")){
 					markers=req.getParameter("markersText");
-					System.out.println("#####################  "+markers);
+					//System.out.println("#####################  "+markers);
 					if(markers.contains("\n")){
-						System.out.println("new line");
+						//System.out.println("new line");
 						splitStr=markers.split("\n");
 					}else if(markers.contains("\t")){
-						System.out.println("tab seperated");
+						//System.out.println("tab seperated");
 						splitStr=markers.split("\t");
 					}else if(markers.contains(",")){
 						splitStr=markers.split(",");
@@ -408,8 +431,8 @@ public class DataRetrieveAction extends Action{
 					
 						for(int m=0;m<splitStr.length;m++){
 							m1=m1+"'"+splitStr[m].trim()+"',";
-							if(!(mList.contains(splitStr[m])))
-								mList.add(splitStr[m]);
+							if(!(mList.contains(splitStr[m].trim())))
+								mList.add(splitStr[m].trim());
 							m2=m2+splitStr[m].trim()+",";
 						}			
 					
@@ -423,12 +446,12 @@ public class DataRetrieveAction extends Action{
 				int alleleCount=0;
 				int charCount=0;
 				int mapCharCount=0;
-				Statement stA=con.createStatement();
+				/*Statement stA=con.createStatement();
 				Statement stC=con.createStatement();
 				Statement stmtC=con.createStatement();
 				Statement stmtA=con.createStatement();
 				Statement stM=con.createStatement();
-				Statement stmtM=con.createStatement();
+				Statement stmtM=con.createStatement();*/
 				Statement stmtG=con.createStatement();
 					Statement stmttest=con.createStatement();
 					ResultSet rs2=null;
@@ -452,7 +475,7 @@ public class DataRetrieveAction extends Action{
 						req.getSession().setAttribute("indErrMsg", ErrMsg);
 						return am.findForward("ErrMsgM");
 					}
-					System.out.println(markerId);
+					//System.out.println(markerId);
 					
 					/** checking whether the marker id exists in 'allele_values' table **/
 					//System.out.println("select count(*) from allele_values where marker_id in ("+ markerId.substring(0,markerId.length()-1) +")");
@@ -538,8 +561,13 @@ public class DataRetrieveAction extends Action{
 					}*/
 					
 					
-					query2=hsession.createQuery("select distinct map_name from MapBean");
-					mapList=query2.list();
+					/*query2=hsession.createQuery("select distinct map_name from MapBean");
+					mapList=query2.list();*/
+					mapList.clear();
+					rsMp=stmtMp.executeQuery("select distinct map_name from gdms_map");
+					while(rsMp.next()){
+						mapList.add(rsMp.getString(1));
+					}
 					session.setAttribute("AccListFinal", germNames);
 					session.setAttribute("mapList", mapList);
 					session.setAttribute("markerList", markerList);
@@ -585,14 +613,14 @@ public class DataRetrieveAction extends Action{
 				
 				String gidsN="";
 				//System.out.println("request.getParameter radios ="+request.getParameter("str") );
-				System.out.println("........................................   gids in class="+gids);
+				//System.out.println("........................................   gids in class="+gids);
 				//String op=req.getParameter("str");
 				req.getSession().setAttribute("op", retrieveOP);
 				if(gids.contains("\n")){
-					System.out.println("new line");
+					//System.out.println("new line");
 					strGids=gids.split("\n");
 				}else if(gids.contains("\t")){
-					System.out.println("tab seperated");
+					//System.out.println("tab seperated");
 					strGids=gids.split("\t");
 				}else if(gids.contains(",")){
 					strGids=gids.split(",");
@@ -619,19 +647,19 @@ public class DataRetrieveAction extends Action{
 				
 				
 				req.getSession().setAttribute("gidsN", gidsN);
-				System.out.println("%%%%%%%%%%%%%%%%   length="+gidsN);
+				//System.out.println("%%%%%%%%%%%%%%%%   length="+gidsN);
 				String gid=gidsN.substring(0,gidsN.length()-1);
 				int alleleCount=0;
 				int charCount=0;
 				int mapCharCount=0;
-				Statement stA=con.createStatement();
+				/*Statement stA=con.createStatement();
 				Statement stC=con.createStatement();
 				Statement stmtC=con.createStatement();
 				Statement stmtA=con.createStatement();
-				
+				*/
 				Statement stN=con.createStatement();
-				Statement stM=con.createStatement();
-				Statement stmtM=con.createStatement();
+				/*Statement stM=con.createStatement();
+				Statement stmtM=con.createStatement();*/
 				//SortedMap mapN = new TreeMap();
 				ArrayList gidsList=new ArrayList();
 				String nid="";
@@ -678,7 +706,7 @@ public class DataRetrieveAction extends Action{
 				
 				
 				//System.out.println(mapN);
-				System.out.println("..........."+gidsList);
+				//System.out.println("..........."+gidsList);
 				
 				
 				
@@ -748,12 +776,18 @@ public class DataRetrieveAction extends Action{
 					session.setAttribute("datasetType", "mapping");
 				}
 				
-				System.out.println(markerList);
+				////System.out.println(markerList);
 				
-				query2=hsession.createQuery("select distinct map_name from MapBean");
+				/*query2=hsession.createQuery("select distinct map_name from MapBean");
 				
 				
-				mapList=query2.list();
+				mapList=query2.list();*/
+				mapList.clear();
+				System.out.println("select distinct map_name from gdms_map");
+				rsMp=stmtMp.executeQuery("select distinct map_name from gdms_map");
+				while(rsMp.next()){
+					mapList.add(rsMp.getString(1));
+				}
 				req.getSession().setAttribute("AccListFinal", genotypesList);
 				req.getSession().setAttribute("mapList", mapList);
 				req.getSession().setAttribute("markerList", markerList);
@@ -772,7 +806,7 @@ public class DataRetrieveAction extends Action{
 				FileUploadToServer fus = null;
 				String fileName="";String saveFtoServer="";String saveF="";
 				String argGNames="";String gidsN="";
-				System.out.println("*******************************************:"+req.getParameter("opTypeGN"));
+			//	System.out.println("*******************************************:"+req.getParameter("opTypeGN"));
 				String op1=req.getParameter("opTypeGN");
 				List<String> linesList=new ArrayList<String>();
 				Statement stmttest=con.createStatement();
@@ -806,10 +840,10 @@ public class DataRetrieveAction extends Action{
 				}else if(op1.equalsIgnoreCase("textbox")){
 					gNames=req.getParameter("GNamesText");
 					if(gNames.contains("\n")){
-						System.out.println("new line");
+						//System.out.println("new line");
 						strGNames=gNames.split("\n");
 					}else if(gNames.contains("\t")){
-						System.out.println("tab seperated");
+						//System.out.println("tab seperated");
 						strGNames=gNames.split("\t");
 					}else if(gNames.contains(",")){
 						strGNames=gNames.split(",");
@@ -828,15 +862,15 @@ public class DataRetrieveAction extends Action{
 						
 				}
 				int count=0;
-				System.out.println("gNames  .......  ="+linesList);
-				Statement stA=con.createStatement();
+				//System.out.println("gNames  .......  ="+linesList);
+				/*Statement stA=con.createStatement();
 				Statement stC=con.createStatement();
 				Statement stmtC=con.createStatement();
-				Statement stmtA=con.createStatement();
+				Statement stmtA=con.createStatement();*/
 				//SortedMap mapN = new TreeMap();
 				ArrayList gidL=new ArrayList();
-				Statement stM=con.createStatement();
-				Statement stmtM=con.createStatement();
+				/*Statement stM=con.createStatement();
+				Statement stmtM=con.createStatement();*/
 				String nids="";
 				int countG=0;
 				//System.out.println("select distinct gid from germplasm_temp where germplasm_name in("+argGNames.substring(0,argGNames.length()-1) +") order by gid desc");
@@ -880,7 +914,7 @@ public class DataRetrieveAction extends Action{
 				
 				req.getSession().setAttribute("genCount", count);
 				req.getSession().setAttribute("gidsN", nid);
-				System.out.println("%%%%%%%%%%%%%%%%   length="+nid);
+				//System.out.println("%%%%%%%%%%%%%%%%   length="+nid);
 				String gid=nid.substring(0,nid.length()-1);
 				int alleleCount=0;
 				int charCount=0;
@@ -941,9 +975,9 @@ public class DataRetrieveAction extends Action{
 					session.setAttribute("datasetType", "mapping");
 				}
 				
-				System.out.println(markerList);
+				//System.out.println(markerList);
 				
-				query2=hsession.createQuery("select distinct map_name from MapBean");
+				//query2=hsession.createQuery("select distinct map_name from MapBean");
 				/*GenotypicDataManager gm=factory.getGenotypicDataManager();				
 				
 				List<Map> maps = gm.getAllMaps(0, 10, Database.LOCAL);
@@ -957,8 +991,13 @@ public class DataRetrieveAction extends Action{
 		            }
 		        }*/
 				
-				mapList=query2.list();
-		        System.out.println("..............:"+mapList);
+				//mapList=query2.list();
+				mapList.clear();
+				rsMp=stmtMp.executeQuery("select distinct map_name from gdms_map");
+				while(rsMp.next()){
+					mapList.add(rsMp.getString(1));
+				}
+		        //System.out.println("..............:"+mapList);
 				req.getSession().setAttribute("AccListFinal", genotypesList);
 				req.getSession().setAttribute("mapList", mapList);
 				req.getSession().setAttribute("markerList", markerList);
@@ -977,8 +1016,29 @@ public class DataRetrieveAction extends Action{
 					session.removeAttribute("strdata");		
 					session.removeAttribute("indErrMsg");	
 				}
+				p.load(new FileInputStream(session.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+				String host=p.getProperty("central.host");
+				String port=p.getProperty("central.port");
+				String url = "jdbc:mysql://"+host+":"+port+"/";
+				String dbName = p.getProperty("central.dbname");
+				String driver = "com.mysql.jdbc.Driver";
+				String userName = p.getProperty("central.username"); 
+				String password = p.getProperty("central.password");
+				ArrayList traitsComList=new ArrayList();
+				SortedMap map = new TreeMap();
+				Class.forName(driver).newInstance();
+				conn = DriverManager.getConnection(url+dbName,userName,password);
+				Statement stCen=conn.createStatement();
 				
-				
+				/*ArrayList traitsList=new ArrayList(); 
+				TraitDataManager tm=factory.getTraitDataManager();
+				int tcount=Integer.parseInt(tm.countAllTraits()+"");
+				List<Trait> traits =tm.getAllTraits(0, tcount, Database.CENTRAL);
+				for (Trait trait : traits) {
+		           // System.out.println("  " + trait);
+		            traitsList.add(trait.getAbbreviation()+"%~%"+trait.getName());
+		        }
+				System.out.println("  " + traitsList);*/
 				//String qtlType=(String)df.get("qtlData");
 				//String qtlType=req.getParameter("retType");
 				String qtl=(String)df.get("qtl");
@@ -986,20 +1046,39 @@ public class DataRetrieveAction extends Action{
 				int linkid=0;			float min=0;			float max=0;
 				String lg="";			String markers="";			//int qtlId=0;
 				String qtlIds="";int count=0;String qtl_id="";	String strData="";
-				
-					String qtlId="";
+				String finalQTLList="";
+				ArrayList qtlDataList=new ArrayList();
+				String qtlId="";
 				ResultSet rs2=null;
 				Statement st=con.createStatement();
 				session.setAttribute("qtlType", opType);
 				System.out.println("******************************************  "+opType+"  $$$$$$$$   "+qtl);
+				rsN=stmtN.executeQuery("select distinct trabbr, trname, ontology from tmstraits");
+				while(rsN.next()){
+					traitsComList.add(rsN.getString(1));
+					//+"!~!"+rsN.getString(2)+"!~!"+rsN.getString(3));
+					map.put(rsN.getString(1), rsN.getString(2)+"!~!"+rsN.getString(3));
+				}
+				//System.out.println("******************:"+traitsComList);
+				//Statement stC=conn.createStatement();
+				ResultSet rsC=stCen.executeQuery("select distinct trabbr, trname, ontology from tmstraits");
+				while(rsC.next()){
+					if(!(traitsComList.contains(rsC.getString(1)))){
+						traitsComList.add(rsC.getString(1));
+						map.put(rsC.getString(1), rsC.getString(2)+"!~!"+rsC.getString(3));
+					}
+						//traitsComList.add(rsC.getString(1)+"!~!"+rsC.getString(2)+"!~!"+rsC.getString(3));
+				}
 				if(opType.equals("QTLName")){
 					/** if retrieval is through QTL Name **/
+					qtlDataList.clear();
 					//System.out.println("select qtl_id from qtl where qtl_name like '"+qtl+"%'");
 					if(qtl.equalsIgnoreCase("*")){
-						System.out.println("***************************");
+						//System.out.println("***************************");
 						rs1=st.executeQuery("select qtl_id from gdms_qtl order by qtl_id");
 					}else{
-						System.out.println("else if");
+						//System.out.println("else if");
+						//System.out.println("select qtl_id from gdms_qtl where qtl_name like '"+qtl+"%' order by qtl_id");
 						rs1=st.executeQuery("select qtl_id from gdms_qtl where qtl_name like '"+qtl+"%' order by qtl_id");
 					}
 					while(rs1.next()){
@@ -1015,27 +1094,44 @@ public class DataRetrieveAction extends Action{
 						String ErrMsg = "QTL Name not found";
 						req.getSession().setAttribute("indErrMsg", ErrMsg);
 						return am.findForward("ErrMsg");
-					}
-					if(qtl.equalsIgnoreCase("*")){
-						//rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.lod, gdms_qtl_details.r_square,gdms_qtl_details.interactions, trait.trname, trait.ontology FROM gdms_qtl_details, gdms_qtl,gdms_map, trait WHERE gdms_qtl.qtl_id in("+qtlId.substring(0,qtlId.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id and gdms_qtl_details.trait=trait.trabbr order by gdms_qtl.qtl_id");
-						//rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.lod, gdms_qtl_details.r_square,gdms_qtl_details.interactions, tmstraits.trname, tmstraits.ontology FROM gdms_qtl_details, gdms_qtl,gdms_map, tmstraits WHERE gdms_qtl.qtl_id in("+qtlId.substring(0,qtlId.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id and gdms_qtl_details.trait=tmstraits.trabbr order by gdms_qtl.qtl_id");
-						rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square,gdms_qtl_details.interactions, tmstraits.trname, tmstraits.ontology FROM gdms_qtl_details, gdms_qtl,gdms_map, tmstraits WHERE gdms_qtl.qtl_id in("+qtlId.substring(0,qtlId.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id and gdms_qtl_details.trait=tmstraits.trabbr order by gdms_qtl.qtl_id");
 					}else{
 						
-						//rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.lod, gdms_qtl_details.r_square,gdms_qtl_details.interactions, trait.trname, trait.ontology FROM gdms_qtl_details, gdms_qtl, gdms_map, trait WHERE gdms_qtl.qtl_name like '"+qtl.toLowerCase()+"%' AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id and gdms_qtl_details.trait=trait.trabbr order by gdms_qtl.qtl_id");
-						//rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.lod, gdms_qtl_details.r_square,gdms_qtl_details.interactions, tmstraits.trname, tmstraits.ontology FROM gdms_qtl_details, gdms_qtl, gdms_map, tmstraits WHERE gdms_qtl.qtl_name like '"+qtl.toLowerCase()+"%' AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id and gdms_qtl_details.trait=tmstraits.trabbr order by gdms_qtl.qtl_id");
-						rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square,gdms_qtl_details.interactions, tmstraits.trname, tmstraits.ontology FROM gdms_qtl_details, gdms_qtl, gdms_map, tmstraits WHERE gdms_qtl.qtl_name like '"+qtl.toLowerCase()+"%' AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id and gdms_qtl_details.trait=tmstraits.trabbr order by gdms_qtl.qtl_id");
+						if(qtl.equalsIgnoreCase("*")){
+							//rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square,gdms_qtl_details.interactions, tmstraits.trname, tmstraits.ontology FROM gdms_qtl_details, gdms_qtl,gdms_map, tmstraits WHERE gdms_qtl.qtl_id in("+qtlId.substring(0,qtlId.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id and gdms_qtl_details.trait=tmstraits.trabbr order by gdms_qtl.qtl_id");
+							System.out.println("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square,gdms_qtl_details.interactions FROM gdms_qtl_details, gdms_qtl,gdms_map WHERE gdms_qtl.qtl_id in("+qtlId.substring(0,qtlId.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
+							rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square,gdms_qtl_details.interactions FROM gdms_qtl_details, gdms_qtl,gdms_map WHERE gdms_qtl.qtl_id in("+qtlId.substring(0,qtlId.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
+						}else{						
+							//rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square,gdms_qtl_details.interactions, tmstraits.trname, tmstraits.ontology FROM gdms_qtl_details, gdms_qtl, gdms_map, tmstraits WHERE gdms_qtl.qtl_name like '"+qtl.toLowerCase()+"%' AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id and gdms_qtl_details.trait=tmstraits.trabbr order by gdms_qtl.qtl_id");
+							rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square,gdms_qtl_details.interactions FROM gdms_qtl_details, gdms_qtl, gdms_map WHERE gdms_qtl.qtl_name like '"+qtl.toLowerCase()+"%' AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
+						}
+						while(rs.next()){
+							//qtlData=qtlData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+"!~!"+rs.getString(14)+"!~!"+rs.getString(15)+";;;";
+//							qtlData=qtlData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+";;;";
+							qtlDataList.add(rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12));
+						}
+						
+						//System.out.println("..................:"+traitsComList);
+						//ArrayList finalQTLList=new ArrayList();
+						
+						for(int a=0; a<qtlDataList.size();a++){
+							String[] argTr=qtlDataList.get(a).toString().split("!~!");
+							if(map.containsKey(argTr[5])){
+								finalQTLList=finalQTLList+argTr[0]+"!~!"+argTr[1]+"!~!"+argTr[2]+"!~!"+argTr[3]+"!~!"+argTr[4]+"!~!"+argTr[5]+"!~!"+argTr[6]+"!~!"+argTr[7]+"!~!"+argTr[8]+"!~!"+argTr[9]+"!~!"+argTr[10]+"!~!"+argTr[11]+"!~!"+argTr[12]+"!~!"+map.get(argTr[5])+";;;";
+							}else{
+								finalQTLList=finalQTLList+argTr[0]+"!~!"+argTr[1]+"!~!"+argTr[2]+"!~!"+argTr[3]+"!~!"+argTr[4]+"!~!"+argTr[5]+"!~!"+argTr[6]+"!~!"+argTr[7]+"!~!"+argTr[8]+"!~!"+argTr[9]+"!~!"+argTr[10]+"!~!"+argTr[11]+"!~!"+argTr[12]+"!~! "+"!~! "+";;;";
+							}
+							
+						}
+						
+						//System.out.println(finalQTLList);
+						req.getSession().setAttribute("strdata",finalQTLList);
 					}
-					while(rs.next()){
-						qtlData=qtlData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+"!~!"+rs.getString(14)+"!~!"+rs.getString(15)+";;;";
-					}
-					//System.out.println(qtlData);
-					req.getSession().setAttribute("strdata",qtlData);
 					req.getSession().setAttribute("qtl", qtl);
 					
 					str="retQTL";
 				}else if(opType.equals("Trait")){
 					/** if the option is through trait name **/
+					qtlDataList.clear();
 					if(qtl.equalsIgnoreCase("*")){
 						//System.out.println("***************************");
 						//rs1=st.executeQuery("select distinct trait, qtl_id from qtl_linkagemap order by qtl_id");
@@ -1064,21 +1160,34 @@ public class DataRetrieveAction extends Action{
 						req.getSession().setAttribute("indErrMsg", ErrMsg);
 						return am.findForward("ErrMsg");
 					}
-					System.out.println("QTL S="+qtl_id.substring(0,qtl_id.length()-1));
+					//System.out.println("QTL S="+qtl_id.substring(0,qtl_id.length()-1));
 					req.getSession().setAttribute("qtl", qtl);
 					
 					//rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.lod, gdms_qtl_details.r_square, gdms_qtl_details.interactions, trait.trname, trait.ontology FROM gdms_qtl_details, gdms_qtl, gdms_map, trait WHERE gdms_qtl_details.trait=trait.trabbr and gdms_qtl_details.qtl_id IN("+qtl_id.substring(0,qtl_id.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
 					//rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.lod, gdms_qtl_details.r_square, gdms_qtl_details.interactions, tmstraits.trname, tmstraits.ontology FROM gdms_qtl_details, gdms_qtl, gdms_map, tmstraits WHERE gdms_qtl_details.trait=tmstraits.trabbr and gdms_qtl_details.qtl_id IN("+qtl_id.substring(0,qtl_id.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
-					rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square, gdms_qtl_details.interactions, tmstraits.trname, tmstraits.ontology FROM gdms_qtl_details, gdms_qtl, gdms_map, tmstraits WHERE gdms_qtl_details.trait=tmstraits.trabbr and gdms_qtl_details.qtl_id IN("+qtl_id.substring(0,qtl_id.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
+					rs=stmt.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.trait, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square, gdms_qtl_details.interactions FROM gdms_qtl_details, gdms_qtl, gdms_map WHERE gdms_qtl_details.qtl_id IN("+qtl_id.substring(0,qtl_id.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
 					while(rs.next()){
-						strData=strData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+"!~!"+rs.getString(14)+"!~!"+rs.getString(15)+";;;";
-						//System.out.println(rs.getString(14)+"    "+rs.getString(15));
+						//strData=strData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+";;;";
+						qtlDataList.add(rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12));
 					}					
-					req.getSession().setAttribute("strdata",strData);
+					//req.getSession().setAttribute("strdata",strData);
+					
+					for(int a=0; a<qtlDataList.size();a++){
+						String[] argTr=qtlDataList.get(a).toString().split("!~!");
+						if(map.containsKey(argTr[5])){
+							finalQTLList=finalQTLList+argTr[0]+"!~!"+argTr[1]+"!~!"+argTr[2]+"!~!"+argTr[3]+"!~!"+argTr[4]+"!~!"+argTr[5]+"!~!"+argTr[6]+"!~!"+argTr[7]+"!~!"+argTr[8]+"!~!"+argTr[9]+"!~!"+argTr[10]+"!~!"+argTr[11]+"!~!"+argTr[12]+"!~!"+map.get(argTr[5])+";;;";
+						}else{
+							finalQTLList=finalQTLList+argTr[0]+"!~!"+argTr[1]+"!~!"+argTr[2]+"!~!"+argTr[3]+"!~!"+argTr[4]+"!~!"+argTr[5]+"!~!"+argTr[6]+"!~!"+argTr[7]+"!~!"+argTr[8]+"!~!"+argTr[9]+"!~!"+argTr[10]+"!~!"+argTr[11]+"!~!"+argTr[12]+"!~! "+"!~! "+";;;";
+						}
+						
+					}
+					
+					//System.out.println(finalQTLList);
+					req.getSession().setAttribute("strdata",finalQTLList);
+					
 					//System.out.println("strData="+strData);	
 					str="retTrait";					
-				}else if(opType.equals("maps")){
-					
+				}else if(opType.equals("maps")){					
 					//String map=df.get("maps").toString();
 					//rs=stmt.executeQuery("select map_type from gdms_map where );
 					//if(format.contains("CMTV")){
@@ -1086,20 +1195,16 @@ public class DataRetrieveAction extends Action{
 					//rs1=stmtR.executeQuery("SELECT  MAX(`mapping_data`.`start_position`) AS `max` , `mapping_data`.`linkage_group` AS Linkage_group, `mapping_data`.`linkagemap_name` AS map FROM `mapping_data` WHERE mapping_data.linkagemap_name LIKE ('"+qtl+"%') GROUP BY UCASE(`mapping_data`.`linkage_group`)");
 					int countF=0;
 					if(qtl.equalsIgnoreCase("*")){
-						rs1=stmtR.executeQuery("SELECT  COUNT(DISTINCT `gdms_mapping_data`.`marker_id`) AS `marker_count` ,MAX(`gdms_mapping_data`.`start_position`) AS `max` , `gdms_mapping_data`.`linkage_group` AS Linkage_group, `gdms_mapping_data`.`map_name` AS map , gdms_map.map_type AS map_type FROM `gdms_mapping_data`, `gdms_map` WHERE gdms_mapping_data.map_id=gdms_map.map_id GROUP BY UCASE(`gdms_mapping_data`.`linkage_group`),UCASE(gdms_mapping_data.map_name) ORDER BY `gdms_mapping_data`.`map_name`, `gdms_mapping_data`.`linkage_group`");
+						rs1=stmtR.executeQuery("SELECT  COUNT(DISTINCT `gdms_mapping_data`.`marker_id`) AS `marker_count` ,MAX(`gdms_mapping_data`.`start_position`) AS `max` , `gdms_mapping_data`.`linkage_group` AS Linkage_group, `gdms_mapping_data`.`map_name` AS map , gdms_mapping_data.map_unit AS map_unit FROM `gdms_mapping_data`, `gdms_map` WHERE gdms_mapping_data.map_id=gdms_map.map_id GROUP BY UCASE(`gdms_mapping_data`.`linkage_group`),UCASE(gdms_mapping_data.map_name) ORDER BY `gdms_mapping_data`.`map_name`, `gdms_mapping_data`.`linkage_group`");
 					}else{
-						rs1=stmtR.executeQuery("SELECT  COUNT(DISTINCT `gdms_mapping_data`.`marker_id`) AS `marker_count` ,MAX(`gdms_mapping_data`.`start_position`) AS `max` , `gdms_mapping_data`.`linkage_group` AS Linkage_group, `gdms_mapping_data`.`map_name` AS map , gdms_map.map_type AS map_type FROM `gdms_mapping_data`, `gdms_map` WHERE gdms_mapping_data.map_id=gdms_map.map_id and lower(gdms_mapping_data.map_name) LIKE ('"+qtl.toLowerCase()+"%') GROUP BY UCASE(`gdms_mapping_data`.`linkage_group`),UCASE(gdms_mapping_data.map_name) ORDER BY `gdms_mapping_data`.`map_name`, `gdms_mapping_data`.`linkage_group`");
+						rs1=stmtR.executeQuery("SELECT  COUNT(DISTINCT `gdms_mapping_data`.`marker_id`) AS `marker_count` ,MAX(`gdms_mapping_data`.`start_position`) AS `max` , `gdms_mapping_data`.`linkage_group` AS Linkage_group, `gdms_mapping_data`.`map_name` AS map , gdms_mapping_data.map_unit AS map_unit FROM `gdms_mapping_data`, `gdms_map` WHERE gdms_mapping_data.map_id=gdms_map.map_id and lower(gdms_mapping_data.map_name) LIKE ('"+qtl.toLowerCase()+"%') GROUP BY UCASE(`gdms_mapping_data`.`linkage_group`),UCASE(gdms_mapping_data.map_name) ORDER BY `gdms_mapping_data`.`map_name`, `gdms_mapping_data`.`linkage_group`");
 					}
 					while(rs1.next()){
 						strDataM.add(rs1.getInt(1)+"!~!"+rs1.getFloat(2)+"!~!"+rs1.getString(3)+"!~!"+rs1.getString(4)+"!~!"+rs1.getString(5));
 						countF=countF+1;
 					}
 					//System.out.println("strDataM="+strDataM);
-					if(countF==0){
-						//ae.add("myerrors", new ActionError("trait.doesnot.exists"));
-						//saveErrors(req, ae);				
-						//msg="chkPlateid";
-						//return (new ActionForward(am.getInput()));
+					if(countF==0){						
 						String ErrMsg = "Map Name not found";
 						req.getSession().setAttribute("indErrMsg", ErrMsg);
 						return am.findForward("ErrMsg");
@@ -1146,7 +1251,7 @@ public class DataRetrieveAction extends Action{
 						}						
 					}
 					session.setAttribute("mapsSTR", distSTR);
-					//System.out.println("........&&&&&&&&&&&&........"+distSTR);			
+					System.out.println("........&&&&&&&&&&&&........"+distSTR);			
 					session.setAttribute("type", "map");
 					
 					str="map";
@@ -1162,6 +1267,7 @@ public class DataRetrieveAction extends Action{
 		}finally{
 		      try{		      		
 		      		if(con!=null) con.close();
+		      		conn.close();
 		      		factory.close(); 
 		      		/*long time = System.currentTimeMillis();
 		      	  	System.gc();

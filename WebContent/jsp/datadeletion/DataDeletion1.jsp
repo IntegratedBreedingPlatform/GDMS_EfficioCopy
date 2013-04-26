@@ -99,7 +99,7 @@
 			</logic:notEmpty>
 			<logic:empty name="user">
 				<br><br><br>
-				<center><font color="blue" face="verdana" size="3px">Please Login to upload/retrieve data</font></center>
+				<center><font color="blue" face="verdana" size="3px"><a href="../common/URLtoAction.jsp?str=logout" target="_parent">Please Login to upload/retrieve data</a></font></center>
 			</logic:empty>
 		
     </html:form>

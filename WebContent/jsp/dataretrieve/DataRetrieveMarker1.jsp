@@ -10,7 +10,7 @@
 <link rel="stylesheet" type="text/css" href="<html:rewrite forward='GDMSStyleSheet'/>">
 </head>
 <body onload="refreshPage()">
-	<html:form action="/retrieveInfo.do" method="get">
+	<html:form action="/retrieveInfo.do" method="post">
 		<div class="heading" align="center">Marker Data Retrieval</div>
 		<!--<table width='35%' border=0 align=right>
 				<tr><td align=left nowrap class="displayBoldText" width="20%">Species</td><td><b>:</b></td><td align=left nowrap class="displayBoldText"><%=session.getAttribute("crop") %></td></tr>		

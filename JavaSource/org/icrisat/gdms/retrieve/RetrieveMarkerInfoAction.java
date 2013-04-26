@@ -52,7 +52,7 @@ public class RetrieveMarkerInfoAction extends Action{
 			//System.out.println("1st if");
 			if (type.equals("")) {
 				//System.out.println("if inside of 1st if");
-				sqlQuery = "Select Distinct Marker_Type from gdms_marker where marker_type != 'UA'";
+				sqlQuery = "Select Distinct Marker_Type from gdms_marker where marker_type != 'UA' and marker_type !='DArT'";
 			} else {
 				//System.out.println("else if inside of 1st if");
 				//System.out.println("Select Marker_Name from marker where Lower(Marker_Type)='"+ type.toLowerCase() + "'");

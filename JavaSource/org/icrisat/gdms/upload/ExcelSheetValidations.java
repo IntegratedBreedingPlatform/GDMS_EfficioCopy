@@ -679,6 +679,76 @@ public class ExcelSheetValidations {
 				 
 				 
 			 }
+		}else if(type.equalsIgnoreCase("mapping")){	
+			lstSheetNames.add("mapping_source");
+			lstSheetNames.add("mapping_datalist");
+			
+			for (int i=0;i<strSheetNames.length;i++){
+				 String strSN = strSheetNames[i];
+				 System.out.println("strSN=:"+strSN);
+				 if(lstSheetNames.contains(strSN.toLowerCase())){
+					 if(!lSN.contains(strSN))
+						 lSN.add(strSN);
+				 }	
+			 }
+			 
+			 if(lstSheetNames.size()!=lSN.size())
+				 return "SheetNameNotFound";
+							
+			 //check the template fields
+			 for(int i=0;i<strSheetNames.length;i++){
+				 String strSName = strSheetNames[i].toString();
+				 if(strSName.equalsIgnoreCase("Mapping_Source")){
+					 Sheet sName = workbook.getSheet(strSName);
+					 String strTempColumnNames[] = {"Institute","Principle investigator","Email contact","Dataset Name","Dataset description","Genus","Species","Population ID","Parent A GID","Parent A","Parent B GID","Parent B","Population Size","Population Type","Purpose of the study","Scoring Scheme","Missing Data","Creation Date","Remark"};
+
+					 for(int j=0;j<strTempColumnNames.length;j++){
+						 String strMFieldNames = (String)sName.getCell(0, j).getContents().trim();
+										
+						 if(!strTempColumnNames[j].toLowerCase().contains(strMFieldNames.toLowerCase())){
+							 hsession.setAttribute("colMsg", strMFieldNames);
+							 //System.out.println("TTTTTTTT="+strMFieldNames);
+							 //System.out.println("TTTTTTTT="+strTempColumnNames[j]);
+							 hsession.setAttribute("colMsg1", strTempColumnNames[j]);
+							 hsession.setAttribute("sheetName", strSName);
+							 //System.out.println("SSR Source");
+							 return "ColumnNameNotFound";
+						 }
+						 if(strMFieldNames==null || strMFieldNames==""){
+							 String strColName = escn.getColumnName(sName.getCell(0, j).getColumn());
+							 hsession.setAttribute("colposition", strColName+(sName.getCell(0, j).getRow()+1));
+							 hsession.setAttribute("sheetName", strSName);
+							 return "DelEmptyRows";
+						 }
+					 }															
+				 }		 
+				 
+			 }
+			//check the required fields in Mapping_Source;
+			 for(int i=0;i<strSheetNames.length;i++){
+				 if(strSheetNames[i].equalsIgnoreCase("Mapping_Source")){
+					 Sheet sName = workbook.getSheet(i);
+					 int intNoOfRows = sName.getRows();
+					 for(int j=0;j<intNoOfRows;j++){
+						 String strFieldsName = sName.getCell(0, j).getContents().trim();
+						 //required fields institute, species, genus, creation date in ssr_source.
+						 //if(strFieldsName.equalsIgnoreCase("institute") || strFieldsName.equalsIgnoreCase("Dataset description") || strFieldsName.equalsIgnoreCase("genus") || strFieldsName.equalsIgnoreCase("creation date")){
+						 if(strFieldsName.equalsIgnoreCase("institute")|| strFieldsName.equalsIgnoreCase("Principle investigator")|| strFieldsName.equalsIgnoreCase("Dataset Name") || strFieldsName.equalsIgnoreCase("Dataset description") || strFieldsName.equalsIgnoreCase("genus")|| strFieldsName.equalsIgnoreCase("species")|| strFieldsName.equalsIgnoreCase("Population ID")|| strFieldsName.equalsIgnoreCase("Parent A GID")|| strFieldsName.equalsIgnoreCase("Parent A")|| strFieldsName.equalsIgnoreCase("Parent B GID")|| strFieldsName.equalsIgnoreCase("Parent B")|| strFieldsName.equalsIgnoreCase("Purpose of the study")|| strFieldsName.equalsIgnoreCase("Creation Date") || strFieldsName.equalsIgnoreCase("missing data")){
+							 String strFieldValue = sName.getCell(1, j).getContents().trim();
+							 if(strFieldValue == null || strFieldValue == ""){
+								 //hsession.setAttribute("dlength", strFieldsName);
+								 //hsession.setAttribute("colposition", strColName+(sName.getCell(k,j).getRow()+1));
+								 //return "ivSpecies";
+								 hsession.setAttribute("fieldName", strFieldsName);
+								 hsession.setAttribute("sheetName", strSheetNames[i]);
+								 String strColName = escn.getColumnName(sName.getCell(1, j).getColumn());
+								 hsession.setAttribute("colposition", strColName+(sName.getCell(1,j).getRow()+1));
+								 return "ReqFields";
+							 }
+						 }
+					 }
+				 }
+			 }
 		}
 		return strValid;
 	}

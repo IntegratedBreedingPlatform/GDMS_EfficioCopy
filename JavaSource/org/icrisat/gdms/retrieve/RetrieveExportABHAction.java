@@ -27,6 +27,7 @@ import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.Name;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 import org.icrisat.gdms.common.ExportFormats;
 
 public class RetrieveExportABHAction extends Action{
@@ -35,16 +36,20 @@ public class RetrieveExportABHAction extends Action{
 			HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
 		
-		System.out.println(">>>>>>>>>>>>   RetrieveExportABHAction.java   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-		
+	//	System.out.println(">>>>>>>>>>>>   RetrieveExportABHAction.java   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+		HttpSession session = req.getSession(true);
 		Connection con=null;
 		ManagerFactory factory =null;
 		try{
-			
+			if(session!=null){
+				session.removeAttribute("qtlExistsSes");
+			}
+			int qtlCount=0;
+			boolean qtlExists=false;
 			String qtl_id="";
 			ArrayList qtlData=new ArrayList();
 			
-			HttpSession session = req.getSession(true);
+			
 			ResultSet rs=null;			
 			ResultSet rs1=null;
 			ResultSet rs2=null;
@@ -63,10 +68,11 @@ public class RetrieveExportABHAction extends Action{
 			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
 			con=dataSource.getConnection();
 			
-			DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
+			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
 			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
-			
-			factory = new ManagerFactory(local, central);
+			*/
+			//factory = new ManagerFactory(local, central);
+			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
 			GermplasmDataManager manager = factory.getGermplasmDataManager();
 			
 			Statement st=con.createStatement();
@@ -128,12 +134,12 @@ public class RetrieveExportABHAction extends Action{
 			//System.out.println("@@@@@@@@@@@@@@@@@   op="+op);
 			String op=df.get("opType").toString();
 			String map="";
-			System.out.println("*************  "+df.get("expType").toString());
+			//System.out.println("*************  "+df.get("expType").toString());
 			String expType=df.get("expType").toString();
 			
 			req.getSession().setAttribute("exportFormat", expType);
 			req.getSession().setAttribute("op",op);
-			System.out.println("@@@@@@@@@@@@@@@@@   op="+op);
+			//System.out.println("@@@@@@@@@@@@@@@@@   op="+op);
 			if(expType.equalsIgnoreCase("flapjack"))
 				map=df.get("maps").toString();
 			
@@ -154,7 +160,7 @@ public class RetrieveExportABHAction extends Action{
 					dataset=rs3.getInt(1);
 					dType=rs3.getString(2);
 				}
-				System.out.println(dataset);
+				//System.out.println(dataset);
 				if(dType.equalsIgnoreCase("mapping")){
 					rs4=stmt2.executeQuery("select mapping_type from gdms_mapping_pop where dataset_id="+dataset);
 					while(rs4.next()){
@@ -259,7 +265,7 @@ public class RetrieveExportABHAction extends Action{
 					while(rs2.next()){
 						parentsData.add(rs2.getInt(1)+"!~!"+rs2.getInt(2)+"!~!"+rs2.getString(3));
 					}
-					System.out.println("parentsData="+parentsData);
+					//System.out.println("parentsData="+parentsData);
 					 for(int c=0;c<parentsData.size();c++){
 						 String arrP[]=new String[3];
 						 StringTokenizer stzP = new StringTokenizer(parentsData.get(c).toString(), "!~!");
@@ -292,7 +298,7 @@ public class RetrieveExportABHAction extends Action{
 					
 				}*/
 				
-				System.out.println(",,,,:gids:"+gids);
+				//System.out.println(",,,,:gids:"+gids);
 				
 				nids.clear();
 				rsG=stmtG.executeQuery("select nid from gdms_acc_metadataset where gid in ("+gids.substring(0,gids.length()-1)+")");
@@ -396,7 +402,7 @@ public class RetrieveExportABHAction extends Action{
 					}
 				}
 				//System.out.println("list="+list);
-				System.out.println("gNamesList="+gNamesList);
+				//System.out.println("gNamesList="+gNamesList);
 				//System.out.println("mListExp="+mListExp);
 				if(expType.equalsIgnoreCase("flapjack")){
 					 String mapName  = map.substring(0,map.lastIndexOf("("));
@@ -410,29 +416,35 @@ public class RetrieveExportABHAction extends Action{
 						//rsQ=stQ.executeQuery("");
 						while(rsMap.next()){
 							//System.out.println("..............:"+rsMap.getInt(1));
+							qtlCount++;
 							qtl_id=qtl_id+rsMap.getInt(1)+",";
 						}
-						System.out.println(",,qtl_id:"+qtl_id);
-						System.out.println("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
-						rsQ=stQ.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
-						while(rsQ.next()){
-							//System.out.println(",,,,,,,,,,,,,,,,,,,,,,  :"+rsQ.getString(5));
-							/*String Fmarkers=rsQ.getString(13)+"/"+rsQ.getString(14);
-							qtlData.add(rsQ.getString(16)+"!~!"+rsQ.getString(11)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getFloat(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getFloat(10)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(8));
-							*/
-							String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);
-							qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7));
+						if(qtlCount>0){
+							qtlExists=true;
+							//System.out.println(",,qtl_id:"+qtl_id);
+							//System.out.println("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
+							rsQ=stQ.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
+							while(rsQ.next()){
+								//System.out.println(",,,,,,,,,,,,,,,,,,,,,,  :"+rsQ.getString(5));
+								/*String Fmarkers=rsQ.getString(13)+"/"+rsQ.getString(14);
+								qtlData.add(rsQ.getString(16)+"!~!"+rsQ.getString(11)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getFloat(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getFloat(10)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(8));
+								*/
+								String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);
+								qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7));
 							
 							
-						}
+							}
+						}else
+							qtlExists=false;
+						session.setAttribute("qtlExistsSes", qtlExists);
 				}
 				
-				System.out.println("88888888888888888888   :"+sortedGMap);
+				//System.out.println("88888888888888888888   :"+sortedGMap);
 				
 				if(expType.equalsIgnoreCase("flapjack")){
 					String FlapjackPath=filePath+"/Flapjack";
 					
-					ef.MatrixDat(list, mapData, FlapjackPath, req, gNamesList, mListExp, qtlData, exportOpType);
+					ef.MatrixDat(list, mapData, FlapjackPath, req, gNamesList, mListExp, qtlData, exportOpType, qtlExists);
 					
 				}else if(expType.contains("Genotyping X Marker Matrix")){					
 					ef.Matrix(list, filePath, req, gNamesList, mListExp, sortedGMap);

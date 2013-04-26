@@ -1,8 +1,12 @@
 package org.icrisat.gdms.common;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.Hibernate;
 import org.hibernate.Query;
@@ -15,6 +19,7 @@ import org.hibernate.Session;
  */
 
 public class MaxIdValue {
+	static Map<String, ArrayList<String>> hashMap = new HashMap<String,  ArrayList<String>>();  
 	
 	public double roundThree(double in){		
 		return Math.round(in*1000.0)/1000.0;
@@ -28,7 +33,10 @@ public class MaxIdValue {
 			Object obj=null;
 			Iterator itList=null;
 			List listValues=null;
-			Query query=session.createSQLQuery("select max("+ fldName +") from " + tblName);
+			//Query query=session.createSQLQuery("select max("+ fldName +") from " + tblName);
+			
+			// changed from max to min because now we have all ids as -ve
+			Query query=session.createSQLQuery("select min("+ fldName +") from " + tblName);
 			
 			listValues=query.list();
 			itList=listValues.iterator();
@@ -41,13 +49,13 @@ public class MaxIdValue {
 		return intMaxVal;
 	}
 	
-	 public ArrayList getMarkerIds(String fldName, String tblName,String wField, Session session, String pi){
+	 public ArrayList getMarkerIds(String fldName, String tblName,String wField, Session session, String mNames){
 			
 			int intVal=0;
 			Object obj=null;
 			Iterator itList=null;
 			List listValues=new ArrayList<String>();
-			SQLQuery query=session.createSQLQuery("select "+ fldName +" from " + tblName +" where "+ wField+" in ("+pi.toUpperCase()+")");
+			SQLQuery query=session.createSQLQuery("select "+ fldName +" from " + tblName +" where "+ wField.toLowerCase()+" in ("+mNames.toLowerCase()+")");
 	                //SQLQuery query=session.createSQLQuery("SELECT marker_id, principal_investigator FROM marker_user_info;");
 			        query.addScalar("marker_id",Hibernate.INTEGER);
 	                query.addScalar("marker_name",Hibernate.STRING);
@@ -143,4 +151,46 @@ public int getMapId(String fldName, String tblName,String wField, Session sessio
 		}
 	return intVal;
 }
+public boolean isValidDate(String inDate) {
+
+	if (inDate == null)
+		return false;
+
+	//set the format to use as a constructor argument
+	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+	if (inDate.trim().length() != dateFormat.toPattern().length())
+		return false;
+
+	dateFormat.setLenient(false);
+
+	try {
+		//parse the inDate parameter
+		dateFormat.parse(inDate.trim());
+	}
+	catch (ParseException pe) {
+		return false;
+	}
+	return true;
+}
+/*
+private static void addValues(String key, String value)  
+{   
+ ArrayList<String> tempList = null;        
+ if(hashMap.containsKey(key)){    
+  tempList=hashMap.get(key);   
+  if(tempList == null)      
+    tempList = new ArrayList<String>();       
+  tempList.add(value);      
+ }  
+ else  
+ {       
+  tempList = new ArrayList();    
+  tempList.add(value);       
+ }       
+ hashMap.put(key,tempList);  
+} */
+
+
+
 }

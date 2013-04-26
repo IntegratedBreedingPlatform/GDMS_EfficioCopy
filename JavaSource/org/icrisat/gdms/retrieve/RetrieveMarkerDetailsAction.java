@@ -315,10 +315,10 @@ public class RetrieveMarkerDetailsAction extends Action{
 								double val2=0;
 								double temp=0;
 								if(!rs2.getString(13).equals("0")){
-									val1=Double.parseDouble(rs2.getString(16));
+									val1=Double.parseDouble(rs2.getString(14));
 								}
 								if(!rs2.getString(14).equals("0")){
-									val2=Double.parseDouble(rs2.getString(17));
+									val2=Double.parseDouble(rs2.getString(15));
 								}
 								if((rs2.getString(13).equals("0"))&&(rs2.getString(14).equals("0"))){
 									temp=0;
@@ -363,10 +363,10 @@ public class RetrieveMarkerDetailsAction extends Action{
 								double val2=0;
 								double temp=0;
 								if(!rs2.getString(11).equals("0")){
-									val1=Double.parseDouble(rs2.getString(16));
+									val1=Double.parseDouble(rs2.getString(12));
 								}
 								if(!rs2.getString(12).equals("0")){
-									val2=rs2.getDouble(17);
+									val2=rs2.getDouble(11);
 								}
 								if((rs2.getString(11).equals("0"))&&(rs2.getString(12).equals("0"))){
 									temp=0;

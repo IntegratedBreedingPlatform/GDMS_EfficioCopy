@@ -16,13 +16,8 @@
 	<body onload="pageRefresh()">
 	<center>
 			<img src="jsp/Images/GDMS_1.gif" border=0 usemap="#Map2">
-				<!--<map name="Map2">
-					<area shape="rect" coords="13,90,60,109" href="../../" alt="Home" target="_top">
-				 	<area shape="rect" coords="88,90,142,109" href="jsp/common/GDMSLayout.jsp?str=upload" alt="Upload" target="_top">
-				  	<area shape="rect" coords="172,90,235,109" href="jsp/common/GDMSLayout.jsp?str=retrieve" alt="Retrieve" target="_top">
-				  	<area shape="rect" coords="260,90,320,109" href="jsp/common/GDMSLayout.jsp?str=delete" alt="Delete" target="_top">
-				</map>
-		--><html:form method="post" action="/login.do">
+				
+		<html:form method="post" action="/login.do">
 			
 			<p class="heading"><b>Welcome </b></p><br>
 			<table border=0 width="68%" cellpadding="2" cellspacing="2" align="center">

@@ -7,8 +7,12 @@ cd %rootpath%
 cd..
 cd..
 cd flapjack
-
-"createproject.exe" -map="Flapjack.map" -genotypes="Flapjack.dat" -qtls="Flapjack.txt"  -project="Flapjack.flapjack" 
+if exist "Flapjack.txt" (
+	"createproject.exe" -map="Flapjack.map" -genotypes="Flapjack.dat" -qtls="Flapjack.txt"  -project="Flapjack.flapjack"
+) 
+if not exist "Flapjack.txt" (
+	"createproject.exe" -map="Flapjack.map" -genotypes="Flapjack.dat" -project="Flapjack.flapjack"
+)
 "Flapjack.flapjack"
  exit
  

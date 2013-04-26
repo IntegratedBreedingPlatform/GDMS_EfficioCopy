@@ -31,8 +31,8 @@ public class ExportMarkerTraitsToFileAction extends Action{
 		
 		HttpSession session = req.getSession(true);
 		Calendar now = Calendar.getInstance();
-		//System.out.println(req.getParameter("dataToExp"));
-		//System.out.println("............  :"+req.getParameter("binSize"));
+		System.out.println(req.getParameter("dataToExp"));
+		System.out.println("............  :"+req.getParameter("binSize"));
 		String mSec=now.getTimeInMillis()+"";
 		req.getSession().setAttribute("msec", mSec);
 		String[] strData=req.getParameter("dataToExp").split("~~!!~~");

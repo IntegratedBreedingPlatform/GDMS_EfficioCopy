@@ -41,6 +41,7 @@ public class DArTGenotypingDataUpload {
 		tx=session.beginTransaction();
 	
 	}*/
+	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();
 	public String setDArTData(HttpServletRequest request, String fname) throws SQLException{
 		ManagerFactory factory =null;
 		try{
@@ -109,7 +110,8 @@ public class DArTGenotypingDataUpload {
 			//////Retrieve the maximum column id from the database
 			MaxIdValue uptMId=new MaxIdValue();
 			int intDatasetId=uptMId.getMaxIdValue("dataset_id","gdms_dataset",session);
-			int dataset_id=intDatasetId+1;
+			//int dataset_id=intDatasetId+1;
+			int dataset_id=intDatasetId-1;
 			
 			int size=0;
 			String mon="";
@@ -132,8 +134,11 @@ public class DArTGenotypingDataUpload {
 			//System.out.println(dataset_id+"   "+sheetSource.getCell(1,4).getContents().trim()+"  "+dataset_type+"   "+sheetSource.getCell(1,2).getContents().trim()+"   "+sheetSource.getCell(1,3).getContents().trim()+"     "+curDate+"      "+datatype);
 
 			/** retrieving user id from 'users' table **/
-			int user_id=uptMId.getUserId("userid", "users", "uname", session,sheetSource.getCell(1,1).getContents().trim());
+			//int user_id=uptMId.getUserId("userid", "users", "uname", session,sheetSource.getCell(1,1).getContents().trim());
 			
+			String username=request.getSession().getAttribute("user").toString();
+			int user_id=uptMId.getUserId("userid", "users", "uname", session,username);
+				
 			
 			/** retrieving maximum marker id from 'marker' table of database **/
 			int maxMarkerId=uptMId.getMaxIdValue("marker_id","gdms_marker",session);
@@ -219,7 +224,8 @@ public class DArTGenotypingDataUpload {
 				names = manager.getNamesByGID(Integer.parseInt(gidsRet.get(n).toString()), null, null);
 				for (Name name : names) {					
 					 lstgermpName.add(name.getGermplasmId());
-					 mapG.put(name.getGermplasmId(), name.getNval());	            
+					 mapG.put(name.getGermplasmId(), name.getNval());	
+					 addValues(name.getGermplasmId(), name.getNval().toLowerCase());	
 		        }
 			}
 			
@@ -247,7 +253,8 @@ public class DArTGenotypingDataUpload {
           
            int gidToCompare=0;
            String gNameToCompare="";
-           String gNameFromMap="";
+           //String gNameFromMap="";
+           ArrayList gNameFromMap=new ArrayList();
            //System.out.println("gidNamesList="+gidNamesList);
            if(mapG.size()>0){
 	           for(int gi=0;gi<gidNamesList.size();gi++){
@@ -262,11 +269,13 @@ public class DArTGenotypingDataUpload {
 	        	   gNameToCompare=arrP[1].toString();
 	        	   //System.out.println("...."+gidToCompare+"   "+lstgermpName.contains(gidToCompare));
 	        	   if(lstgermpName.contains(gidToCompare)){
-	        		   gNameFromMap=mapG.get(gidToCompare).toString();
+	        		   //gNameFromMap=mapG.get(gidToCompare).toString();
+	        		   gNameFromMap=hashMap.get(gidToCompare);
 	        		   //System.out.println("...."+gNameToCompare+"   "+map.get(gidToCompare).equals(gNameToCompare)+"  from map: "+map.get(gidToCompare));
-	        		   if(!(gNameFromMap.toLowerCase().equals(gNameToCompare.toLowerCase()))){
-	        			   notMatchingData=notMatchingData+gidToCompare+"   "+mapG.get(gidToCompare)+"\n\t";
-		        		   alertGN="yes"; 
+	        		   //if(!(gNameFromMap.toLowerCase().equals(gNameToCompare.toLowerCase()))){
+	        		   if(!(gNameFromMap.contains(gNameToCompare.toLowerCase()))){
+	        			   notMatchingData=notMatchingData+gidToCompare+"   "+hashMap.get(gidToCompare)+"\n\t";
+	        			   alertGN="yes"; 
 	        		   }			        			   
 	        	   }else{
 	        		   alertGID="yes";
@@ -299,6 +308,12 @@ public class DArTGenotypingDataUpload {
         	   return "ErrMsg";	 
            }
 			System.out.println("fGids="+fGids);
+			String dname=sheetSource.getCell(1,2).getContents().trim();
+			if(dname.length()>30){
+				ErrMsg = "Error : Dataset Name value exceeds max char size.";
+				request.getSession().setAttribute("indErrMsg", ErrMsg);							
+				return "ErrMsg";
+			}
 			//** Writing from source sheet of Template to 'dataset' table  **//*
 			ub.setDataset_id(dataset_id);
 			ub.setDataset_name((String)sheetSource.getCell(1,2).getContents().trim());
@@ -409,7 +424,8 @@ public class DArTGenotypingDataUpload {
 			System.out.println("map"+map);
 			System.out.println("lstMarkers="+lstMarkers);
 			//**  inserting data from data sheet of template to database  **//*		
-			maxad_Id=maxad_Id+1;
+			//maxad_Id=maxad_Id+1;
+			maxad_Id=maxad_Id-1;
 			for (int im=1;im<rowCount;im++){
 				DArTDetailsBean dartBean=new DArTDetailsBean();
 				MarkerInfoBean mib=new MarkerInfoBean();
@@ -419,7 +435,8 @@ public class DArTGenotypingDataUpload {
 					if(!(mids.contains(MarkerId)))
 						mids.add(MarkerId);
 				}else{
-					MarkerId=maxMarkerId+1;
+					//MarkerId=maxMarkerId+1;
+					MarkerId=maxMarkerId-1;
 					if(!(mids.contains(MarkerId)))
 						mids.add(MarkerId);
 					mib.setMarkerId(MarkerId);
@@ -456,9 +473,11 @@ public class DArTGenotypingDataUpload {
 					session.flush();
 					session.clear();
 				}
-				maxad_Id++;
+				//maxad_Id++;
+				maxad_Id--;
 				//m++;
-				maxMarkerId++;
+				//maxMarkerId++;
+				maxMarkerId--;
 			}			
 			
 			
@@ -466,7 +485,8 @@ public class DArTGenotypingDataUpload {
 			//String[] accessions=germplasmName.split(",");		
 			
 			int kk=0;
-			intDataOrderIndex=intDataOrderIndex+1;
+			//intDataOrderIndex=intDataOrderIndex+1;
+			intDataOrderIndex=intDataOrderIndex-1;
 			//** inserting data into 'allele_values' table **//*
 			for(int i=1;i<rowCount;i++){	
 				//String[] insGids=fGids.split(",");
@@ -484,7 +504,8 @@ public class DArTGenotypingDataUpload {
 					intB.setAllele_bin_value((String)sheetData.getCell(j,i).getContents().trim());
 					kk++;
 					g++;
-					intDataOrderIndex++;
+					//intDataOrderIndex++;
+					intDataOrderIndex--;
 					session.save(intB);
 					if (g % 1 == 0){
 						session.flush();
@@ -522,6 +543,19 @@ public class DArTGenotypingDataUpload {
 			session.clear();							
 		}
 		return str;
+	}
+	private static void addValues(int key, String value){
+		ArrayList<String> tempList = null;
+		if(hashMap.containsKey(key)){
+			tempList=hashMap.get(key);
+			if(tempList == null)
+				tempList = new ArrayList<String>();
+			tempList.add(value);
+		}else{
+			tempList = new ArrayList();
+			tempList.add(value);
+		}
+		hashMap.put(key,tempList);
 	}
 
 }

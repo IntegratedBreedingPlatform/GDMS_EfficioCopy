@@ -50,8 +50,9 @@ public class MappingDataUpload {
 			tx=session.beginTransaction();		
 		}*/
 		String marker="";	String data="";
+		static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();
 		public String setMappingDetails(HttpServletRequest request, String mapfile) throws SQLException{
-			String result = "inserted";
+			String result = "";
 			
 			DatasetBean db=new DatasetBean();
 			GenotypeUsersBean usb=new GenotypeUsersBean();	
@@ -76,6 +77,10 @@ public class MappingDataUpload {
 				//con=dataSource.getConnection();
 				con=session.connection();
 				
+				String dataset_name="";	String dataset_desc="";	String genus=""; String species="";;
+				String popId="";	String popSize="";	String popType="";	String purposeOfStudy="";
+				String scoringScheme="";	String missingData="";	String creDate="";
+				String remarks="";
 				
 				Statement st = con.createStatement();
 				ResultSet rs=null;
@@ -119,6 +124,11 @@ public class MappingDataUpload {
 				//avoids the case sensitive of sheet names
 				String strSource="",strDatalist="";
 				int intAC_ID = 0;
+				
+				ExcelSheetValidations fv = new ExcelSheetValidations();
+				String strFv=fv.validation(workbook, request,"mapping");
+				if(!strFv.equals("valid"))
+					return strFv;
 				for (int i=0;i<strSheetNames.length;i++){					
 					if(strSheetNames[i].equalsIgnoreCase("Mapping_Source"))
 						strSource = strSheetNames[i];
@@ -127,7 +137,7 @@ public class MappingDataUpload {
 						strDatalist = strSheetNames[i];						
 				}
 				String mapType=request.getParameter("mapType");
-				System.out.println("mapType"+mapType);
+				//System.out.println("mapType"+mapType);
 					
 				Sheet sheetDataList=workbook.getSheet(strDatalist);
 				Sheet sheetSource = workbook.getSheet(strSource);
@@ -176,7 +186,7 @@ public class MappingDataUpload {
 							pGidsList.add(parentB_GID);
 							pGNamesList.add(parentB_GID+","+parentB);
 						}
-						System.out.println("**************:"+pGidsList);
+						//System.out.println("**************:"+pGidsList);
 						SortedMap mapP = new TreeMap();
 			            List lstgermpNameP = new ArrayList();
 			            manager = factory.getGermplasmDataManager();
@@ -185,17 +195,19 @@ public class MappingDataUpload {
 							names = manager.getNamesByGID(Integer.parseInt(pGidsList.get(n).toString()), null, null);
 							for (Name name : names) {					
 								 lstgermpNameP.add(name.getGermplasmId());
-								 mapP.put(name.getGermplasmId(), name.getNval());	            
+								 mapP.put(name.getGermplasmId(), name.getNval());	
+								 addValues(name.getGermplasmId(), name.getNval().toLowerCase());	
 					        }
 						}
-						System.out.println("....mapP="+mapP);
+						//System.out.println("....mapP="+mapP);
 						if(mapP.size()==0){
 				        	   alertGID="yes";
 				        	   size=0;
 				           }
 						int gidToCompare=0;
 				           String gNameToCompare="";
-				           String gNameFromMap="";
+				           //String gNameFromMap="";
+				           ArrayList gNameFromMap=new ArrayList();
 				           if(mapP.size()>0){
 					           for(int gi=0;gi<pGNamesList.size();gi++){
 					        	   String arrP[]=new String[3];
@@ -209,10 +221,13 @@ public class MappingDataUpload {
 					        	   gNameToCompare=arrP[1].toString();
 					        	   //System.out.println("...."+gidToCompare+"   "+lstgermpName.contains(gidToCompare));
 					        	   if(lstgermpNameP.contains(gidToCompare)){
-					        		   gNameFromMap=mapP.get(gidToCompare).toString();
+					        		   //gNameFromMap=mapP.get(gidToCompare).toString();
+					        		   gNameFromMap=hashMap.get(gidToCompare);
 					        		   //System.out.println("...."+gNameToCompare+"   "+map.get(gidToCompare).equals(gNameToCompare)+"  from map: "+map.get(gidToCompare));
-					        		   if(!(gNameFromMap.toLowerCase().equals(gNameToCompare.toLowerCase()))){
-					        			   notMatchingData=notMatchingData+gidToCompare+"   "+mapP.get(gidToCompare)+"\n\t";
+					        		   //if(!(gNameFromMap.toLowerCase().equals(gNameToCompare.toLowerCase()))){
+					        		   if(!(gNameFromMap.contains(gNameToCompare.toLowerCase()))){
+					        			   notMatchingData=notMatchingData+gidToCompare+"   "+hashMap.get(gidToCompare)+"\n\t";
+					        			   //notMatchingData=notMatchingData+gidToCompare+"   "+mapP.get(gidToCompare)+"\n\t";
 						        		   alertGN="yes"; 
 					        		   }			        			   
 					        	   }else{
@@ -249,20 +264,20 @@ public class MappingDataUpload {
 						
 						
 						
-						System.out.println("select dataset_id from gdms_acc_metadataset where gid in("+parentGids.substring(0,parentGids.length()-1)+")");
+					//	System.out.println("select dataset_id from gdms_acc_metadataset where gid in("+parentGids.substring(0,parentGids.length()-1)+")");
 						rs=st.executeQuery("select dataset_id from gdms_acc_metadataset where gid in("+parentGids.substring(0,parentGids.length()-1)+")");
 						if(rs.next()){
 							dataset=rs.getInt(1);							
 						}else
 							exists="no";
 						
-						System.out.println("1 exists="+exists);
+						//System.out.println("1 exists="+exists);
 						rs1=st1.executeQuery("select * from gdms_marker_metadataset where dataset_id="+dataset+" and marker_id in(select marker_id from gdms_marker where marker_name in("+marker.substring(0,marker.length()-1)+") order by marker_id)");	
 						if(rs1.next())
 							exists="yes";
 						else
 							exists="no";
-						System.out.println("2 exists="+exists);
+						//System.out.println("2 exists="+exists);
 						if(exists.equalsIgnoreCase("no")){
 							if((!(sheetDataList.getCell(2,1).getContents().trim().toString().equals(parentA)))&&(!(sheetDataList.getCell(2,2).getContents().trim().toString().equals(parentB)))){
 								 String strRowNumber1 = String.valueOf(sheetDataList.getCell(2, 1).getRow()+1);	
@@ -338,9 +353,9 @@ public class MappingDataUpload {
 					        }
 						}
 			            
-						System.out.println("......"+map.size()+".........  map="+map);
+						//System.out.println("......"+map.size()+".........  map="+map);
 			            
-			            System.out.println("gidsAList="+gidsAList);
+			           // System.out.println("gidsAList="+gidsAList);
 			            /*SortedMap map = new TreeMap();
 			            List lstgermpName = new ArrayList();
 			            for(int w=0;w<lstGIDs.size();w++){
@@ -416,23 +431,73 @@ public class MappingDataUpload {
 					
 					
 					int intDatasetId=uptMId.getMaxIdValue("dataset_id","gdms_dataset",session);
-					int user_id=uptMId.getUserId("userid", "users", "uname", session,sheetSource.getCell(1,1).getContents().trim());
+					
+					//int user_id=uptMId.getUserId("userid", "users", "uname", session,sheetSource.getCell(1,1).getContents().trim());
+					String username=request.getSession().getAttribute("user").toString();
+					int user_id=uptMId.getUserId("userid", "users", "uname", session,username);
+					
+					
+					
 					int mp_id=uptMId.getMaxIdValue("mp_id","gdms_mapping_pop_values",session);
-					int dataset_id=intDatasetId+1;
+					//int dataset_id=intDatasetId+1;
+					int dataset_id=intDatasetId-1;
 					/*int parent_a_gid=uptMId.getUserId("gid", "names", "nval", session,sheetSource.getCell(1,8).getContents().trim());
 					int parent_b_gid=uptMId.getUserId("gid", "names", "nval", session,sheetSource.getCell(1,9).getContents().trim());*/
 					/** writing to 'dataset' table **/
 					
+					int parentAGid=Integer.parseInt(sheetSource.getCell(1,8).getContents().trim());
+					String parentA=sheetSource.getCell(1,9).getContents().trim();
+					
+					int parentBGid=Integer.parseInt(sheetSource.getCell(1,10).getContents().trim());
+					String parentB=sheetSource.getCell(1,11).getContents().trim();
+					
+					Name namesPA = null;
+					namesPA=manager.getNameByGIDAndNval(parentAGid, parentA);
+					int parentA_nid=namesPA.getNid();
+					Name namesPB = null;
+					namesPB=manager.getNameByGIDAndNval(parentBGid, parentB);
+					int parentB_nid=namesPB.getNid();
+					
+					
+					dataset_name=sheetSource.getCell(1,3).getContents().trim();		
+					
+					if(dataset_name.length()>30){
+						ErrMsg = "Error : Dataset Name value exceeds max char size.";
+		            	hsession.setAttribute("indErrMsg", ErrMsg);							
+						return result = "ErrMsg";
+					}
+					dataset_desc=sheetSource.getCell(1,4).getContents().trim();
+					genus=sheetSource.getCell(1,5).getContents().trim();
+					species=sheetSource.getCell(1,6).getContents().trim();
+					popId=sheetSource.getCell(1,7).getContents().trim();
+					popSize=sheetSource.getCell(1,12).getContents().trim();
+					popType=sheetSource.getCell(1,13).getContents().trim();
+					purposeOfStudy=sheetSource.getCell(1,14).getContents().trim();
+					scoringScheme=sheetSource.getCell(1,15).getContents().trim();
+					missingData=sheetSource.getCell(1,16).getContents().trim();				
+					boolean dFormat=uptMId.isValidDate(sheetSource.getCell(1,17).getContents().trim());
+					if(dFormat==false){
+						ErrMsg = "Creation Date should be in yyyy-mm-dd format";
+						request.getSession().setAttribute("indErrMsg", ErrMsg);
+						return "ErrMsg";
+					}else{
+						creDate=sheetSource.getCell(1,17).getContents().trim();
+					}
+					
+					
+					remarks=sheetSource.getCell(1,18).getContents().trim();
+					
+					
 					db.setDataset_id(dataset_id);
-					db.setDataset_name(sheetSource.getCell(1,3).getContents());
-					db.setDataset_desc(sheetSource.getCell(1,4).getContents());
+					db.setDataset_name(dataset_name);
+					db.setDataset_desc(dataset_desc);
 					db.setDataset_type(dataset_type);
-					db.setGenus(sheetSource.getCell(1,5).getContents());
-					db.setSpecies(sheetSource.getCell(1,5).getContents());
-					db.setUpload_template_date(sheetSource.getCell(1,17).getContents());					
+					db.setGenus(genus);
+					db.setSpecies(species);
+					db.setUpload_template_date(creDate);					
 					db.setDatatype("map");
-					db.setRemarks(sheetSource.getCell(1,17).getContents());
-					db.setMissing_data(sheetSource.getCell(1,16).getContents().trim());
+					db.setRemarks(remarks);
+					db.setMissing_data(missingData);
 					//System.out.println("dataset id = ");
 					session.save(db);
 					
@@ -441,12 +506,12 @@ public class MappingDataUpload {
 					mb.setDataset_id(dataset_id);
 					//mb.setMp_id(mp_id);
 					mb.setMapping_type(mapType);
-					mb.setParent_a_gid(Integer.parseInt(sheetSource.getCell(1,8).getContents().trim().toString()));
-					mb.setParent_b_gid(Integer.parseInt(sheetSource.getCell(1,10).getContents().trim().toString()));
-					mb.setPopulation_size(Integer.parseInt(sheetSource.getCell(1,12).getContents().toString()));
-					mb.setPopulation_type(sheetSource.getCell(1,13).getContents());
-					mb.setMapdata_desc(sheetSource.getCell(1,14).getContents());	
-					mb.setScoring_scheme(sheetSource.getCell(1,15).getContents());
+					mb.setParent_a_gid(parentA_nid);
+					mb.setParent_b_gid(parentB_nid);
+					mb.setPopulation_size(Integer.parseInt(popSize));
+					mb.setPopulation_type(popType);
+					mb.setMapdata_desc(purposeOfStudy);	
+					mb.setScoring_scheme(scoringScheme);
 					mb.setMap_id(map_id);
 					//System.out.println("dataset_id;:"+dataset_id+"   mcid="+dataset_id+"  parentA;"+sheetSource.getCell(1,7).getContents()+"   Parent B:"+sheetSource.getCell(1,8).getContents()+"  Pop size="+sheetSource.getCell(1,9).getContents()+"    Pop type="+sheetSource.getCell(1,10).getContents()+"  DEsc="+sheetSource.getCell(1,11).getContents()+"   Scoring scheme="+sheetSource.getCell(1,12).getContents()+"   map id="+map_id);
 					
@@ -454,7 +519,7 @@ public class MappingDataUpload {
 					
 					
 					SortedMap mapN = new TreeMap();
-					System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
+					//System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
 					ArrayList finalList =new ArrayList();
 					ArrayList gidL=new ArrayList();
 					/*ArrayList lstNids=uptMId.getNids("gid, nid", "names", "nval", session, gNames.substring(0,gNames.length()-1));
@@ -487,7 +552,7 @@ public class MappingDataUpload {
 			        	}
 			        }
 		            
-			        System.out.println("finalList="+finalList);
+			       // System.out.println("finalList="+finalList);
 			        
 			        
 					//*************  dataset_users*************
@@ -564,7 +629,8 @@ public class MappingDataUpload {
 								intRMarkerId=(Integer)(markersMap.get(markersList.get(f)));							
 								mids.add(intRMarkerId);
 							}else{
-								maxMid=maxMid+1;
+								//maxMid=maxMid+1;
+								maxMid=maxMid-1;
 								intRMarkerId=maxMid;
 								mids.add(intRMarkerId);	
 								mib.setMarkerId(intRMarkerId);
@@ -593,7 +659,8 @@ public class MappingDataUpload {
 							String[] pGids=parentGids.split(",");
 							int mcount=0;
 							int gcount=0;
-							intAC_ID=intAC_ID+1;
+							//intAC_ID=intAC_ID+1;
+							intAC_ID=intAC_ID-1;
 							for(int r=1;r<3;r++){
 								mcount=0;
 								for(int c=3;c<colCount;c++){
@@ -613,7 +680,8 @@ public class MappingDataUpload {
 									session.save(chb);
 									mcount++;
 									
-									intAC_ID++;
+									//intAC_ID++;
+									intAC_ID--;
 															
 									if (r % 1 == 0){
 										session.flush();
@@ -627,7 +695,8 @@ public class MappingDataUpload {
 							String[] pGids=parentGids.split(",");
 							int mcount=0;
 							int gcount=0;
-							intAC_ID=intAC_ID+1;
+							//intAC_ID=intAC_ID+1;
+							intAC_ID=intAC_ID-1;
 							for(int r=1;r<3;r++){
 								mcount=0;
 								for(int c=3;c<colCount;c++){
@@ -647,7 +716,8 @@ public class MappingDataUpload {
 									session.save(chb);
 									mcount++;
 									
-									intAC_ID++;
+									//intAC_ID++;
+									intAC_ID--;
 															
 									if (r % 1 == 0){
 										session.flush();
@@ -660,7 +730,8 @@ public class MappingDataUpload {
 										
 					}	
 					int gi=0;
-					mp_id=mp_id+1;
+					//mp_id=mp_id+1;
+					mp_id=mp_id-1;
 					for(int i=rows;i<rowCount;i++){	
 						//String[] insGids=fGids.split(",");
 						int m=0;
@@ -700,7 +771,8 @@ public class MappingDataUpload {
 							intDataOrderIndex++;
 													
 							g++;
-							mp_id++;
+							//mp_id++;
+							mp_id--;
 							m++;
 							if (g % 1 == 0){
 								session.flush();
@@ -727,6 +799,7 @@ public class MappingDataUpload {
 					
 					}					
 					tx.commit();
+					result="inserted";
 				}				
 			}catch(Exception e){
 				session.clear();
@@ -739,5 +812,17 @@ public class MappingDataUpload {
 			  }
 			return result;
 		}
-
+		private static void addValues(int key, String value){
+			ArrayList<String> tempList = null;
+			if(hashMap.containsKey(key)){
+				tempList=hashMap.get(key);
+				if(tempList == null)
+					tempList = new ArrayList<String>();
+				tempList.add(value);
+			}else{
+				tempList = new ArrayList();
+				tempList.add(value);
+			}
+			hashMap.put(key,tempList);
+		}
 }

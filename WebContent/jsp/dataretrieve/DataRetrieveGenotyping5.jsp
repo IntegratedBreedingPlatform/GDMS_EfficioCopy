@@ -28,11 +28,8 @@
 	  			<tr class="displayText">
 	  				<td width="45%"><input type="checkbox" name="maps" value='<%=str[1]%>'>&nbsp;<%=str[1]%></td>
 	  				<td> Markers : <%=str[0] %></td>
-	  				<%if(str[3].equals("genetic")){ %>
-	  					<td>Map Length : <%=str[2] %> cM</td>
-	  				<%}else{ %>
-	  					<td>Map Length : <%=str[2] %> bp</td>
-	  				<%} %>
+	  				<td>Map Length : <%=str[2] %>&nbsp;<%=str[3]%></td>
+	  				
 	  			</tr>
 	  		<%} 
 	  			%>
@@ -42,7 +39,17 @@
 	  			<tr><td>&nbsp;</td></tr>
 	  			<tr><td>&nbsp;</td></tr>
 	  			<tr><td>&nbsp;</td></tr>
-	  			<tr align="center"><td><html:button property="export" value="Submit" onclick="sub()"/></td></tr>
+	  			<tr align="center">
+	  			<td>
+	  			<table align="left" width="80%" border=0>
+	  			<tr>
+	  				<td width="45%">
+	  				<td><html:button property="showMap" value="View Map" onclick="sub('map')"/></td>
+	  				<td><html:button property="export" value="Export To CMTV Format" onclick="sub('cmtv')"/></td>
+	  			</tr>
+	  			</table>
+	  			</td>
+	  			</tr>
 	  			</table>
 	  			<html:hidden property="selMaps"/>
 	  			<html:hidden property="opType"/>
@@ -52,7 +59,9 @@
 
 </html:html>
 <script>
-function sub(){		
+function sub(a){
+	var op=a;
+	//alert(a);
 	var temp="";
 	document.forms[0].opType.value="map";
 	var c=0;	
@@ -65,7 +74,13 @@ function sub(){
 		    }          
 	    }		
 	//alert("temp="+temp);
-	document.forms[0].selMaps.value=temp;		
+	document.forms[0].selMaps.value=temp;
+	if(op=='map'){
+		document.forms[0].action="retrieveMap.do?map";
+	}else{
+		document.forms[0].action="export.do";
+
+	}		
 	document.forms[0].submit();
 
 }
