@@ -262,7 +262,7 @@ public class RetrieveMarkerDetailsAction extends Action{
 			String marker_type="";
 			Query=strQuery+" from gdms_marker_retrieval_info "+s1;
 			//query=hsession.createQuery(strQuery+" from RetrievalMarkerInfoBean where marker_name ='"+SearchM+"'");
-			System.out.println("Query="+Query);
+			//System.out.println("Query="+Query);
 			Statement st=con.createStatement();
 			ResultSet rs=st.executeQuery(Query);
 			Statement st1=con.createStatement();
@@ -413,6 +413,7 @@ public class RetrieveMarkerDetailsAction extends Action{
 					}					
 				}
 			}
+			//System.out.println(SSRlist);
 			if(SSRlist.size()>1){
 				al.add(SSRlist);
 			}
@@ -430,7 +431,7 @@ public class RetrieveMarkerDetailsAction extends Action{
 			e.printStackTrace();
 		}finally{
 			try{
-				if(con!=null) con.close();
+				if(con!=null) con.close();hsession.disconnect();
 			}catch(Exception e){System.out.println(e);}
 		}	
 		return am.findForward("ret");

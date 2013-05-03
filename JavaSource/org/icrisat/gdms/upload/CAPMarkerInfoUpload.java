@@ -141,7 +141,7 @@ public class CAPMarkerInfoUpload {
 				String strMC=uMarkerInfo.getMarker_name()+"!`!"+uMarkerInfo.getSpecies()+"!`!"+uMarkerInfo.getMarker_type();
 				listDBMarkerNames.add(strMC.toLowerCase());					
 			}		
-			System.out.println("listDBMarkerNames:"+listDBMarkerNames);
+			//System.out.println("listDBMarkerNames:"+listDBMarkerNames);
 			///Database and Template Marker names comparision
 			Object objCom=null;
 			Iterator itCom;				
@@ -159,7 +159,7 @@ public class CAPMarkerInfoUpload {
 				}
 			}
 			//Message will be displayed when the marker(s) already exists in the database.
-			System.out.println("listNewMarkers="+listNewMarkers);
+			//System.out.println("listNewMarkers="+listNewMarkers);
 			if(listNewMarkers.size()==0){
 				String ErrMsg = "All the marker(s) already exists in the database";
 				hsession.setAttribute("indErrMsg", ErrMsg);					
@@ -321,7 +321,7 @@ public class CAPMarkerInfoUpload {
 		      // Actual contact insertion will happen at this step
 		      //session.flush();
 		      session.clear();
-
+		      session.disconnect();
 		      }
 		
 		return strResult;

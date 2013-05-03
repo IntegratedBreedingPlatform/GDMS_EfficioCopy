@@ -22,6 +22,7 @@ import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.Name;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
@@ -66,7 +67,7 @@ public class DArTGenotypingDataUpload {
 			String markerId="";
 			String germplasmName="";
 			String gids1="";
-			int gidsCount=0;
+			//int gidsCount=0;
 			int m=0;
 			int g=0;
 			String ErrMsg ="";
@@ -154,12 +155,16 @@ public class DArTGenotypingDataUpload {
 				germplasmName=germplasmName+sheetData.getCell(a,0).getContents().trim()+",";				
 			}
 			String str1="";
-			int strCount=0;
-			
+			//int strCount=0;
+			ArrayList gidsDataSheet=new ArrayList();
+			ArrayList gidsSheet =new ArrayList();
 			/** appending all germplasm names to a variable **/
 			for(int g1=7;g1<colCount;g1++){
 				str1=str1+sheetData.getCell(g1,0).getContents().trim()+"!~!";
-				strCount=strCount+1;				
+				if(!gidsDataSheet.contains(sheetData.getCell(g1,0).getContents().trim())){
+					gidsDataSheet.add(sheetData.getCell(g1,0).getContents().trim());
+					//strCount=strCount+1;	
+				}
 			}
 			
 			/** reading gids & germplasm name from gids sheet of template and inserting to 'germplasm_temp' table **/
@@ -167,15 +172,21 @@ public class DArTGenotypingDataUpload {
 			int rows=sheetGIDs.getRows();
 			for(int r=1;r<rows;r++){					
 				gids1=gids1+sheetGIDs.getCell(0,r).getContents().trim()+"!~!"+sheetGIDs.getCell(1,r).getContents().trim()+",";
-				gidsCount=gidsCount+1;
+				if(!gidsSheet.contains(sheetGIDs.getCell(1,r).getContents().trim())){
+					gidsSheet.add(sheetGIDs.getCell(1,r).getContents().trim());
+					//gidsCount=gidsCount+1;
+				}
 			}
-			if(gidsCount!=strCount){
+			//System.out.println(".................:"+gidsSheet.size()+"!="+gidsDataSheet.size());
+			//System.out.println("gids1=:"+gids1);
+			//if(gidsCount!=strCount){
+			if(gidsSheet.size()!=gidsDataSheet.size()){
 				//System.out.println("NOT Matching");
 				ErrMsg = "Germplasms in DArT_GIDs sheet doesnot match with the Germplasm in DArT_Data sheet.";
 				request.getSession().setAttribute("indErrMsg", ErrMsg);
 				return "ErrMsg";
 			}
-			System.out.println("gidsCount="+gidsCount+"     strCount="+strCount);
+			//System.out.println("gidsCount="+gidsCount+"     strCount="+strCount);
 			int s=0;
 			//String fGids="";
 			String gNames="";
@@ -186,15 +197,15 @@ public class DArTGenotypingDataUpload {
 			HashMap<Integer, String> GIDsMap = new HashMap<Integer, String>();
 			ArrayList gidNamesList=new ArrayList();
 			/** arranging gid's with respect to germplasm name in order to insert into allele_values table */
-			if(gidsCount==strCount){			
+			if(gidsSheet.size()==gidsDataSheet.size()){			
 				String[] arg1=gids1.split(",");
 				String[] str2=str1.split("!~!");
 				for(int a=0;a<arg1.length;a++){
 					String[] arg2=arg1[a].split("!~!");
 					if(str2[s].equals(arg2[1])){
 						//gidsRet=gidsRet+arg2[0]+",";
-						if(!gidsRet.contains(Integer.parseInt(arg2[0])))
-							gidsRet.add(Integer.parseInt(arg2[0]));
+						//if(!gidsRet.contains(Integer.parseInt(arg2[0])))
+						gidsRet.add(Integer.parseInt(arg2[0]));
 						gNames=gNames+"'"+arg2[1]+"',";
 						if(!fGids.contains(arg2[0]))
 							fGids.add(arg2[0]);
@@ -211,8 +222,6 @@ public class DArTGenotypingDataUpload {
 				}
 			}
 			
-			System.out.println("GIDsMap="+GIDsMap);
-			System.out.println("*******************"+gidsRet);
 			Map<Object, String> sortedMap = new TreeMap<Object, String>(GIDsMap);
 			SortedMap mapG = new TreeMap();
             List lstgermpName = new ArrayList();
@@ -220,8 +229,8 @@ public class DArTGenotypingDataUpload {
 			//ArrayList lstGIDs=uptMId.getGIds("gid, nval", "names", "gid", session, gidsRet.substring(0,gidsRet.length()-1));
 			
 			List<Name> names = null;
-			for(int n=0;n<gidsRet.size();n++){
-				names = manager.getNamesByGID(Integer.parseInt(gidsRet.get(n).toString()), null, null);
+			for(int n=0;n<fGids.size();n++){
+				names = manager.getNamesByGID(Integer.parseInt(fGids.get(n).toString()), null, null);
 				for (Name name : names) {					
 					 lstgermpName.add(name.getGermplasmId());
 					 mapG.put(name.getGermplasmId(), name.getNval());	
@@ -307,10 +316,22 @@ public class DArTGenotypingDataUpload {
         	   request.getSession().setAttribute("indErrMsg", ErrMsg);
         	   return "ErrMsg";	 
            }
-			System.out.println("fGids="+fGids);
+			//System.out.println("fGids="+fGids);
 			String dname=sheetSource.getCell(1,2).getContents().trim();
+			
+			Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dname+"'");				
+			
+			List result1= rsDatasetNames.list();
+			//System.out.println(".............:"+result1.size());
+			if(result1.size()>0){
+				ErrMsg = "Dataset Name already exists.";
+				request.getSession().setAttribute("indErrMsg", ErrMsg);							
+				return "ErrMsg";
+			}
+			
+			
 			if(dname.length()>30){
-				ErrMsg = "Error : Dataset Name value exceeds max char size.";
+				ErrMsg = "Dataset Name value exceeds max char size.";
 				request.getSession().setAttribute("indErrMsg", ErrMsg);							
 				return "ErrMsg";
 			}
@@ -333,7 +354,7 @@ public class DArTGenotypingDataUpload {
 			session.save(usb);
 			
 			SortedMap mapN = new TreeMap();
-			System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
+			//System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
 			ArrayList finalList =new ArrayList();
 			ArrayList gidL=new ArrayList();
 			
@@ -352,8 +373,11 @@ public class DArTGenotypingDataUpload {
 			 * getting nids with gid and nval for inserting into gdms_acc_metadataset table			
 			*/
 			Name name = null;
+			
+			//System.out.println("...fGids.size()........:"+fGids.size());
 			for(int n=0;n<fGids.size();n++){
 				name = manager.getNameByGIDAndNval(Integer.parseInt(fGids.get(n).toString()), fGNames.get(n).toString());
+				//System.out.println(n+":  "+name.getGermplasmId()+"    "+name.getNval()+"     "+name.getNid());
 				if(!gidL.contains(name.getGermplasmId()))
 	            	gidL.add(name.getGermplasmId());
 	            mapN.put(name.getGermplasmId(), name.getNid());
@@ -367,7 +391,7 @@ public class DArTGenotypingDataUpload {
 	        		finalList.add(gid1+"~!~"+mapN.get(gid1));	
 	        	}
 	        }
-            System.out.println("******************  "+finalList);
+           // System.out.println("******************  "+finalList);
 	        
 	        /** writing to acc_metadataset table  **/
 			/*for(int r=1;r<rows;r++){					
@@ -421,8 +445,8 @@ public class DArTGenotypingDataUpload {
 	                 
 	            }
 			ArrayList mids=new ArrayList();
-			System.out.println("map"+map);
-			System.out.println("lstMarkers="+lstMarkers);
+			//System.out.println("map"+map);
+			//System.out.println("lstMarkers="+lstMarkers);
 			//**  inserting data from data sheet of template to database  **//*		
 			//maxad_Id=maxad_Id+1;
 			maxad_Id=maxad_Id-1;
@@ -487,6 +511,7 @@ public class DArTGenotypingDataUpload {
 			int kk=0;
 			//intDataOrderIndex=intDataOrderIndex+1;
 			intDataOrderIndex=intDataOrderIndex-1;
+			//System.out.println("colCount=:"+colCount+"   gidsRet="+gidsRet.size());
 			//** inserting data into 'allele_values' table **//*
 			for(int i=1;i<rowCount;i++){	
 				//String[] insGids=fGids.split(",");
@@ -498,7 +523,7 @@ public class DArTGenotypingDataUpload {
 					cack.setAn_id(intDataOrderIndex);
 					intB.setComKey(cack);
 					//intB.setGid(Integer.parseInt(insGids[kk]));
-					intB.setGid(Integer.parseInt(fGids.get(kk).toString()));
+					intB.setGid(Integer.parseInt(gidsRet.get(kk).toString()));
 					intB.setMarker_id(Integer.parseInt(markers[m]));
 					//chb.setAllele_raw_value((String)sheetData.getCell(j,i).getContents().trim());
 					intB.setAllele_bin_value((String)sheetData.getCell(j,i).getContents().trim());
@@ -540,7 +565,8 @@ public class DArTGenotypingDataUpload {
 			e.printStackTrace();
 		}finally{	
 			factory.close();
-			session.clear();							
+			session.clear();	
+			session.disconnect();
 		}
 		return str;
 	}

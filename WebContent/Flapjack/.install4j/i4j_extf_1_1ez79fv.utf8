@@ -219,7 +219,7 @@ ErrorInstallService=Der Dienst "{0}" konnte nicht installiert werden
 ErrorUninstallService=Der Dienst "{0}" konnte nicht deinstalliert werden
 ErrorInstallIcons=Symbole konnten nicht installiert werden.
 # {0} is a version number, {1} is an application name
-AppleJavaMinVersionError=Sie benötigen für die Installation von {1} mindestens eine {0} Java Virtual Machine.\nBitte downloaden Sie die Datei bei http://www.apple.com.
+AppleJavaMinVersionError=Sie benötigen für die Installation von {1} mindestens eine {0} Java Virtual Machine.\nBitte downloaden Sie die Datei bei http://java.com.
 # {0} is a file name
 AskContinue=Datei konnte nicht installiert werden. \n{0}\nMöchten Sie die Installation fortsetzen?
 UninstallFailureTitle=Ergebnisse des Deinstallationsvorgangs

@@ -198,7 +198,7 @@ public class CISRMarkerInfoUpload{
 				int maxMarkerId=uptMDsetId.getMaxIdValue("marker_id","gdms_marker",session);
 				//maxMarkerId++;
 				maxMarkerId--;
-				System.out.println("Max Marker Id =="+maxMarkerId);
+				//System.out.println("Max Marker Id =="+maxMarkerId);
 					//maxMarkerId++;
 				String MarkerType="",annealing_temp="",reverse_primer_temp="",forward_primer_temp="";
 				boolean	exists=false;
@@ -218,7 +218,7 @@ public class CISRMarkerInfoUpload{
 					if(listNewMarkers.contains(str.toLowerCase())){						
 						//MarkerID=maxMarkerId++;
 						MarkerID=maxMarkerId--;
-						System.out.println(MarkerID);
+						//System.out.println(MarkerID);
 					}else{
 						//retrieving MarkerID for the already existing marker from MarkerInfo table
 						List listValues=session.createQuery("select markerId from MarkerInfoBean where Lower(marker_name) ='"+(String)sheetMarkerDetails.getCell(0,r).getContents().trim().toLowerCase()+"' and Lower(species)='"+(String)sheetMarkerDetails.getCell(3,r).getContents().trim().toLowerCase()+"' and marker_type='CISR'").list();
@@ -385,7 +385,8 @@ public class CISRMarkerInfoUpload{
 				
 				e.printStackTrace();
 			}finally{			    
-				session.clear();				
+				session.clear();
+				session.disconnect();
 			}
 			return strResult;
 		}

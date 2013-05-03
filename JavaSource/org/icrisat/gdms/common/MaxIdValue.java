@@ -33,7 +33,8 @@ public class MaxIdValue {
 			Object obj=null;
 			Iterator itList=null;
 			List listValues=null;
-			//Query query=session.createSQLQuery("select max("+ fldName +") from " + tblName);
+			
+			//Query query=session.createSQLQuery("select max("+ fldName +") from " + tblName);			
 			
 			// changed from max to min because now we have all ids as -ve
 			Query query=session.createSQLQuery("select min("+ fldName +") from " + tblName);
@@ -55,10 +56,13 @@ public class MaxIdValue {
 			Object obj=null;
 			Iterator itList=null;
 			List listValues=new ArrayList<String>();
+			System.out.println("select "+ fldName +" from " + tblName +" where "+ wField.toLowerCase()+" in ("+mNames.toLowerCase()+")");
 			SQLQuery query=session.createSQLQuery("select "+ fldName +" from " + tblName +" where "+ wField.toLowerCase()+" in ("+mNames.toLowerCase()+")");
-	                //SQLQuery query=session.createSQLQuery("SELECT marker_id, principal_investigator FROM marker_user_info;");
-			        query.addScalar("marker_id",Hibernate.INTEGER);
-	                query.addScalar("marker_name",Hibernate.STRING);
+	        //SQLQuery query=session.createSQLQuery("SELECT marker_id, principal_investigator FROM marker_user_info;");
+			//String[] fldNames=fldName.split(",");
+			
+			query.addScalar("marker_id",Hibernate.INTEGER);
+	        query.addScalar("marker_name",Hibernate.STRING);
 			
 			listValues=query.list();
 			

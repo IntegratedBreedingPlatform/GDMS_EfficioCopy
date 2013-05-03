@@ -1,11 +1,16 @@
 package org.icrisat.gdms.upload;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Properties;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -16,9 +21,8 @@ import javax.servlet.http.HttpSession;
 import jxl.Sheet;
 import jxl.Workbook;
 
-import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
-import org.generationcp.middleware.manager.api.TraitDataManager;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
@@ -30,7 +34,8 @@ public class QTLDataUpload {
 	
 	private Session session;
 	private Transaction tx;
-	Connection con = null;
+	java.sql.Connection conn;
+	java.sql.Connection con;
 	HttpServletRequest request;
 	/*String crop=request.getSession().getAttribute("crop").toString();
 	public QTLDataUpload(){
@@ -44,8 +49,39 @@ public class QTLDataUpload {
 		String datatype="int";
 		
 		ManagerFactory factory =null;
-		
+		Properties p=new Properties();
+		HttpSession ses = request.getSession(true);
+		ArrayList traitsComList=new ArrayList();
+		//SortedMap mapT = new TreeMap();
 		try{
+			 p.load(new FileInputStream(ses.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+				String host=p.getProperty("central.host");
+				String port=p.getProperty("central.port");
+				String url = "jdbc:mysql://"+host+":"+port+"/";
+				String dbName = p.getProperty("central.dbname");
+				String driver = "com.mysql.jdbc.Driver";
+				String userName = p.getProperty("central.username"); 
+				String password = p.getProperty("central.password");
+				
+				Class.forName(driver).newInstance();
+				conn = DriverManager.getConnection(url+dbName,userName,password);
+				Statement stCen=conn.createStatement();
+				
+				
+				String hostL=p.getProperty("local.host");
+				String portL=p.getProperty("local.port");
+				String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+				String dbNameL = p.getProperty("local.dbname");
+				//String driver = "com.mysql.jdbc.Driver";
+				String userNameL = p.getProperty("local.username"); 
+				String passwordL = p.getProperty("local.password");
+				
+				Class.forName(driver).newInstance();
+				con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+				Statement stLoc=con.createStatement();
+				
+				
+			 
 			//String crop=request.getSession().getAttribute("crop").toString();
 			session = HibernateSessionFactory.currentSession();
 			tx=session.beginTransaction();
@@ -123,15 +159,36 @@ public class QTLDataUpload {
 				 traits=traits+"'"+traitList.get(t)+"',";
 			 }
 			 traits=traits.substring(0, traits.length()-1);
-			 ArrayList lstTraits=uptMId.getMarkerIds("traitid, trabbr", "tmstraits", "trabbr", session, traits);
 			 SortedMap map = new TreeMap();
-            List retTraits = new ArrayList();
+	         List retTraits = new ArrayList();
+			ResultSet rsLoc=stLoc.executeQuery("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+			while(rsLoc.next()){
+				traitsComList.add(rsLoc.getString(1));
+				//+"!~!"+rsN.getString(2)+"!~!"+rsN.getString(3));
+				retTraits.add(rsLoc.getString(2));
+				map.put(rsLoc.getString(2), rsLoc.getString(1));
+			}
+	       //  System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+			ResultSet rsCen=stCen.executeQuery("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+			while(rsCen.next()){
+				traitsComList.add(rsCen.getString(1));
+				//+"!~!"+rsN.getString(2)+"!~!"+rsN.getString(3));
+				retTraits.add(rsCen.getString(2));
+				map.put(rsCen.getString(2), rsCen.getString(1));
+			}
+			
+			
+			//System.out.println("retTraits=:"+retTraits);
+			//System.out.println(map);
+			
+			/*ArrayList lstTraits=uptMId.getMarkerIds("traitid, trabbr", "tmstraits", "trabbr", session, traits);
+			 
             for(int w=0;w<lstTraits.size();w++){
                  Object[] strMareO= (Object[])lstTraits.get(w);
                  retTraits.add(strMareO[1]);
                  String strMa123 = (String)strMareO[1];
                  map.put(strMa123, strMareO[0]);	                 
-            }
+            }*/
             if(map.size()==0){
             	alertT="yes";
 	        	size=0;
@@ -168,8 +225,19 @@ public class QTLDataUpload {
 	        	return "ErrMsg";
             }         
             String dname=sheetSource.getCell(1,2).getContents().trim();
+            
+            Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dname+"'");				
+			
+			List result1= rsDatasetNames.list();
+			System.out.println(".............:"+result1.size());
+			if(result1.size()>0){
+				ErrMsg = "Dataset Name already exists.";
+				request.getSession().setAttribute("indErrMsg", ErrMsg);							
+				return "ErrMsg";
+			}
+            
             if(dname.length()>30){
-            	ErrMsg = "Error : Dataset Name value exceeds max char size.";
+            	ErrMsg = "Dataset Name value exceeds max char size.";
             	request.getSession().setAttribute("indErrMsg", ErrMsg);							
 				return "ErrMsg";
             }
@@ -206,11 +274,11 @@ public class QTLDataUpload {
 			//int qtlId=intqtlId+1;
 			int qtlId=intqtlId-1;
 			
-			System.out.println("rowCount=:"+rowCount);
+			//System.out.println("rowCount=:"+rowCount);
 			for (int i=1;i<rowCount;i++){
 				if(sheetData.getCell(1,i).getContents().trim()!=""){
 					mapId=uptMId.getMapId("map_id", "gdms_map", "map_name", session,sheetData.getCell(2,i).getContents().trim());
-					System.out.println("mapId="+mapId);
+					//System.out.println("mapId="+mapId);
 					if(mapId!=0){
 						linkMapId=linkMapId+mapId+",";	
 					}else{
@@ -270,7 +338,10 @@ public class QTLDataUpload {
 			session.clear();
 			e.printStackTrace();
 		}finally{		    
-			session.clear();							
+			session.clear();	
+			session.disconnect();
+			con.close();
+			conn.close();
 		}
 		return result;	
 	}

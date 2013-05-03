@@ -56,7 +56,7 @@ public class RetrieveDataAction extends Action{
 		
 			return null;
 		}else if(type.equalsIgnoreCase("map")){
-			rs = st.executeQuery("select mapdata_desc from gdms_mapping_pop");
+			rs = st.executeQuery("select dataset_name from gdms_dataset where dataset_type='mapping'");
 			//query=hsession.createQuery(sqlQuery);
 			pr.println("<data>");
 			pr.println("<details><![CDATA[- Select -]]></details>");

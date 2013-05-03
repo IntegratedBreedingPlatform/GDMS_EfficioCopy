@@ -10,7 +10,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
@@ -30,20 +32,18 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.DynaActionForm;
 import org.apache.struts.upload.FormFile;
-import org.generationcp.middleware.manager.Database;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GenotypicDataManager;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
-import org.generationcp.middleware.manager.api.TraitDataManager;
 import org.generationcp.middleware.pojos.GidNidElement;
 import org.generationcp.middleware.pojos.Name;
-import org.generationcp.middleware.pojos.Trait;
+import org.generationcp.middleware.pojos.workbench.WorkFlowActivity;
 import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 import org.hibernate.Query;
 import org.icrisat.gdms.common.FileUploadToServer;
 
 public class DataRetrieveAction extends Action{
-	
+	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();  
 	Connection con;
 	Connection conn;
 	
@@ -74,7 +74,7 @@ public class DataRetrieveAction extends Action{
 		DynaActionForm df = (DynaActionForm) af;
 		
 		String retrieveOP=(String)df.get("retrieveOP");	
-		System.out.println(".................................:"+retrieveOP);
+		//System.out.println(".................................:"+retrieveOP);
 		float distance=0;
 		int mCount=0;
 		String mapData="";
@@ -117,8 +117,8 @@ public class DataRetrieveAction extends Action{
 			
 			GenotypicDataManager gdms=factory.getGenotypicDataManager();
 			//System.out.println("maps     ====  :"+gdms.getAllMaps(0, 5, Database.LOCAL));
-			
-		
+			//WorkFlowActivity wfa=factory.get
+			//WorkbenchSetting
 			if(retrieveOP.equalsIgnoreCase("first")){
 				if(session!=null){
 					session.removeAttribute("indErrMsg");	
@@ -178,8 +178,8 @@ public class DataRetrieveAction extends Action{
 				//System.out.println("...........   :"+gids1);
 				String nid="";
 				ArrayList nidList=new ArrayList();
-				
-				rsN=stmtN.executeQuery("select nid from gdms_acc_metadataset where gid in ("+gids1.substring(0, gids1.length()-1)+")");
+				//System.out.println("select distinct nid from gdms_acc_metadataset where gid in ("+gids1.substring(0, gids1.length()-1)+")");
+				rsN=stmtN.executeQuery("select distinct nid from gdms_acc_metadataset where gid in ("+gids1.substring(0, gids1.length()-1)+")");
 				while(rsN.next()){
 					nid=nid+rsN.getString(1)+",";
 					nidList.add(rsN.getInt(1));
@@ -191,7 +191,7 @@ public class DataRetrieveAction extends Action{
 				
 				
 				Name names = null;
-			
+				//System.out.println(",,,,,,,,,,,,,,,,,,,,  :"+nidList);
 				for(int n=0;n<nidList.size();n++){
 					names=manager.getGermplasmNameByID(Integer.parseInt(nidList.get(n).toString()));
 					gids=gids+names.getGermplasmId()+",";
@@ -234,8 +234,9 @@ public class DataRetrieveAction extends Action{
 					}
 					//System.out.println("charCount="+charCount);
 				}
-				
-				
+				ArrayList mList1=new ArrayList();
+				ArrayList mList2=new ArrayList();
+				ArrayList mFinalList=new ArrayList();
 				ArrayList chVal=new ArrayList();
 				if(polyType.equalsIgnoreCase("fingerprinting")){
 				
@@ -243,23 +244,27 @@ public class DataRetrieveAction extends Action{
 					if(alleleCount>0){
 						//ResultSet rsDet=stmtA.executeQuery("SELECT allele_values.dataset_id,allele_values.gid,germplasm_temp.germplasm_name,marker.species,allele_values.marker_id,marker.marker_name,allele_values.allele_bin_value as data FROM allele_values,germplasm_temp,marker WHERE allele_values.gid in ("+gids+") AND allele_values.gid=germplasm_temp.gid AND marker.marker_id = allele_values.marker_id ORDER BY germplasm_name, marker_name");
 						//System.out.println("SELECT allele_values.dataset_id,allele_values.gid,names.nval,marker.crop,allele_values.marker_id,marker.marker_name,allele_values.allele_bin_value as data FROM allele_values,names,marker WHERE allele_values.gid in ("+gids+") AND allele_values.gid=names.gid AND marker.marker_id = allele_values.marker_id ORDER BY nval, marker_name");
+						//System.out.println("SELECT gdms_allele_values.dataset_id,gdms_allele_values.gid,gdms_marker.marker_name,gdms_allele_values.allele_bin_value as data FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_allele_values.marker_id ORDER BY gid, marker_name");
 						ResultSet rsDet=stmtA.executeQuery("SELECT gdms_allele_values.dataset_id,gdms_allele_values.gid,gdms_marker.marker_name,gdms_allele_values.allele_bin_value as data FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_allele_values.marker_id ORDER BY gid, marker_name");
 						
 						while(rsDet.next()){
 							//chValues=chValues+rsDet.getString(3)+"!~!"+rsDet.getString(6)+"!~!"+rsDet.getString(7)+"~!!~";
 							chVal.add(rsDet.getInt(2)+"!~!"+rsDet.getString(3)+"!~!"+rsDet.getString(4));
+							addValues(rsDet.getInt(2), rsDet.getString(3));	
 						}
 					}
 					/** if gids exists in 'char_values' table retrieving corresponding data and concatinating germplasm name, marker_name & char_value **/
 					if(charCount>0){
 						//ResultSet rsDet=stmtC.executeQuery("SELECT distinct char_values.dataset_id,char_values.gid,germplasm_temp.germplasm_name,marker.species,char_values.marker_id,marker.marker_name,char_values.char_value as data FROM char_values,germplasm_temp,marker WHERE char_values.gid in ("+gids+") AND char_values.gid=germplasm_temp.gid AND marker.marker_id = char_values.marker_id ORDER BY germplasm_name, marker_name");
 						//System.out.println("SELECT distinct char_values.dataset_id,char_values.gid,names.nval,marker.crop,char_values.marker_id,marker.marker_name,char_values.char_value FROM char_values,names,marker WHERE char_values.gid in ("+gids+") AND char_values.gid=names.gid AND marker.marker_id = char_values.marker_id ORDER BY nval, marker_name");
+						//System.out.println("SELECT distinct gdms_char_values.dataset_id,gdms_char_values.gid,gdms_marker.marker_name,gdms_char_values.char_value FROM gdms_char_values,gdms_marker WHERE gdms_char_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_char_values.marker_id ORDER BY gid, marker_name");
 						ResultSet rsDet=stmtC.executeQuery("SELECT distinct gdms_char_values.dataset_id,gdms_char_values.gid,gdms_marker.marker_name,gdms_char_values.char_value FROM gdms_char_values,gdms_marker WHERE gdms_char_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_char_values.marker_id ORDER BY gid, marker_name");
 						
 						
 						while(rsDet.next()){
 							//chValues=chValues+rsDet.getString(3)+"!~!"+rsDet.getString(6)+"!~!"+rsDet.getString(7)+"~!!~";
 							chVal.add(rsDet.getInt(2)+"!~!"+rsDet.getString(3)+"!~!"+rsDet.getString(4));
+							addValues(rsDet.getInt(2), rsDet.getString(3));	
 						}
 					
 					}
@@ -268,20 +273,43 @@ public class DataRetrieveAction extends Action{
 					
 					//ResultSet rsDet=stmtM.executeQuery("SELECT mapping_pop_values.dataset_id,mapping_pop_values.gid,germplasm_temp.germplasm_name,marker.species,mapping_pop_values.marker_id,marker.marker_name,mapping_pop_values.map_char_value as data FROM mapping_pop_values,germplasm_temp,marker WHERE mapping_pop_values.gid in ("+gids+") AND mapping_pop_values.gid=germplasm_temp.gid AND marker.marker_id = mapping_pop_values.marker_id ORDER BY germplasm_name, marker_name");
 					//System.out.println("SELECT allele_values.dataset_id,allele_values.gid,names.nval,marker.crop,allele_values.marker_id,marker.marker_name,allele_values.allele_bin_value as data FROM allele_values,names,marker WHERE allele_values.gid in ("+gids+") AND allele_values.gid=names.gid AND marker.marker_id = allele_values.marker_id ORDER BY nval, marker_name");
-					System.out.println("SELECT gdms_mapping_pop_values.dataset_id,gdms_mapping_pop_values.gid,gdms_marker.marker_name,gdms_mapping_pop_values.map_char_value as data FROM gdms_mapping_pop_values,gdms_marker WHERE gdms_mapping_pop_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_mapping_pop_values.marker_id ORDER BY gid, marker_name");
+					//System.out.println("SELECT gdms_mapping_pop_values.dataset_id,gdms_mapping_pop_values.gid,gdms_marker.marker_name,gdms_mapping_pop_values.map_char_value as data FROM gdms_mapping_pop_values,gdms_marker WHERE gdms_mapping_pop_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_mapping_pop_values.marker_id ORDER BY gid, marker_name");
 					ResultSet rsDet=stmtM.executeQuery("SELECT gdms_mapping_pop_values.dataset_id,gdms_mapping_pop_values.gid,gdms_marker.marker_name,gdms_mapping_pop_values.map_char_value as data FROM gdms_mapping_pop_values,gdms_marker WHERE gdms_mapping_pop_values.gid in ("+gids+") AND gdms_marker.marker_id = gdms_mapping_pop_values.marker_id ORDER BY gid, marker_name");
 					
 					while(rsDet.next()){
 						//chValues=chValues+rsDet.getString(3)+"!~!"+rsDet.getString(6)+"!~!"+rsDet.getString(7)+"~!!~";
 						chVal.add(rsDet.getInt(2)+"!~!"+rsDet.getString(3)+"!~!"+rsDet.getString(4));
+						addValues(rsDet.getInt(2), rsDet.getString(3));	
 					}
 				}
 				
 				
 				
-				//System.out.println(".........chValues="+chVal);
+				/*System.out.println(".........hashMap="+hashMap.get(gid1).size());
+				System.out.println(".........hashMap="+hashMap.get(gid1));*/
 				// String[] chVal=chValues.split("~!!~");
-				
+				mList1=hashMap.get(gid1);
+				mList2=hashMap.get(gid2);
+				if((hashMap.get(gid1).size())>(hashMap.get(gid2).size())){					
+					for(int ml=0; ml<mList1.size();ml++){
+						if(mList2.contains(mList1.get(ml))){
+							mFinalList.add(mList1.get(ml));
+						}
+					}					
+				}else if((hashMap.get(gid1).size())<(hashMap.get(gid2).size())){
+					for(int ml=0; ml<mList2.size();ml++){
+						if(mList1.contains(mList2.get(ml))){
+							mFinalList.add(mList2.get(ml));
+						}
+					}
+				}else if((hashMap.get(gid1).size())==(hashMap.get(gid2).size())){
+					for(int ml=0; ml<mList2.size();ml++){
+						if(mList1.contains(mList2.get(ml))){
+							mFinalList.add(mList2.get(ml));
+						}
+					}
+				}
+				//System.out.println("copmmon Markers="+mFinalList);
 				 int s=0;
 				 geno1.clear();geno2.clear();mark1.clear(); mark2.clear();ch1.clear();ch2.clear();
 				 for(int c=0;c<chVal.size();c++){	
@@ -295,17 +323,19 @@ public class DataRetrieveAction extends Action{
 			    			i1++;
 			    		}
 					//str1=chVal.get(c).toString().split("!~!");
-					if(Integer.parseInt(arr[0])==(gid1)){
+					if((Integer.parseInt(arr[0])==(gid1))&&(mFinalList.contains(arr[1]))){
 						geno1.add(arr[0]);
 						mark1.add(arr[1]);
 						ch1.add(arr[2]);					
-					}else{
+					}else if((Integer.parseInt(arr[0])==(gid2))&&(mFinalList.contains(arr[1]))){
 						geno2.add(arr[0]);
 						mark2.add(arr[1]);
 						ch2.add(arr[2]);
 					}			
 				}
-				/*System.out.println(mark1);
+				/* System.out.println(geno1);
+				 System.out.println(geno2);
+				System.out.println(mark1);
 				System.out.println(mark2);
 				System.out.println(ch1);
 				System.out.println(ch2);*/
@@ -313,15 +343,17 @@ public class DataRetrieveAction extends Action{
 				missingList=new ArrayList();
 				String geno="";
 				String markers="";
+				int markerCount=0;
 				//System.out.println(mark1);
 				for(int k=0;k<geno1.size();k++){
-					if((!(ch2.get(k).equals("0:0")||ch2.get(k).equals("N")||ch2.get(k).equals("?")||ch2.get(k).equals("-")))&&(!(ch1.get(k).equals("0:0")||ch1.get(k).equals("N")||ch1.get(k).equals("?")||ch1.get(k).equals("-")))&&(!(ch1.get(k).equals(ch2.get(k))))){
+					if((!(ch2.get(k).equals("0/0")||ch2.get(k).equals("0:0")||ch2.get(k).equals("N")||ch2.get(k).equals("?")||ch2.get(k).equals("-")))&&(!(ch1.get(k).equals("0:0")||ch1.get(k).equals("0/0")||ch1.get(k).equals("N")||ch1.get(k).equals("?")||ch1.get(k).equals("-")))&&(!(ch1.get(k).equals(ch2.get(k))))){
 						if(!finalList.contains(mark1.get(k))){
 							finalList.add(mark1.get(k));
 							markers=markers+"'"+mark1.get(k)+"',";	
+							markerCount++;
 						}
 					}
-					if((ch1.get(k).equals("0:0"))||(ch2.get(k).equals("0:0"))||(ch1.get(k).equals("?"))||(ch2.get(k).equals("?"))||(ch1.get(k).equals("N"))||(ch2.get(k).equals("N"))||(ch1.get(k).equals("-"))||(ch2.get(k).equals("-"))){
+					if((ch1.get(k).equals("0/0"))||(ch2.get(k).equals("0/0"))||(ch1.get(k).equals("0:0"))||(ch2.get(k).equals("0:0"))||(ch1.get(k).equals("?"))||(ch2.get(k).equals("?"))||(ch1.get(k).equals("N"))||(ch2.get(k).equals("N"))||(ch1.get(k).equals("-"))||(ch2.get(k).equals("-"))){
 						if(!missingList.contains(mark1.get(k))){
 							missingList.add(mark1.get(k));
 						}
@@ -331,22 +363,24 @@ public class DataRetrieveAction extends Action{
 				String mcount=missingList.size()+"";
 				ArrayList mapList1=new ArrayList();
 				String markerIDs="";
-				System.out.println("select marker_id from gdms_marker where marker_name in("+markers.substring(0, markers.length()-1)+")");
-				ResultSet RM=stmt.executeQuery("select marker_id from gdms_marker where marker_name in("+markers.substring(0, markers.length()-1)+")");
-				while (RM.next()){
-					markerIDs=markerIDs+RM.getInt(1)+",";
+				if(markerCount>0){
+					//System.out.println("select marker_id from gdms_marker where marker_name in("+markers.substring(0, markers.length()-1)+")");
+					ResultSet RM=stmt.executeQuery("select marker_id from gdms_marker where marker_name in("+markers.substring(0, markers.length()-1)+")");
+					while (RM.next()){
+						markerIDs=markerIDs+RM.getInt(1)+",";
+					}
+					
+					String markerIDsN=markerIDs.substring(0, markerIDs.length()-1);
+					//markers=markers.substring(0, markers.length()-1);
+					//System.out.println(markers);
+					//System.out.println("SELECT gdms_map.map_name, COUNT(gdms_markers_onmap.marker_id) FROM gdms_markers_onmap JOIN gdms_map ON gdms_map.map_id=gdms_markers_onmap.map_id WHERE gdms_markers_onmap.marker_id IN("+markerIDsN+") GROUP BY gdms_map.map_name");
+					ResultSet rsMap=stmtMap.executeQuery("SELECT gdms_map.map_name, COUNT(gdms_markers_onmap.marker_id) FROM gdms_markers_onmap JOIN gdms_map ON gdms_map.map_id=gdms_markers_onmap.map_id WHERE gdms_markers_onmap.marker_id IN("+markerIDsN+") GROUP BY gdms_map.map_name");
+					while(rsMap.next()){
+						mapList1.add(rsMap.getString(1)+" ("+rsMap.getInt(2)+")");
+					}
+					//System.out.println("mapList="+mapList1);								
+					session.setAttribute("maps", mapList1);
 				}
-				
-				String markerIDsN=markerIDs.substring(0, markerIDs.length()-1);
-				//markers=markers.substring(0, markers.length()-1);
-				//System.out.println(markers);
-				System.out.println("SELECT gdms_map.map_name, COUNT(gdms_markers_onmap.marker_id) FROM gdms_markers_onmap JOIN gdms_map ON gdms_map.map_id=gdms_markers_onmap.map_id WHERE gdms_markers_onmap.marker_id IN("+markerIDsN+") GROUP BY gdms_map.map_name");
-				ResultSet rsMap=stmtMap.executeQuery("SELECT gdms_map.map_name, COUNT(gdms_markers_onmap.marker_id) FROM gdms_markers_onmap JOIN gdms_map ON gdms_map.map_id=gdms_markers_onmap.map_id WHERE gdms_markers_onmap.marker_id IN("+markerIDsN+") GROUP BY gdms_map.map_name");
-				while(rsMap.next()){
-					mapList1.add(rsMap.getString(1)+" ("+rsMap.getInt(2)+")");
-				}
-				//System.out.println("mapList="+mapList1);								
-				session.setAttribute("maps", mapList1);
 				//System.out.println("missing list=:"+missingList);
 				//System.out.println("final list=:"+finalList);
 				//req.getSession().setAttribute("map", map);
@@ -411,33 +445,61 @@ public class DataRetrieveAction extends Action{
 							m2=m2+splitStr[m]+",";
 						}			
 					}
+					 m1=m1.substring(0,m1.length()-1);
 				}else if(op1.equalsIgnoreCase("textbox")){
 					markers=req.getParameter("markersText");
-					//System.out.println("#####################  "+markers);
+					System.out.println("#####################  "+markers.length());
 					if(markers.contains("\n")){
 						//System.out.println("new line");
 						splitStr=markers.split("\n");
-					}else if(markers.contains("\t")){
-						//System.out.println("tab seperated");
-						splitStr=markers.split("\t");
-					}else if(markers.contains(",")){
-						splitStr=markers.split(",");
-					}else{
-						String ErrMsg = " Marker names should be provided with seperator as indicated";
-						req.getSession().setAttribute("indErrMsg", ErrMsg);
-						return am.findForward("ErrMsgM");
-					}
-					session.setAttribute("mCount", splitStr.length);
-					
 						for(int m=0;m<splitStr.length;m++){
 							m1=m1+"'"+splitStr[m].trim()+"',";
 							if(!(mList.contains(splitStr[m].trim())))
 								mList.add(splitStr[m].trim());
 							m2=m2+splitStr[m].trim()+",";
-						}			
+						}
+						// m1=m1.substring(0,m1.length()-1);
+						session.setAttribute("mCount", splitStr.length);
+					}else if(markers.contains("\t")){
+						//System.out.println("tab seperated");
+						splitStr=markers.split("\t");
+						for(int m=0;m<splitStr.length;m++){
+							m1=m1+"'"+splitStr[m].trim()+"',";
+							if(!(mList.contains(splitStr[m].trim())))
+								mList.add(splitStr[m].trim());
+							m2=m2+splitStr[m].trim()+",";
+						}
+						// m1=m1.substring(0,m1.length()-1);
+						session.setAttribute("mCount", splitStr.length);
+					}else if(markers.contains(",")){
+						//System.out.println(", seperated");
+						splitStr=markers.split(",");
+						for(int m=0;m<splitStr.length;m++){
+							m1=m1+"'"+splitStr[m].trim()+"',";
+							if(!(mList.contains(splitStr[m].trim())))
+								mList.add(splitStr[m].trim());
+							m2=m2+splitStr[m].trim()+",";
+						}
+						 //m1=m1.substring(0,m1.length()-1);
+						session.setAttribute("mCount", splitStr.length);
+					}else{
+						int mcount=1;
+						//System.out.println("ELSE , TAB AND NEW LINE Seperated");						
+						/*String ErrMsg = " Marker names should be provided with seperator as indicated";
+						req.getSession().setAttribute("indErrMsg", ErrMsg);
+						return am.findForward("ErrMsgM");*/
+						m1="'"+markers.trim()+"',";
+						if(!(mList.contains(markers.trim())))
+							mList.add(markers.trim());
+						m2=markers.trim()+",";
+						session.setAttribute("mCount", mcount);
+					}
+					
+					
+									
 					
 				}
-				//System.out.println("..............markers="+m1);
+				System.out.println("..............markers="+m1);
 				session.setAttribute("mnames1", m1);
 				session.setAttribute("mnames", m2);
 				String markerId="";
@@ -465,7 +527,7 @@ public class DataRetrieveAction extends Action{
 					
 					
 					System.out.println("select marker_id from gdms_marker where marker_name in("+ m1.substring(0,m1.length()-1) +") order by marker_id");
-					rs=stmt.executeQuery("select marker_id from gdms_marker where marker_name in("+ m1.substring(0,m1.length()-1) +") order by marker_id");
+					rs=stmt.executeQuery("select marker_id from gdms_marker where marker_name in("+ m1.substring(0,m1.length()-1)+") order by marker_id");
 					while(rs.next()){
 						count=count+1;
 						markerId=markerId+rs.getInt(1)+",";
@@ -532,7 +594,7 @@ public class DataRetrieveAction extends Action{
 					
 					String nid="";
 					ArrayList nList=new ArrayList();
-					System.out.println("select nid from gdms_acc_metadataset where gid in ("+gids.substring(0, gids.length()-1)+")");
+					//System.out.println("select nid from gdms_acc_metadataset where gid in ("+gids.substring(0, gids.length()-1)+")");
 					rs=stmt.executeQuery("select nid from gdms_acc_metadataset where gid in ("+gids.substring(0, gids.length()-1)+")");
 					while(rs.next()){
 						nid=nid+rs.getString(1)+",";
@@ -585,10 +647,12 @@ public class DataRetrieveAction extends Action{
 				FileUploadToServer fus = null;
 				String fileName="";String saveFtoServer="";String saveF="";
 				InputStream stream=null;
-				System.out.println("*******************************************:"+req.getParameter("opTypeGids"));
+				//System.out.println("*******************************************:"+req.getParameter("opTypeGids"));
 				String op1=req.getParameter("opTypeGids");
-				
+				String gidsN="";
+				String gid="";
 				Statement stmttest=con.createStatement();
+				int gidsCount=0;
 				if(op1.equalsIgnoreCase("file")){
 					FormFile file=(FormFile)df.get("txtNameM");
 				
@@ -606,49 +670,60 @@ public class DataRetrieveAction extends Action{
 					while ((str1 = bf.readLine()) != null){				
 						gids= gids+str1+",";					
 					}
+					strGids=gids.split(",");
+					if(strGids[0].equalsIgnoreCase("gids")){				
+						for(int i=1;i<strGids.length;i++){
+							gidsN=gidsN+strGids[i]+",";
+						}	
+						gidsCount=strGids.length-1;
+						req.getSession().setAttribute("genCount", gidsCount);
+					}
 				}else if(op1.equalsIgnoreCase("textbox")){
 					gids=req.getParameter("gidsText");
+					if(gids.contains("\n")){
+						//System.out.println("new line");
+						strGids=gids.split("\n");
+						for(int i=0;i<strGids.length;i++){
+							gidsN=gidsN+strGids[i].trim()+",";
+						}				
+						req.getSession().setAttribute("genCount", strGids.length);
+						//gid=gidsN.substring(0,gidsN.length()-1);
+					}else if(gids.contains("\t")){
+						//System.out.println("tab seperated");
+						strGids=gids.split("\t");
+						for(int i=0;i<strGids.length;i++){
+							gidsN=gidsN+strGids[i].trim()+",";
+						}				
+						req.getSession().setAttribute("genCount", strGids.length);
+						//gid=gidsN.substring(0,gidsN.length()-1);
+					}else if(gids.contains(",")){
+						strGids=gids.split(",");
+						for(int i=0;i<strGids.length;i++){
+							gidsN=gidsN+strGids[i].trim()+",";
+						}				
+						req.getSession().setAttribute("genCount", strGids.length);
+						
+					}else{
+						int gcount=1;
+						gidsN=gids+",";
+						/*String ErrMsg = " Gids should be provided with seperator as indicated";
+						req.getSession().setAttribute("indErrMsg", ErrMsg);
+						return am.findForward("ErrMsgM");*/
+						req.getSession().setAttribute("genCount", gcount);
+						gid=gidsN;
+					}
 					
 				}
+				gid=gidsN.substring(0,gidsN.length()-1);
 				
-				String gidsN="";
 				//System.out.println("request.getParameter radios ="+request.getParameter("str") );
 				//System.out.println("........................................   gids in class="+gids);
 				//String op=req.getParameter("str");
 				req.getSession().setAttribute("op", retrieveOP);
-				if(gids.contains("\n")){
-					//System.out.println("new line");
-					strGids=gids.split("\n");
-				}else if(gids.contains("\t")){
-					//System.out.println("tab seperated");
-					strGids=gids.split("\t");
-				}else if(gids.contains(",")){
-					strGids=gids.split(",");
-				}else{
-					String ErrMsg = " Gids should be provided with seperator as indicated";
-					req.getSession().setAttribute("indErrMsg", ErrMsg);
-					return am.findForward("ErrMsgM");
-				}
-				//String[] strGids=gids.split(",");
-				int gidsCount=strGids.length-1;
-				if(op1.equalsIgnoreCase("file")){
-					if(strGids[0].equalsIgnoreCase("gids")){				
-						for(int i=1;i<strGids.length;i++){
-							gidsN=gidsN+strGids[i]+",";
-						}				
-						req.getSession().setAttribute("genCount", gidsCount);
-					}
-				}else{
-					for(int i=0;i<strGids.length;i++){
-						gidsN=gidsN+strGids[i].trim()+",";
-					}				
-					req.getSession().setAttribute("genCount", strGids.length);
-				}
-				
 				
 				req.getSession().setAttribute("gidsN", gidsN);
 				//System.out.println("%%%%%%%%%%%%%%%%   length="+gidsN);
-				String gid=gidsN.substring(0,gidsN.length()-1);
+				
 				int alleleCount=0;
 				int charCount=0;
 				int mapCharCount=0;
@@ -710,7 +785,7 @@ public class DataRetrieveAction extends Action{
 				
 				
 				
-				System.out.println("select count(*) from gdms_allele_values where gid in ("+gid+")");
+				//System.out.println("select count(*) from gdms_allele_values where gid in ("+gid+")");
 				/** checking whether the gid exists in 'allele_values' table **/
 				ResultSet rsa=stA.executeQuery("select count(*) from gdms_allele_values where gid in ("+gid+")");
 				while (rsa.next()){
@@ -718,14 +793,14 @@ public class DataRetrieveAction extends Action{
 				}
 				
 				/** checking whether the gid exists in 'char_values' table **/
-				System.out.println("select count(*) from gdms_char_values where gid in("+gid+")");
+				//System.out.println("select count(*) from gdms_char_values where gid in("+gid+")");
 				ResultSet rsc=stC.executeQuery("select count(*) from gdms_char_values where gid in("+gid+")");
 				while(rsc.next()){
 					charCount=rsc.getInt(1);
 				}
 				
 				/** checking whether the gid exists in 'char_values' table **/
-				System.out.println("select count(*) from gdms_mapping_pop_values where gid in("+gid+")");
+				//System.out.println("select count(*) from gdms_mapping_pop_values where gid in("+gid+")");
 				ResultSet rsM=stM.executeQuery("select count(*) from gdms_mapping_pop_values where gid in("+gid+")");
 				while(rsM.next()){
 					mapCharCount=rsM.getInt(1);
@@ -783,7 +858,7 @@ public class DataRetrieveAction extends Action{
 				
 				mapList=query2.list();*/
 				mapList.clear();
-				System.out.println("select distinct map_name from gdms_map");
+				//System.out.println("select distinct map_name from gdms_map");
 				rsMp=stmtMp.executeQuery("select distinct map_name from gdms_map");
 				while(rsMp.next()){
 					mapList.add(rsMp.getString(1));
@@ -842,23 +917,34 @@ public class DataRetrieveAction extends Action{
 					if(gNames.contains("\n")){
 						//System.out.println("new line");
 						strGNames=gNames.split("\n");
+						for(int i=0;i<strGNames.length;i++){
+							argGNames=argGNames+"'"+strGNames[i].trim()+"',";
+							linesList.add(strGNames[i].trim());
+						}
 					}else if(gNames.contains("\t")){
 						//System.out.println("tab seperated");
 						strGNames=gNames.split("\t");
+						for(int i=0;i<strGNames.length;i++){
+							argGNames=argGNames+"'"+strGNames[i].trim()+"',";
+							linesList.add(strGNames[i].trim());
+						}
 					}else if(gNames.contains(",")){
 						strGNames=gNames.split(",");
+						for(int i=0;i<strGNames.length;i++){
+							argGNames=argGNames+"'"+strGNames[i].trim()+"',";
+							linesList.add(strGNames[i].trim());
+						}
 					}else{
-						String ErrMsg = "Germplasm names should be provided with seperator as indicated";
+						/*String ErrMsg = "Germplasm names should be provided with seperator as indicated";
 						req.getSession().setAttribute("indErrMsg", ErrMsg);
-						return am.findForward("ErrMsgM");
+						return am.findForward("ErrMsgM");*/
+						argGNames="'"+gNames.trim()+"',";
+						linesList.add(gNames.trim());
 					}
 					
 					
 					//String[] strGNames=gNames.split(",");
-					for(int i=0;i<strGNames.length;i++){
-						argGNames=argGNames+"'"+strGNames[i].trim()+"',";
-						linesList.add(strGNames[i].trim());
-					}				
+									
 						
 				}
 				int count=0;
@@ -895,10 +981,10 @@ public class DataRetrieveAction extends Action{
 				if(countG<1){
 					String ErrMsg = "Germplasm name(s) does not exist";
 					req.getSession().setAttribute("indErrMsg", ErrMsg);
-					return am.findForward("ErrMsgM");
+					return am.findForward("ErrMsgG");
 				}
 				String nid="";
-				System.out.println("select distinct gid,nid from gdms_acc_metadataset where gid in ("+gidsN.substring(0,gidsN.length()-1)+")");
+				//System.out.println("select distinct gid,nid from gdms_acc_metadataset where gid in ("+gidsN.substring(0,gidsN.length()-1)+")");
 				rs=stmt.executeQuery("select distinct gid,nid from gdms_acc_metadataset where gid in ("+gidsN.substring(0,gidsN.length()-1)+")");
 				while(rs.next()){
 					nid=nid+rs.getString(1)+",";
@@ -1052,22 +1138,25 @@ public class DataRetrieveAction extends Action{
 				ResultSet rs2=null;
 				Statement st=con.createStatement();
 				session.setAttribute("qtlType", opType);
-				System.out.println("******************************************  "+opType+"  $$$$$$$$   "+qtl);
-				rsN=stmtN.executeQuery("select distinct trabbr, trname, ontology from tmstraits");
-				while(rsN.next()){
-					traitsComList.add(rsN.getString(1));
-					//+"!~!"+rsN.getString(2)+"!~!"+rsN.getString(3));
-					map.put(rsN.getString(1), rsN.getString(2)+"!~!"+rsN.getString(3));
-				}
-				//System.out.println("******************:"+traitsComList);
-				//Statement stC=conn.createStatement();
-				ResultSet rsC=stCen.executeQuery("select distinct trabbr, trname, ontology from tmstraits");
-				while(rsC.next()){
-					if(!(traitsComList.contains(rsC.getString(1)))){
-						traitsComList.add(rsC.getString(1));
-						map.put(rsC.getString(1), rsC.getString(2)+"!~!"+rsC.getString(3));
+				//System.out.println("******************************************  "+opType+"  $$$$$$$$   "+qtl);
+				if((opType.equals("QTLName"))||(opType.equals("Trait"))){
+					rsN=stmtN.executeQuery("select distinct trabbr, trname, ontology from tmstraits");
+					while(rsN.next()){
+						if(!(traitsComList.contains(rsN.getString(1)))){
+							traitsComList.add(rsN.getString(1));
+							map.put(rsN.getString(1), rsN.getString(2)+"!~!"+rsN.getString(3));
+						}
 					}
+					//System.out.println("******************:"+traitsComList);
+					//Statement stC=conn.createStatement();
+					ResultSet rsC=stCen.executeQuery("select distinct trabbr, trname, ontology from tmstraits");
+					while(rsC.next()){
+						if(!(traitsComList.contains(rsC.getString(1)))){
+							traitsComList.add(rsC.getString(1));
+							map.put(rsC.getString(1), rsC.getString(2)+"!~!"+rsC.getString(3));
+						}
 						//traitsComList.add(rsC.getString(1)+"!~!"+rsC.getString(2)+"!~!"+rsC.getString(3));
+					}
 				}
 				if(opType.equals("QTLName")){
 					/** if retrieval is through QTL Name **/
@@ -1086,12 +1175,13 @@ public class DataRetrieveAction extends Action{
 						//qtl_id=qtl_id+qtlId+",";	
 						count=count+1;
 					}
+					System.out.println(" qtl count =:"+count);
 					if(count==0){
 						/*ae.add("myerrors", new ActionError("qtl.doesnot.exists"));
 						saveErrors(req, ae);				
 						//msg="chkPlateid";
 						return (new ActionForward(am.getInput()));*/
-						String ErrMsg = "QTL Name not found";
+						String ErrMsg = "QTL Name not found";						
 						req.getSession().setAttribute("indErrMsg", ErrMsg);
 						return am.findForward("ErrMsg");
 					}else{
@@ -1268,7 +1358,9 @@ public class DataRetrieveAction extends Action{
 		      try{		      		
 		      		if(con!=null) con.close();
 		      		conn.close();
+		      	
 		      		factory.close(); 
+		      		
 		      		/*long time = System.currentTimeMillis();
 		      	  	System.gc();
 		      	  	System.out.println("It took " + (System.currentTimeMillis()-time) + " ms");*/
@@ -1276,7 +1368,19 @@ public class DataRetrieveAction extends Action{
 			}
 		return am.findForward(str);
 	}
-	
+	private static void addValues(int key, String value){
+		ArrayList<String> tempList = null;
+		if(hashMap.containsKey(key)){
+			tempList=hashMap.get(key);
+			if(tempList == null)
+				tempList = new ArrayList<String>();
+			tempList.add(value);
+		}else{
+			tempList = new ArrayList();
+			tempList.add(value);
+		}
+		hashMap.put(key,tempList);
+	}
 	
 
 }

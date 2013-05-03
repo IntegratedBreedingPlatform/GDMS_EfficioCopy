@@ -18,6 +18,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellReference;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
@@ -29,7 +30,7 @@ public class MapDataUpload {
 	private Session session;
 	static int map_count=0;
 		private Transaction tx;
-		Connection con = null;
+		//Connection con = null;
 		
 		
 		public String setMapDetails(HttpServletRequest request, String mapfile) throws SQLException{
@@ -89,6 +90,7 @@ public class MapDataUpload {
 				}
 				
 				int intSRC = sheetMarkerDetails.getPhysicalNumberOfRows();
+				System.out.println("........  "+intSRC);
 				String strColName ="";
 				String strD="";
 				String str="";
@@ -110,9 +112,17 @@ public class MapDataUpload {
 		            row = sheetMarkerDetails.getRow(cr.getRow());
 		            cell = row.getCell(cr.getCol());
 		            map_name=cell.getStringCellValue().trim();
-		            System.out.println("..................:"+map_name.length());
+		           // System.out.println("..................:"+map_name.length());
 		            int mapNameLength=map_name.length();
 		            
+		            Query rsDatasetNames=session.createQuery("from MapBean where map_name ='"+map_name+"'");						
+					List result1= rsDatasetNames.list();
+					System.out.println(".............:"+result1.size());
+					if(result1.size()>0){
+						String ErrMsg = "Map with a given name already exists.";
+						request.getSession().setAttribute("indErrMsg", ErrMsg);							
+						return "ErrMsg";
+					}
 		            if(map_name.equals("")){
 		            	String ErrMsg = "Error : Map Name value should not be empty.\n  The column/row position is B1.";
 		            	hsession.setAttribute("indErrMsg", ErrMsg);							
@@ -189,7 +199,7 @@ public class MapDataUpload {
 					return result = "ErrMsg";
 	            	
 	            }
-	            System.out.println("MapUnit=:"+MapUnit);
+	            //System.out.println("MapUnit=:"+MapUnit);
 	            if (MapUnit.equalsIgnoreCase("cm")){
 					mapType="genetic";
 				}else
@@ -221,16 +231,18 @@ public class MapDataUpload {
 	            ArrayList mNames=new ArrayList();
 	            String markers="";
 	           // System.out.println("*********************************:"+map_name);
-	            for (int rows = 6; rows < intSRC; rows++) {
+	            for (int rows = 6; rows <= intSRC; rows++) {
 	            	int colnum = 0;
                     row = sheetMarkerDetails.getRow(rows);
                    	cell = row.getCell(colnum);
+                   	//System.out.println("**************:"+cell.getStringCellValue().trim());
                    	if(!(mNames.contains(cell.getStringCellValue().trim()))){
                    		mNames.add(cell.getStringCellValue());   
                    		markers=markers+"'"+cell.getStringCellValue().trim()+"',";
+                   		
                    	}
 	            }
-	            
+	            //System.out.println("******markers ********:"+markers);
 	            HashMap<String, Object> markersMap = new HashMap<String, Object>();
 	            ArrayList lstMarIdNames=uptMDsetId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, markers.substring(0, markers.length()-1));
 	          
@@ -242,9 +254,10 @@ public class MapDataUpload {
 	                 markersMap.put(strMa123, strMareO[0]);	                 
 	            }
 	            
-	            
-	            
-				for (int rows = 6; rows < intSRC; rows++) {
+	            /*System.out.println(markersMap);
+	            System.out.println("     >>>>>>>>>>>>>>>L:"+lstMarkers);
+	            System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<<<:"+intSRC);*/
+				for (int rows = 6; rows <= intSRC; rows++) {
                     row = sheetMarkerDetails.getRow(rows);
                     int rcount=0;
                     noOfColumns = row.getLastCellNum();
@@ -304,7 +317,7 @@ public class MapDataUpload {
                     }
 				}
 				
-				for(int r=6;r<intSRC;r++){	
+				for(int r=6;r<= intSRC;r++){	
 					MapMarkersBean marker_linkage = new MapMarkersBean();
 					MarkerInfoBean mb=new MarkerInfoBean();
 					row = sheetMarkerDetails.getRow(r);
@@ -361,8 +374,8 @@ public class MapDataUpload {
 					marker_linkage.setMap_unit(MapUnit);			
 					//System.out.println("........................:"+MapUnit);
 					session.save(marker_linkage);	
-					//System.out.println("MarkerID =="+strMarkerName+"   "+LinkageGroup+"   "+Position);
-						//System.out.println("MarkerID =="+strMarkerName+"   "+LinkageGroup+"   "+df.format(Position)+"   "+new BigDecimal(Position)+"  "+(long)Position);
+					//System.out.println("MarkerID =="+strMarkerName+" intRMarkerId=:"+intRMarkerId+"    "+LinkageGroup+"   "+Position);
+					//System.out.println("MarkerID =="+strMarkerName+"   "+LinkageGroup+"   "+df.format(Position)+"   "+new BigDecimal(Position)+"  "+(long)Position);
 					if (r % 1 == 0){
 						session.flush();
 						session.clear();
@@ -377,9 +390,9 @@ public class MapDataUpload {
 			
 			e.printStackTrace();
 		}finally{
-		    
+		    //con.close();
 			session.clear();
-			
+			session.disconnect();
 		      }
 		return result;
 		}

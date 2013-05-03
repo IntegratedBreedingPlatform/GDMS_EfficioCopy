@@ -133,7 +133,7 @@
 													<%} %>
 												</select></td>
 												<%}else{ %>
-													<th width="40%" colspan="3" align="center"><font color="red">NO Maps!!!</font> <font color="black">Please upload Mapping data to create Export formats for Flapjack...</font></th>
+													<th width="40%" colspan="3" align="center"><font color="red">NO Maps!!!</font> <font color="black">Please upload Map data to create Export formats for Flapjack...</font></th>
 												<%} %>
 											</tr>
 									 	</table>
@@ -150,11 +150,11 @@
 				<html:hidden property="exportTypeH"/>	
 				<html:hidden property="opType" value="nonDataset"/> 	
 				<html:hidden property="str" value="<%=str%>"/>
-				<center><html:button property="export" value="Submit" onclick="sub('<%=str%>')" /></center>
+				<center><html:button property="export" value="Submit" onclick="sub('<%=str%>')" />&nbsp;<input type="button" name="Back" value=" Back " onclick="javascript:history.back()"/></center>
 				<input type="hidden" name="selectListN"> 	
 		  		<input type="hidden" name="markersSel">
 		  		
-	  		<%}else if(request.getQueryString().equalsIgnoreCase("second")){  %>
+	  		<%} else if(request.getQueryString().equalsIgnoreCase("second")){  %>
 	  			<br><br>
 	  			<table border=0 cellpadding=0 cellspacing=0 width="75%" align="center">
 						<tr>
@@ -221,15 +221,25 @@
 										<tr><td colspan="2"> &nbsp;</td></tr>
 										<tr>
 											<td colspan="2" align="center"> 				
-												<html:submit value="Run Flapjack" property="flapjack" onclick="funcFlapjack(this.value)"/>
+												<table width="100%" border=0>
+													<tr><td align="right">
+														<html:submit value="Visualize In Flapjack" property="flapjack" onclick="funcFlapjack(this.value)"/>
+														</td>
+														<td width="5%">&nbsp;</td>
+														<td align="left"> 				
+															<html:submit value="Show Similarity Matrix" property="flapjack" onclick="funcFlapjack(this.value)"/>
+														</td>
+													</tr>
+												</table>
 											</td>
 										</tr>
+										<html:hidden property="flapjackOp"/>
 					
 								<%	//System.out.println("Flapjack");
 								}else if(ExportFormats.equals("Genotyping X Marker Matrix")){
 									
 									String type=session.getAttribute("datasetType").toString();
-									System.out.println("Type id jsp="+type);
+									//System.out.println("Type id jsp="+type);
 								%>			
 									<%if(session.getAttribute("op").toString().equalsIgnoreCase("dataset")){ %>
 										<td colspan=2 align="center"  class="displayBoldText">
@@ -259,7 +269,8 @@
 										//for(int l=0;l<ExportFormats.length;l++){
 											if(ExportFormats.equals("Genotyping X Marker Matrix")){
 											
-												if((type.equalsIgnoreCase("SNP"))||(type.equalsIgnoreCase("SSR"))){
+												//if((type.equalsIgnoreCase("SNP"))||(type.equalsIgnoreCase("SSR"))){
+												if(type.equalsIgnoreCase("SNP")){
 													path="./jsp/analysisfiles/matrix"+session.getAttribute("msec")+".txt";
 												}else{
 													path="./jsp/analysisfiles/matrix"+session.getAttribute("msec")+".xls";
@@ -337,104 +348,10 @@
 							<tr align="center">
 								<td colspan=2>
 								<%--<input type=submit value="View in CMTV" onclick="funcFlapjack(this.value)">&nbsp;&nbsp;--%>
-								<input type="button" name="Back" value=" Back " onclick="funcBackCMTV()"/></td>
+								<input type="button" name="Back" value=" Back " onclick="javascript:history.back()"/></td>
 							</tr>
 						<%} %>
 					</table>	  		
-	  		<%}else if(request.getQueryString().equalsIgnoreCase("third")){  
-	  			String path="./jsp/analysisfiles/matrix"+session.getAttribute("msec")+".xls";
-	  			String ExportFormats=session.getAttribute("exportFormat").toString();
-	  			//String type=session.getAttribute("datasetType").toString();
-	  		%>
-	  		<br><br>
-	  			<table border=0 cellpadding=0 cellspacing=0 width="75%" align="center">
-						<tr>
-							<td>
-								<table border=0 width="75%" bordercolor="black" cellpadding=2 cellspacing=2 bgcolor="white" align=center>
-									<tr>
-	  									<td colspan=2 align="center"  class="displayBoldText">
-											<font color=red><%=session.getAttribute("genCount")%></font>
-											 Germplasm ID(s)   
-											 <font color=red> <%=session.getAttribute("mCount")%></font> 
-											 Marker(s)										 
-										</td>
-										
-										</tr>
-										<tr>
-											<td  colspan="2" align="center">&nbsp;</td>
-										</tr>
-										<tr>
-											<td colspan="2" align="center" class="displayBoldText" bgcolor="lightgrey">
-											Data Export Formats
-											</td>
-										</tr>
-										<tr>
-											<td colspan="2">&nbsp;</td>
-										</tr>
-										<%
-										String path1="";
-										String label1="";
-										String label2="";
-										String label3="";
-										String path2="";
-										//for(int l=0;l<ExportFormats.length;l++){
-											/*if(ExportFormats.equals("Genotyping X Marker Matrix")){
-											
-												if((type.equalsIgnoreCase("SNP"))||(type.equalsIgnoreCase("SSR"))){
-													path="./jsp/analysisfiles/matrix"+session.getAttribute("msec")+".txt";
-												}else{
-													path="./jsp/analysisfiles/matrix"+session.getAttribute("msec")+".xls";
-												}
-											}else 
-											*/	
-											if(ExportFormats.equals("Flapjack")){
-											
-												label1="Flapjack data file";
-												label2="Flapjack Map file";
-												label3="Flapjack QTL file";
-												path="Flapjack/"+"Flapjack.dat";	
-												path1="Flapjack/"+"Flapjack.map";
-												path2="Flapjack/"+"Flapjack.txt";
-											}
-										%>
-										<tr>
-											<td width="15%" align=right>
-												<img src="jsp/Images/bullet2.gif"  border=0 >
-											</td>
-											<td align="left"> 												
-												<a href=<%=path %> target="_blank" class="link2">												
-													<b>&nbsp;&nbsp;<%=label1%></b>													
-												</a>													
-											</td>
-										</tr>								
-										<tr>
-											<td width="15%" align=right>
-												<img src="jsp/Images/bullet2.gif"  border=0 >
-											</td>
-											<td align="left"> 												
-												<a href=<%=path1 %> target="_blank" class="link2">												
-													<b>&nbsp;&nbsp;<%=label2%></b>													
-												</a>													
-											</td>
-										</tr>								
-										<tr>
-											<td width="15%" align=right>
-												<img src="jsp/Images/bullet2.gif"  border=0 >
-											</td>
-											<td align="left"> 												
-												<a href=<%=path1 %> target="_blank" class="link2">												
-													<b>&nbsp;&nbsp;<%=label2%></b>													
-												</a>													
-											</td>
-										</tr>
-									<tr><td>&nbsp;</td></tr>
-									
-									<tr><td colspan=2 align="center"><input type="button" name="Back" value=" Back " onclick="funcBack()"/></td></tr>
-									</table>
-									</td>
-									</tr>
-									</table>
-									
 	  		<%}%>
 	  		<html:hidden property="reportType" value="genotyping"/>
 	  		</center>
@@ -488,6 +405,7 @@ function selOpt(opt){
 }
 function funcFlapjack(a){
 	//alert(a);
+	document.forms[0].flapjackOp.value=a;
 	document.forms[0].action="jsp/dataretrieve/Progress.jsp";
 		
 }

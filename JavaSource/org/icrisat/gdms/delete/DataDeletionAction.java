@@ -41,14 +41,6 @@ public class DataDeletionAction extends Action{
 			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
 			con=dataSource.getConnection();	
 			
-			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
-			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
-			
-			factory = new ManagerFactory(local, central);*/
-			/*factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
-			GenotypicDataManager gdms=factory.getGenotypicDataManager();
-			*/
-			
 			ResultSet rs=null;
 			ResultSet rs2=null;
 			ResultSet rs1=null;
@@ -74,68 +66,6 @@ public class DataDeletionAction extends Action{
 			String mapping_type="";
 			String[] strArr1=delData.split(";;");
 			for(int i=0;i<strArr1.length;i++){
-			
-				if(!(strArr1[0]).equals(" ")){
-					//System.out.println("            Genotyping data");
-					String[] strArr2=strArr1[0].split("!~!");
-					for(int d=0;d<strArr2.length;d++){
-						
-						
-						/*List<DatasetElement> results = gdms.getDatasetDetailsByDatasetName(strArr2[d], Database.LOCAL);
-				        System.out.println("RESULTS (testGetDatasetDetailsByDatasetName): " + results);*/
-						rs=stmt.executeQuery("select dataset_id, dataset_type from gdms_dataset where dataset_name='"+strArr2[d]+"'");
-						while(rs.next()){
-							datasetID=rs.getInt(1);
-							datasetType=rs.getString(2);
-						}
-						if(datasetType.equalsIgnoreCase("SNP")){
-							int del=stmtR.executeUpdate("delete from gdms_char_values where dataset_id='"+datasetID+"'");						
-						}else if(datasetType.equalsIgnoreCase("SSR")){
-							int del=stmtR.executeUpdate("delete from gdms_allele_values where dataset_id='"+datasetID+"'");							
-						}else if(datasetType.equalsIgnoreCase("DArT")){
-							int del=stmtR.executeUpdate("delete from gdms_allele_values where dataset_id='"+datasetID+"'");
-							int delDA=stmtR.executeUpdate("delete from gdms_dart_values where dataset_id='"+datasetID+"'");						
-						}else if(datasetType.equalsIgnoreCase("mapping")){
-							String exists="no";
-							rs1=stP.executeQuery("select distinct marker_type from gdms_marker where marker_id in(select marker_id from gdms_marker_metadataset where dataset_id="+datasetID+")");
-							while(rs1.next()){
-								//System.out.println(rs1.getString(1));
-								marker_type=rs1.getString(1);
-							}
-							rs3=stmtPD.executeQuery("select mapping_type from gdms_mapping_pop where dataset_id="+datasetID);
-							while(rs3.next()){
-								mapping_type=rs3.getString(1);
-							}
-							if(mapping_type.equalsIgnoreCase("allelic")){
-								if(marker_type.equalsIgnoreCase("snp")){
-									rs2=stmtP.executeQuery("select * from gdms_char_values where dataset_id="+datasetID);
-									if(rs2.next()){
-										exists="yes";
-									}
-									if(exists.equalsIgnoreCase("yes")){
-										int delPD=stPD.executeUpdate("delete from gdms_char_values where dataset_id="+datasetID);
-									}
-								}else if((marker_type.equalsIgnoreCase("ssr"))||(marker_type.equalsIgnoreCase("DArT"))){
-									//int delPD=stPD.executeUpdate("");
-									rs2=stmtP.executeQuery("select * from gdms_allele_values where dataset_id="+datasetID);
-									if(rs2.next()){
-										exists="yes";
-									}
-									if(exists.equalsIgnoreCase("yes")){
-										int delPD=stPD.executeUpdate("delete from gdms_allele_values where dataset_id="+datasetID);
-									}
-								}
-							}
-							int del=stmtR.executeUpdate("delete from gdms_mapping_pop_values where dataset_id='"+datasetID+"'");
-							int delDA=stmtR.executeUpdate("delete from gdms_mapping_pop where dataset_id='"+datasetID+"'");		
-						}
-						int del1=st.executeUpdate("delete from gdms_dataset_users where dataset_id='"+datasetID+"'");
-						//int del2=stR.executeUpdate("delete from dataset_details where dataset_id='"+datasetID+"'");
-						int del2=stR.executeUpdate("delete from gdms_acc_metadataset where dataset_id='"+datasetID+"'");
-						int del4=stDa.executeUpdate("delete from gdms_marker_metadataset where dataset_id='"+datasetID+"'");
-						int del3=stD.executeUpdate("delete from gdms_dataset where dataset_id='"+datasetID+"'");	
-					}
-				}
 				if(!(strArr1[1]).equals(" ")){
 					//System.out.println(".............    QTLs data");
 					String[] strArr2=strArr1[1].split("!~!");
@@ -158,6 +88,81 @@ public class DataDeletionAction extends Action{
 						int del3=stD.executeUpdate("delete from gdms_dataset where dataset_id='"+datasetID+"'");	
 					}
 				}
+				if(!(strArr1[0]).equals(" ")){
+					String[] strArr2=strArr1[0].split("!~!");
+					for(int d=0;d<strArr2.length;d++){					
+						/*List<DatasetElement> results = gdms.getDatasetDetailsByDatasetName(strArr2[d], Database.LOCAL);
+				        System.out.println("RESULTS (testGetDatasetDetailsByDatasetName): " + results);*/
+						rs=stmt.executeQuery("select dataset_id, dataset_type from gdms_dataset where dataset_name='"+strArr2[d]+"'");
+						while(rs.next()){
+							datasetID=rs.getInt(1);
+							datasetType=rs.getString(2);
+						}
+						if(datasetType.equalsIgnoreCase("SNP")){
+							int del=stmtR.executeUpdate("delete from gdms_char_values where dataset_id='"+datasetID+"'");	
+							int del1=st.executeUpdate("delete from gdms_dataset_users where dataset_id='"+datasetID+"'");
+							int del2=stR.executeUpdate("delete from gdms_acc_metadataset where dataset_id='"+datasetID+"'");
+							int del4=stDa.executeUpdate("delete from gdms_marker_metadataset where dataset_id='"+datasetID+"'");
+							int del3=stD.executeUpdate("delete from gdms_dataset where dataset_id='"+datasetID+"'");	
+						}else if(datasetType.equalsIgnoreCase("SSR")){
+							int del=stmtR.executeUpdate("delete from gdms_allele_values where dataset_id='"+datasetID+"'");	
+							int del1=st.executeUpdate("delete from gdms_dataset_users where dataset_id='"+datasetID+"'");
+							int del2=stR.executeUpdate("delete from gdms_acc_metadataset where dataset_id='"+datasetID+"'");
+							int del4=stDa.executeUpdate("delete from gdms_marker_metadataset where dataset_id='"+datasetID+"'");
+							int del3=stD.executeUpdate("delete from gdms_dataset where dataset_id='"+datasetID+"'");	
+						}else if(datasetType.equalsIgnoreCase("DArT")){
+							int del=stmtR.executeUpdate("delete from gdms_allele_values where dataset_id='"+datasetID+"'");
+							int delDA=stmtR.executeUpdate("delete from gdms_dart_values where dataset_id='"+datasetID+"'");		
+							int del1=st.executeUpdate("delete from gdms_dataset_users where dataset_id='"+datasetID+"'");
+							int del2=stR.executeUpdate("delete from gdms_acc_metadataset where dataset_id='"+datasetID+"'");
+							int del4=stDa.executeUpdate("delete from gdms_marker_metadataset where dataset_id='"+datasetID+"'");
+							int del3=stD.executeUpdate("delete from gdms_dataset where dataset_id='"+datasetID+"'");	
+						}else if(datasetType.equalsIgnoreCase("mapping")){
+							String exists="no";
+							
+							rs1=stP.executeQuery("select distinct marker_type from gdms_marker where marker_id in(select marker_id from gdms_marker_metadataset where dataset_id="+datasetID+")");
+							while(rs1.next()){
+								System.out.println(rs1.getString(1));
+								marker_type=rs1.getString(1);
+							}
+							rs3=stmtPD.executeQuery("select mapping_type from gdms_mapping_pop where dataset_id="+datasetID);
+							while(rs3.next()){
+								mapping_type=rs3.getString(1);
+							}
+							if(mapping_type.equalsIgnoreCase("allelic")){
+								if(marker_type.equalsIgnoreCase("snp")){
+									rs2=stmtP.executeQuery("select * from gdms_char_values where dataset_id="+datasetID);
+									if(rs2.next()){
+										exists="yes";
+									}
+									System.out.println(exists);
+									if(exists.equalsIgnoreCase("yes")){
+										System.out.println("if exists");
+										int delPD=stPD.executeUpdate("delete from gdms_char_values where dataset_id="+datasetID);
+									}
+								}else if((marker_type.equalsIgnoreCase("ssr"))||(marker_type.equalsIgnoreCase("DArT"))){
+									//int delPD=stPD.executeUpdate("");
+									rs2=stmtP.executeQuery("select * from gdms_allele_values where dataset_id="+datasetID);
+									if(rs2.next()){
+										exists="yes";
+									}
+									if(exists.equalsIgnoreCase("yes")){
+										int delPD=stPD.executeUpdate("delete from gdms_allele_values where dataset_id="+datasetID);
+									}
+								}
+							}
+							int del=stmtR.executeUpdate("delete from gdms_mapping_pop_values where dataset_id='"+datasetID+"'");
+							int delDA=stmtR.executeUpdate("delete from gdms_mapping_pop where dataset_id='"+datasetID+"'");		
+							int del1=st.executeUpdate("delete from gdms_dataset_users where dataset_id='"+datasetID+"'");
+							
+							int del2=stR.executeUpdate("delete from gdms_acc_metadataset where dataset_id='"+datasetID+"'");
+							int del4=stDa.executeUpdate("delete from gdms_marker_metadataset where dataset_id='"+datasetID+"'");
+							int del3=stD.executeUpdate("delete from gdms_dataset where dataset_id='"+datasetID+"'");	
+						}
+						
+					}
+				}
+				
 				if(!(strArr1[2]).equals(" ")){
 					//System.out.println(".............   Maps data");
 					String[] strArr2=strArr1[2].split("!~!");

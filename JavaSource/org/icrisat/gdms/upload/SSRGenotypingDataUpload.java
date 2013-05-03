@@ -23,6 +23,7 @@ import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.Name;
 import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
@@ -357,6 +358,16 @@ public class SSRGenotypingDataUpload {
 			//int dataset_id=intDatasetId+1;
 			int dataset_id=intDatasetId-1;
 			String dname=sheetSource.getCell(1,2).getContents().trim();
+			
+			Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dname+"'");			
+			List result1= rsDatasetNames.list();
+			//System.out.println(".............:"+result1.size());
+			if(result1.size()>0){
+				ErrMsg = "Dataset Name already exists.";
+				request.getSession().setAttribute("indErrMsg", ErrMsg);							
+				return "ErrMsg";
+			}
+			
 			if(dname.length()>30){
 				ErrMsg = "Dataset Name value exceeds max char size.";
 				request.getSession().setAttribute("indErrMsg", ErrMsg);							
@@ -688,7 +699,8 @@ public class SSRGenotypingDataUpload {
 			// Actual contact insertion will happen at this step
 		    //session.flush();
 		    //session.close();
-			//session.clear();
+			session.clear();
+			session.disconnect();
 			factory.close();
 		}
 		return str;

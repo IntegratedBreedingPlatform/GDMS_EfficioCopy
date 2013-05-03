@@ -33,17 +33,16 @@
 	  				int genoCount=0;
 	  				int colCount=0;
 	  				int rowCount=0;
+	  				
+	  				int mrowCount=0;
+	  				int mcolCount=0;
 	  				genoCount=(totalItemcount/30);
 	  				if(genoCount*30<totalItemcount){
 	  					genoCount=genoCount+1;	
-	  				} 
-	  				
-	  				missingCount=(missCount/30);
-	  				if(missingCount*30<missCount){
-	  					missingCount=missingCount+1;
-	  				}
+	  				} 	  				
 	  				
 	  				colCount=1;
+	  				
 	  				String[] mD=null;
 		  			String mapData="";		  			
 		  			mcount=totalItemcount;		
@@ -86,14 +85,22 @@
 						<tr><td><table border=1 align="center" width="100%">
 						
 									<%
-										ArrayList missingMarkers=(ArrayList)session.getAttribute("MissingData");										
+									missingCount=(missCount/30);
+					  				if(missingCount*30<missCount){
+					  					missingCount=missingCount+1;
+					  				}
+					  				
+					  				mcolCount=1;
+									//System.out.println("missingCount="+missingCount+"   missCount=:"+missCount);
+										ArrayList missingMarkers=(ArrayList)session.getAttribute("MissingData");
+										mcount=totalItemcount;	
 										for (int j = 0;j<missCount;j++){
-											if(rowCount==missingCount){
-												rowCount=0;%>
+											if(mrowCount==missingCount){
+												mrowCount=0;%>
 												<tr class="displaysmallText">
 											<%}	%>															
 											<td class="displaysmallText">&nbsp;<%=missingMarkers.get(j)%>&nbsp;</td>											
-											<%rowCount++;										
+											<%mrowCount++;										
 										}
 								//}%>			
 							
@@ -125,6 +132,64 @@
  			</center>
  			
  			</logic:notEmpty>
+ 			<logic:empty name="result">
+ 			<br>
+			<center>
+ 				<table border=0 width="60%" cellpadding=0>		
+					<tr><td align="center" class="displayText" colspan=2> <b>'<%=session.getAttribute("recCount")%>'</b> markers are polymorphic between <b><%=session.getAttribute("selLines") %></b> </td>
+						<td align="left" class="displaysmallText" colspan=2> </td>
+					</tr>
+				</table>
+ 				<logic:notEmpty name="MissingData">
+ 				<%
+
+  				int mrowCount=0;
+  				int mcolCount=0;
+ 				int missingCount=0;
+ 				int missCount=Integer.parseInt(session.getAttribute("missingCount").toString());
+ 				int genoCount=0;
+  				int mcount=0;
+  				missingCount=(missCount/30);
+  				//System.out.println("missingCount="+missingCount+"   missCount=:"+missCount);
+ 				%>
+ 				<br><br>
+ 				<table border=0>
+						<tr bgcolor="#006633" ><td nowrap align="center" class="displaysmallwhiteboldText">Markers with missing data(<%=session.getAttribute("missingCount")%>)</td></tr>
+									
+						<tr><td><table border=1 align="center" width="100%">
+						
+									<%
+									missingCount=(missCount/30);
+					  				if(missingCount*30<missCount){
+					  					missingCount=missingCount+1;
+					  				}
+					  				
+					  				mcolCount=1;
+									//System.out.println("missingCount="+missingCount+"   missCount=:"+missCount);
+										ArrayList missingMarkers=(ArrayList)session.getAttribute("MissingData");
+										mcount=missCount;	
+										for (int j = 0;j<missCount;j++){
+											if(mrowCount==missingCount){
+												mrowCount=0;%>
+												<tr class="displaysmallText">
+											<%}	%>															
+											<td class="displaysmallText">&nbsp;<%=missingMarkers.get(j)%>&nbsp;</td>											
+											<%mrowCount++;										
+										}
+								//}%>			
+							
+						</tr>
+						</table>
+						</td></tr>
+					</table>
+					
+ 				</logic:notEmpty>
+ 				<center>
+					<br><br>
+ 				<html:button property="backButton" value="Back" onclick="javascript:history.back()"/>
+ 				</center>
+ 			</logic:empty>
+ 			
 		</html:form>
 	</body>
 </html:html>

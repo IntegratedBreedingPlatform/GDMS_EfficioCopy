@@ -191,7 +191,7 @@
 						<tr><td colspan="3" >&nbsp;</td></tr>
 						<tr><th colspan="3" align="center">(or)</th></tr>
 						<tr><td colspan="3" >&nbsp;</td></tr>
-						<tr class="displayText"><td>Enter the gids seperated by Comma(,)</td><td width="5%" align="left">:</td><td align="left"><html:textarea property="gidsText" rows="3"/></td></tr>
+						<tr class="displayText"><td>Enter the gids seperated by Comma(,) (or) Tab (or) New Line</td><td width="5%" align="left">:</td><td align="left"><html:textarea property="gidsText" rows="3"/></td></tr>
 						<tr><td colspan="3" >&nbsp;</td></tr>
 						
 						
@@ -210,7 +210,7 @@
 						<tr><td colspan="3" >&nbsp;</td></tr>
 						<tr><th colspan="3" align="center">(or)</th></tr>
 						<tr><td colspan="3" >&nbsp;</td></tr>
-						<tr class="displayText"><td>Enter the Marker names seperated by Comma(,)</td><td width="5%" align="left">:</td><td align="left"><html:textarea property="markersText" rows="3"/></td></tr>
+						<tr class="displayText"><td>Enter the Marker names seperated by Comma(,) (or) Tab (or) New Line</td><td width="5%" align="left">:</td><td align="left"><html:textarea property="markersText" rows="3"/></td></tr>
 						<tr><td colspan="3" >&nbsp;</td></tr>
 						<tr><td colspan="3" align="center"><html:submit property="linesButton" value="Submit" onclick="return sub('Get Lines')"/></td></tr>
 				 	</table>
@@ -227,7 +227,7 @@
 							<tr><td colspan="3" >&nbsp;</td></tr>
 							<tr><th colspan="3" align="center">(or)</th></tr>
 							<tr><td colspan="3" >&nbsp;</td></tr>
-							<tr class="displayText"><td>Enter the Germplasm names seperated by Comma(,)</td><td width="5%" align="left">:</td><td align="left"><html:textarea property="GNamesText" rows="3"/></td></tr>
+							<tr class="displayText"><td>Enter the Germplasm names seperated by Comma(,) (or) Tab (or) New Line</td><td width="5%" align="left">:</td><td align="left"><html:textarea property="GNamesText" rows="3"/></td></tr>
 							<tr><td colspan="3" >&nbsp;</td></tr>
 							<tr><td colspan="3" align="center"><html:submit property="linesButton" value="Submit" onclick="return sub('Get')"/></td></tr>
 					 	</table>
@@ -276,8 +276,8 @@
 							    	 <td colspan=3>
 							    	
 							    	 <span id="map" style="visibility: hidden;">
-							    	 <%//int mcount=Integer.parseInt(session.getAttribute("mapsCount").toString()); 
-							    	// if(mcount>0){
+							    	 <%int mcount=Integer.parseInt(session.getAttribute("mapsCount").toString()); 
+							    	 if(mcount>0){
 							    	 %>
 									 	<table width=100% align="left" border=0>
 											<tr>												
@@ -301,7 +301,13 @@
 								    	 		</td>
 								    	 	</tr>
 										 </table>									 	
-									
+									<%} else{ %>
+									<table width=100% align="left" border=0>
+											<tr>
+									<th width="40%" colspan="3" align="center"><font color="red">NO Maps!!!</font> <font color="black">Please upload Map data to create Export formats for Flapjack...</font></th>
+									</tr>
+									</table>
+									<%} %>
 									</span>
 							    	 </td>
 						    	 </tr>
@@ -566,6 +572,10 @@ function subExport(){
 		//alert("....:"+document.forms[0].maps.value);
 		if(document.forms[0].maps.value==""){
 			alert("Please select the Map");
+			return false;
+		}
+		if(document.forms[0].maps.value=="- Select -"){
+			alert("Map Required");
 			return false;
 		}
 		var expTypeValue="";

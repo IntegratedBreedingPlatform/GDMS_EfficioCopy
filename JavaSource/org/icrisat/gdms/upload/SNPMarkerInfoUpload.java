@@ -320,7 +320,8 @@ private Session session;
 		      // Actual contact insertion will happen at this step
 		      //session.flush();
 		      session.clear();
-
+		      session.disconnect();
+		     
 		      }
 		
 		return strResult;

@@ -5,7 +5,7 @@
  <data-sources>
   <data-source>
    <set-property property="driverClass" value="com.mysql.jdbc.Driver"/>
-   <set-property property="url" value="jdbc:mysql://localhost:13306/"/>
+   <set-property property="url" value="jdbc:mysql://localhost:3306/"/>
    <set-property property="user" value="root"/>
    <set-property property="password" value=""/>
    <set-property property="minCount" value="1"/>
@@ -14,90 +14,91 @@
  </data-sources>
  <form-beans>
   <form-bean name="LoginForm" type="org.apache.struts.action.DynaActionForm">
-   <form-property name="uname" type="java.lang.String"/>
    <form-property name="password" type="java.lang.String"/>
+   <form-property name="uname" type="java.lang.String"/>
    <form-property name="crop" type="java.lang.String"/>
    <form-property name="menuOp" type="java.lang.String"/>
   </form-bean>
   <form-bean name="dataupload" type="org.apache.struts.action.DynaActionForm">
    <form-property name="option" type="java.lang.String"/>
-   <form-property name="uploadFormatType" type="java.lang.String"/>
    <form-property name="upType" type="java.lang.String"/>
-   <form-property name="radios" type="java.lang.String"/>
-   <form-property name="fileuploads" type="org.apache.struts.upload.FormFile"/>
-   <form-property name="op" type="java.lang.String"/>
    <form-property name="uploadType" type="java.lang.String"/>
-   <form-property name="opMap" type="java.lang.String"/>
    <form-property name="uploadDataType" type="java.lang.String"/>
+   <form-property name="opMap" type="java.lang.String"/>
+   <form-property name="op" type="java.lang.String"/>
+   <form-property name="fileuploads" type="org.apache.struts.upload.FormFile"/>
+   <form-property name="uploadFormatType" type="java.lang.String"/>
+   <form-property name="radios" type="java.lang.String"/>
   </form-bean>
   <form-bean name="dataretrieve" type="org.apache.struts.action.DynaActionForm">
-   <form-property name="mapsH" type="java.lang.String"/>
-   <form-property name="opTypeGN" type="java.lang.String"/>
-   <form-property name="hMarkers" type="java.lang.String"/>
-   <form-property name="germplasmSel" type="java.lang.String"/>
-   <form-property name="FormatcheckGroup" type="java.lang.String"/>
-   <form-property name="markers" type="java.lang.String"/>
-   <form-property name="dataType" type="java.lang.String"/>
-   <form-property name="MarkNm" type="java.lang.String"/>
+   <form-property name="qtl" type="java.lang.String"/>
    <form-property name="opTypeGids" type="java.lang.String"/>
-   <form-property name="txtNameL" type="org.apache.struts.upload.FormFile"/>
-   <form-property name="MarkerOption" type="java.lang.String"/>
-   <form-property name="chk" type="java.lang.String"/>
-   <form-property name="SearchMark" type="java.lang.String"/>
-   <form-property name="traits" type="java.lang.String"/>
-   <form-property name="linesT" type="java.lang.String"/>
-   <form-property name="opType" type="java.lang.String"/>
-   <form-property name="Amp" type="java.lang.String"/>
-   <form-property name="binSize" type="java.lang.String"/>
-   <form-property name="exportTypeH" type="java.lang.String"/>
-   <form-property name="retrievalType" type="java.lang.String"/>
-   <form-property name="expType" type="java.lang.String"/>
-   <form-property name="getOp" type="java.lang.String"/>
-   <form-property name="List1" type="java.lang.String"/>
    <form-property name="selMaps" type="java.lang.String"/>
    <form-property name="crop" type="java.lang.String"/>
-   <form-property name="AmplificationOption" type="java.lang.String"/>
-   <form-property name="traitValues" type="java.lang.String"/>
-   <form-property name="dataset" type="java.lang.String"/>
-   <form-property name="StartRange" type="java.lang.String"/>
+   <form-property name="txtNameL" type="org.apache.struts.upload.FormFile"/>
+   <form-property name="exportTypeH" type="java.lang.String"/>
+   <form-property name="traits" type="java.lang.String"/>
+   <form-property name="EndRange" type="java.lang.String"/>
+   <form-property name="exportType" type="java.lang.String"/>
+   <form-property name="polyTypeH" type="java.lang.String"/>
+   <form-property name="MarkNm" type="java.lang.String"/>
+   <form-property name="List1" type="java.lang.String"/>
+   <form-property name="gidsText" type="java.lang.String"/>
+   <form-property name="SearchMark" type="java.lang.String"/>
+   <form-property name="markersSel" type="java.lang.String"/>
+   <form-property name="retrieveOP" type="java.lang.String"/>
+   <form-property name="op" type="java.lang.String"/>
+   <form-property name="mapsH" type="java.lang.String"/>
+   <form-property name="maps" type="java.lang.String"/>
+   <form-property name="txtNameGN" type="org.apache.struts.upload.FormFile"/>
    <form-property name="trait" type="java.lang.String"/>
-   <form-property name="traitM" type="java.lang.String"/>
+   <form-property name="dataType" type="java.lang.String"/>
+   <form-property name="StartRange" type="java.lang.String"/>
+   <form-property name="polyType" type="java.lang.String"/>
+   <form-property name="opTypeGN" type="java.lang.String"/>
+   <form-property name="markersText" type="java.lang.String"/>
+   <form-property name="chk" type="java.lang.String"/>
+   <form-property name="traitValues" type="java.lang.String"/>
+   <form-property name="reportType" type="java.lang.String"/>
+   <form-property name="qtlData" type="java.lang.String"/>
+   <form-property name="germplasmSel" type="java.lang.String"/>
+   <form-property name="binSize" type="java.lang.String"/>
+   <form-property name="markers" type="java.lang.String"/>
+   <form-property name="dataset" type="java.lang.String"/>
+   <form-property name="linesO" type="java.lang.String"/>
+   <form-property name="MarkerOption" type="java.lang.String"/>
+   <form-property name="choiceBox" type="java.lang.String"/>
+   <form-property name="expType" type="java.lang.String"/>
+   <form-property name="FormatcheckGroup" type="java.lang.String"/>
+   <form-property name="selection" type="java.lang.String"/>
+   <form-property name="opTypeMarkers" type="java.lang.String"/>
+   <form-property name="linesT" type="java.lang.String"/>
    <!-- <form-property name="excelName" type="org.apache.struts.upload.FormFile"/>-->
    <form-property name="txtNameM" type="org.apache.struts.upload.FormFile"/>
-   <form-property name="qtlData" type="java.lang.String"/>
+   <form-property name="opType" type="java.lang.String"/>
    <form-property name="McheckGroup" type="java.lang.String"/>
-   <form-property name="FieldsList" type="java.lang.String"/>
-   <form-property name="polyType" type="java.lang.String"/>
+   <form-property name="retrievalType" type="java.lang.String"/>
    <form-property name="type" type="java.lang.String"/>
-   <form-property name="qtl" type="java.lang.String"/>
-   <form-property name="maps" type="java.lang.String"/>
-   <form-property name="opTypeMarkers" type="java.lang.String"/>
-   <form-property name="reportType" type="java.lang.String"/>
+   <form-property name="getOp" type="java.lang.String"/>
    <form-property name="List2" type="java.lang.String"/>
-   <form-property name="txtNameGN" type="org.apache.struts.upload.FormFile"/>
-   <form-property name="retrieveOP" type="java.lang.String"/>
-   <form-property name="gidsText" type="java.lang.String"/>
-   <form-property name="EndRange" type="java.lang.String"/>
-   <form-property name="GNamesText" type="java.lang.String"/>
-   <form-property name="selection" type="java.lang.String"/>
-   <form-property name="QuickSearch" type="java.lang.String"/>
-   <form-property name="choiceBox" type="java.lang.String"/>
-   <form-property name="linesO" type="java.lang.String"/>
+   <form-property name="FieldsList" type="java.lang.String"/>
    <form-property name="main" type="java.lang.String"/>
-   <form-property name="polyTypeH" type="java.lang.String"/>
-   <form-property name="exportType" type="java.lang.String"/>
-   <form-property name="markersText" type="java.lang.String"/>
-   <form-property name="op" type="java.lang.String"/>
-   <form-property name="markersSel" type="java.lang.String"/>
+   <form-property name="QuickSearch" type="java.lang.String"/>
+   <form-property name="traitM" type="java.lang.String"/>
+   <form-property name="hMarkers" type="java.lang.String"/>
+   <form-property name="GNamesText" type="java.lang.String"/>
+   <form-property name="Amp" type="java.lang.String"/>
+   <form-property name="AmplificationOption" type="java.lang.String"/>
+   <form-property name="flapjackOp" type="java.lang.String"/>
   </form-bean>
   <form-bean name="datadeletion" type="org.apache.struts.action.DynaActionForm">
    <form-property name="maps" type="java.lang.String"/>
-   <form-property name="qtl" type="java.lang.String"/>
-   <form-property name="delOpM" type="java.lang.String"/>
-   <form-property name="delOpG" type="java.lang.String"/>
-   <form-property name="getOp" type="java.lang.String"/>
    <form-property name="dataSet" type="java.lang.String"/>
+   <form-property name="delOpM" type="java.lang.String"/>
    <form-property name="delOpQ" type="java.lang.String"/>
+   <form-property name="qtl" type="java.lang.String"/>
+   <form-property name="getOp" type="java.lang.String"/>
+   <form-property name="delOpG" type="java.lang.String"/>
   </form-bean>
  </form-beans>
  <global-exceptions/>

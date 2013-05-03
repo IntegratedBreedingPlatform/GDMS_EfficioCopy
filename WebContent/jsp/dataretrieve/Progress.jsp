@@ -12,7 +12,8 @@
 function refresh(){
 	var op=document.forms[0].option.value;
 	//alert(op);
-	var valueF="Run Flapjack";
+	//var valueF="Run Flapjack";
+	var valueF='<%=request.getParameter("flapjackOp")%>';
 	//if((op=="allelic")||(op=="flapjack")){
 	if(op=="allelic"){
 		document.forms[0].action="export.do";

@@ -28,6 +28,7 @@ import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.Name;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
@@ -63,6 +64,11 @@ public class MappingDataUpload {
 				//String crop=request.getSession().getAttribute("crop").toString();
 				session = HibernateSessionFactory.currentSession();
 				tx=session.beginTransaction();
+				String username=request.getSession().getAttribute("user").toString();
+				if((String)request.getSession().getAttribute("user")==null){			
+					result="logout";			
+					return result;
+				}
 				
 				/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
 				DatabaseConnectionParameters central = new DatabaseConnectionParameters("localhost", "3306", "ibdb_ivis", "root", "root");*/
@@ -433,7 +439,7 @@ public class MappingDataUpload {
 					int intDatasetId=uptMId.getMaxIdValue("dataset_id","gdms_dataset",session);
 					
 					//int user_id=uptMId.getUserId("userid", "users", "uname", session,sheetSource.getCell(1,1).getContents().trim());
-					String username=request.getSession().getAttribute("user").toString();
+					//String username=request.getSession().getAttribute("user").toString();
 					int user_id=uptMId.getUserId("userid", "users", "uname", session,username);
 					
 					
@@ -460,9 +466,17 @@ public class MappingDataUpload {
 					
 					
 					dataset_name=sheetSource.getCell(1,3).getContents().trim();		
+					Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dataset_name+"'");				
 					
+					List result1= rsDatasetNames.list();
+					System.out.println(".............:"+result1.size());
+					if(result1.size()>0){
+						ErrMsg = "Dataset Name already exists.";
+		            	hsession.setAttribute("indErrMsg", ErrMsg);							
+						return result = "ErrMsg";
+					}
 					if(dataset_name.length()>30){
-						ErrMsg = "Error : Dataset Name value exceeds max char size.";
+						ErrMsg = "Dataset Name value exceeds max char size.";
 		            	hsession.setAttribute("indErrMsg", ErrMsg);							
 						return result = "ErrMsg";
 					}
@@ -594,11 +608,7 @@ public class MappingDataUpload {
 						gidsList = gidsList +"'"+ sheetDataList.getCell(1,l).getContents().trim().toString()+"',";
 					}
 		            
-		            
-		            
-		            
-		            
-		            
+		                        
 		            for(int i=0;i<finalList.size();i++){	
 		            	String[] strList=finalList.get(i).toString().split("~!~");
 		            	AccessionMetaDataBean amdb=new AccessionMetaDataBean();					
@@ -649,7 +659,7 @@ public class MappingDataUpload {
 							
 						}
 					//}
-						System.out.println("MIDS="+mids);
+					
 					/*System.out.println("MIDS="+mids);
 					System.out.println("markers="+lstMarkers.size());
 					System.out.println("gids count="+gids.size());*/
@@ -670,7 +680,49 @@ public class MappingDataUpload {
 									cack.setAc_id(intAC_ID);
 									chb.setComKey(cack);
 			                       
-									charData=sheetDataList.getCell(c,r).getContents().trim();
+									String charStr=sheetDataList.getCell(c,r).getContents().trim();
+									//System.out.println(charStr.length());
+									if(charStr.length()>2){
+										if(charStr.contains(":")){
+											String str1="";
+											String str2="";
+											//String charStr=str.get(s);
+											str1=charStr.substring(0, charStr.length()-2);
+											str2=charStr.substring(2, charStr.length());
+											charData=str1+"/"+str2;
+										}else if(charStr.contains("/")){
+											charData=charStr;
+										}else{
+											ExcelSheetColumnName escn =  new ExcelSheetColumnName();
+											String strColName = escn.getColumnName(sheetDataList.getCell(c, r).getColumn());							
+																						
+											 ErrMsg = "Data not submitted to the database. \n Please check the allele value("+charStr+") given at cell position "+strColName+(sheetDataList.getCell(c, r).getRow()+1)+"\n Heterozygote data representation should be either : or /";
+											 request.getSession().setAttribute("indErrMsg", ErrMsg);
+											 return "ErrMsg";	
+											
+										}
+									}else if(charStr.length()==2){
+										String str1="";
+										String str2="";
+										//String charStr=str.get(s);
+										str1=charStr.substring(0, charStr.length()-1);
+										str2=charStr.substring(1);
+										charData=str1+"/"+str2;
+										
+									}else if(charStr.length()==1){
+										if(charStr.equalsIgnoreCase("A")){
+											charData="A/A";	
+										}else if(charStr.equalsIgnoreCase("C")){	
+											charData="C/C";
+										}else if(charStr.equalsIgnoreCase("G")){
+											charData="G/G";
+										}else if(charStr.equalsIgnoreCase("T")){
+											charData="T/T";
+										}else{
+											charData=charStr;
+										}
+									}							
+									
 									
 									chb.setChar_value(charData);
 									chb.setGid(Integer.parseInt(pGids[gcount]));
@@ -732,6 +784,7 @@ public class MappingDataUpload {
 					int gi=0;
 					//mp_id=mp_id+1;
 					mp_id=mp_id-1;
+					String strData1="";
 					for(int i=rows;i<rowCount;i++){	
 						//String[] insGids=fGids.split(",");
 						int m=0;
@@ -742,24 +795,55 @@ public class MappingDataUpload {
 							Mcack.setMp_id(mp_id);
 							//mcb.setMcomKey(Mcack);
 							mcb.setMapComKey(Mcack);
-							/*mcb.setMp_id(mp_id);
-							mcb.setDataset_id(dataset_id);*/
+							strData1=sheetDataList.getCell(j,i).getContents();
+							//System.out.println("strData1.length()=:"+strData1.length());
+							if((mapType.equalsIgnoreCase("allelic"))&&(marker_type.equalsIgnoreCase("snp"))){
 							
-							//mcb.setDataset_id(dataset_id);							
-							/*if(sheetDataList.getCell(j,i).getContents().equalsIgnoreCase("A")){
-								charData="A:A";	
-							}else if(sheetDataList.getCell(j,i).getContents().equalsIgnoreCase("C")){	
-								charData="C:C";
-							}else if(sheetDataList.getCell(j,i).getContents().equalsIgnoreCase("G")){
-								charData="G:G";
-							}else if(sheetDataList.getCell(j,i).getContents().equalsIgnoreCase("T")){
-								charData="T:T";
-							}else if(sheetDataList.getCell(j,i).getContents().equalsIgnoreCase("B")){
-								charData="B:B";
-							}else{*/
+								if(strData1.length()>2){
+									String charStr=strData1;
+									if(charStr.contains(":")){
+										String str1="";
+										String str2="";
+										//String charStr=str.get(s);
+										str1=charStr.substring(0, charStr.length()-2);
+										str2=charStr.substring(2, charStr.length());
+										charData=str1+"/"+str2;
+									}else if(charStr.contains("/")){
+										charData=charStr;
+									}else{
+										//String errVal=charStr;
+										ExcelSheetColumnName escn =  new ExcelSheetColumnName();
+										String strColName = escn.getColumnName(sheetDataList.getCell(j, i).getColumn());							
+																					
+										 ErrMsg = "Data not submitted to the database. \n Please check the allele value("+charStr+") given at cell position "+strColName+(sheetDataList.getCell(j, i).getRow()+1)+"\n Heterozygote data representation should be either : or /";
+										 request.getSession().setAttribute("indErrMsg", ErrMsg);
+										 return "ErrMsg";
+									}
+									
+								}else if(strData1.length()==2){
+									String str1="";
+									String str2="";
+									String charStr=strData1;
+									str1=charStr.substring(0, charStr.length()-1);
+									str2=charStr.substring(1);
+									charData=str1+"/"+str2;
+									//System.out.println(".....:"+str.get(s).substring(1));
+								}else if(strData1.length()==1){
+									if(strData1.equalsIgnoreCase("A")){
+										charData="A/A";	
+									}else if(strData1.equalsIgnoreCase("C")){	
+										charData="C/C";
+									}else if(strData1.equalsIgnoreCase("G")){
+										charData="G/G";
+									}else if(strData1.equalsIgnoreCase("T")){
+										charData="T/T";
+									}else{
+										charData=strData1;
+									}							
+								}
+							}else{
 								charData=sheetDataList.getCell(j,i).getContents();
-							//}
-							//System.out.println(i+"   "+j+"   "+charData+"     "+intRMarkerId+"   "+gids.get(i));
+							}
 							mcb.setMap_char_value(charData);
 							mcb.setGid(Integer.parseInt(gids.get(gi).toString()));
 							
@@ -804,11 +888,14 @@ public class MappingDataUpload {
 			}catch(Exception e){
 				session.clear();
 				//con.rollback();
-				//tx.rollback();				
+				//tx.rollback();	
+				session.disconnect();
 				e.printStackTrace();
 			}finally{	
 				factory.close();
-				session.clear();				
+				session.clear();
+				
+				con.close();
 			  }
 			return result;
 		}

@@ -282,7 +282,7 @@ public class RetrieveExportABHAction extends Action{
 						 }			
 					}
 				}
-				rsD=stmtD.executeQuery("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+dataset+" order by gid desc, marker_id");
+				rsD=stmtD.executeQuery("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+dataset+" order by gid, marker_id");
 				while(rsD.next()){
 					gids=gids+rsD.getInt(1)+",";
 					populationData.add(rsD.getInt(1)+"!~!"+rsD.getInt(2)+"!~!"+rsD.getString(3));
@@ -301,7 +301,7 @@ public class RetrieveExportABHAction extends Action{
 				//System.out.println(",,,,:gids:"+gids);
 				
 				nids.clear();
-				rsG=stmtG.executeQuery("select nid from gdms_acc_metadataset where gid in ("+gids.substring(0,gids.length()-1)+")");
+				rsG=stmtG.executeQuery("select nid from gdms_acc_metadataset where gid in ("+gids.substring(0,gids.length()-1)+") order by gid");
 				while(rsG.next()){
 					nids.add(rsG.getInt(1));
 				}
@@ -440,11 +440,13 @@ public class RetrieveExportABHAction extends Action{
 				}
 				
 				//System.out.println("88888888888888888888   :"+sortedGMap);
+				//System.out.println("list="+list);
+				//System.out.println("gNamesList=:"+gNamesList);
 				
 				if(expType.equalsIgnoreCase("flapjack")){
 					String FlapjackPath=filePath+"/Flapjack";
 					
-					ef.MatrixDat(list, mapData, FlapjackPath, req, gNamesList, mListExp, qtlData, exportOpType, qtlExists);
+					ef.FlapjackDat(list, mapData, FlapjackPath, req, gNamesList, mListExp, qtlData, exportOpType, qtlExists);
 					
 				}else if(expType.contains("Genotyping X Marker Matrix")){					
 					ef.Matrix(list, filePath, req, gNamesList, mListExp, sortedGMap);

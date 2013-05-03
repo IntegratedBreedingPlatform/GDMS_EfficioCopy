@@ -29,7 +29,7 @@ public class SSRMarkerInfoUpload {
 	private Session session;
 	static int map_count=0;
 		private Transaction tx;
-		Connection con = null;
+		//Connection con = null;
 		/*public SSRMarkerInfoUpload(){
 			//session=HibernateSessionFactory.currentSession();
 			session = HibernateSessionFactory.currentSession(crop);
@@ -406,7 +406,9 @@ public class SSRMarkerInfoUpload {
 				
 				e.printStackTrace();
 			}finally{			    
-				session.clear();				
+				session.clear();
+				//con.close();
+				session.disconnect();
 			}
 			return strResult;
 		}

@@ -187,6 +187,7 @@ public class RetrieveSizeAction extends Action{
 			return null;		
 		}catch(Exception e){
 			e.printStackTrace();
+		
 		}finally{
 		      try{		      		
 		      		if(con!=null) con.close();

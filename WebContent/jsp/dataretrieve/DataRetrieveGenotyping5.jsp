@@ -74,14 +74,21 @@ function sub(a){
 		    }          
 	    }		
 	//alert("temp="+temp);
-	document.forms[0].selMaps.value=temp;
-	if(op=='map'){
-		document.forms[0].action="retrieveMap.do?map";
+	if(temp==""){
+		alert("Please select the map");
+		return false;
 	}else{
-		document.forms[0].action="export.do";
+		document.forms[0].selMaps.value=temp;
+		if(op=='map'){
+			document.forms[0].action="retrieveMap.do?map";
+		}else{
+			document.forms[0].action="export.do";
 
-	}		
-	document.forms[0].submit();
+		}		
+		document.forms[0].submit();
+
+	}
+	
 
 }
 

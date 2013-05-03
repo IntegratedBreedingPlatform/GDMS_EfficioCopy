@@ -10,10 +10,39 @@
 </head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Insert title here</title>
+<script>
+function msg(){	
+	<%
+	String strValue = "";				
+	String strResult = (String)request.getSession().getAttribute("indErrMsg");
+	String strResult1 = request.getQueryString();
+	
+	if(strResult == null)
+		strResult = "";
+	
+		
+	if(strResult.equals("ErrMsg")){
+		strValue = (String)	session.getAttribute("indErrMsg");
+		strResult = "Error : "+strValue +".";
+	}
+	%>
+	if(document.forms[0].elements['hResult'].value != ""){
+		alert(document.forms[0].elements['hResult'].value);					
+		document.forms[0].qtl.focus();
+		document.forms[0].qtl.value="";
+	}
+	<%
+	
+	session.removeAttribute("indErrMsg");
+	%>
+}
+
+
+</script>
 </head>
-<body>
+<body onload="msg();">
 <html:form action="/dataretrieval.do" method="post" enctype="multipart/form-data">
-<br><div class="heading" align="center">Genotyping Data Retrieval</div><br>
+<br><div class="heading" align="center">Map/QTL Data Retrieval</div><br>
 				<br>
 				<center>
 				<table border=0 width="45%">
@@ -35,6 +64,7 @@
 						<td align="center"><html:submit property="qtlsub" value="Submit" onclick="return sub()"/></td>
 					</tr>
 				</table>
+				<input type=hidden name="hResult" value='<%=strResult %>'>
 				<input type=hidden name="retType" value="">
 				<html:hidden property="retrieveOP"/>
 				</html:form>

@@ -237,8 +237,15 @@ public class DataRetrieveDirectingAction extends Action{
 				while(rsDS.next()){
 					dataSetList.add(rsDS.getString(1));
 				}
+				int initialmapCount=0;
+				rs=st.executeQuery("select map_name from gdms_map");
+				while(rs.next()){
+					initialmapCount++;
+					//dataSetList.add(rs.getString(1));
+				}
+				
 				//System.out.println("dataSetList="+dataSetList);
-							
+				session.setAttribute("mapsCount", initialmapCount);		
 				session.setAttribute("dataSetList", dataSetList);
 				str="retDataset";
 			

@@ -6,7 +6,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,7 +34,7 @@ public class RetrieveMapsAction extends Action{
 			//session.removeAttribute("markers");
 			session.removeAttribute("map_data");
 		}
-		
+		boolean LGType=false;
 		DynaActionForm df = (DynaActionForm) af;
 		try{
 			//String crop=req.getSession().getAttribute("crop").toString();
@@ -45,7 +46,7 @@ public class RetrieveMapsAction extends Action{
 			
 			String fromPage=req.getQueryString();
 			
-			
+			System.out.println("From page=:"+fromPage);
 			ResultSet rs=null;
 			ResultSet rs1=null;
 			Statement stmt=con.createStatement();
@@ -78,7 +79,7 @@ public class RetrieveMapsAction extends Action{
 			
 			//System.out.println(".........."+markers);
 
-			
+			Pattern p = Pattern.compile( "([0-9]*)\\.[0]" );
 			
 			//System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   :"+map);
 			ArrayList traitsList=new ArrayList();
@@ -109,8 +110,21 @@ public class RetrieveMapsAction extends Action{
 			//rs1=stmtR.executeQuery("SELECT distinct marker_name, map_name, start_position, linkage_group, map_unit FROM gdms_mapping_data where marker_name in("+markersforQuery+") and map_name='"+mapName+"' order BY map_name, linkage_group,start_position asc");
 			while(rs1.next()){	
 				map_unit=rs1.getString(5);
-				mapData.add(rs1.getString(1)+"!~!"+rs1.getString(2)+"!~!"+rs1.getString(3)+"!~!"+rs1.getString(4));
-				fData=fData+rs1.getString(1)+"!~!"+rs1.getString(2)+"!~!"+rs1.getString(3)+"!~!"+rs1.getString(4)+"~~!!~~";
+				Matcher m = p.matcher(rs1.getString(4));
+				LGType=m.matches();
+				//System.out.println("*************   :"+m.matches());
+				if(LGType==true){
+					//Double.valueOf(str).intValue();
+					mapData.add(rs1.getString(1)+"!~!"+rs1.getString(2)+"!~!"+rs1.getString(3)+"!~!"+Double.valueOf(rs1.getString(4)).intValue());
+					fData=fData+rs1.getString(1)+"!~!"+rs1.getString(2)+"!~!"+rs1.getString(3)+"!~!"+Double.valueOf(rs1.getString(4)).intValue()+"~~!!~~";
+					
+					//System.out.println("*********************  Integer");
+				}else{
+					mapData.add(rs1.getString(1)+"!~!"+rs1.getString(2)+"!~!"+rs1.getString(3)+"!~!"+rs1.getString(4));
+					fData=fData+rs1.getString(1)+"!~!"+rs1.getString(2)+"!~!"+rs1.getString(3)+"!~!"+rs1.getString(4)+"~~!!~~";
+					
+					//System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+				}
 				if(!(retMarkers.contains(rs1.getString(1))))
 					retMarkers.add(rs1.getString(1));
 			}
@@ -227,6 +241,7 @@ public class RetrieveMapsAction extends Action{
 			session.setAttribute("missingCount", req.getParameter("missCount"));
 			session.setAttribute("result", req.getParameter("nData"));
 			session.setAttribute("retCount", retMarkers.size());
+			session.setAttribute("fromPage", fromPage);
 
 		}catch(Exception e){
 			e.printStackTrace();

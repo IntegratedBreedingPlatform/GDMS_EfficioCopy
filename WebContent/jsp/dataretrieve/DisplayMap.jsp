@@ -30,7 +30,9 @@
 				ArrayList mdata=new ArrayList();
 				mdata=(ArrayList)request.getSession().getAttribute("map_data");
 				String testing=request.getSession().getAttribute("finalData").toString();
+				String fromPage=session.getAttribute("fromPage").toString();
 			%>
+			<html:hidden property="fromPage" value='<%=fromPage%>'/>
 			<logic:notEmpty name="map_data">
 				<html:hidden property="traitValues" value='<%=testing%>'/>
 				<br>
@@ -105,7 +107,7 @@
 				<br>
 				<input type="hidden" name="dataToExp"/>
 				<input type="hidden" name="op" value='<%=session.getAttribute("polyType") %>'/>
-				<html:button property="back" value="Back" onclick="earlierPage()"/>
+				<html:button property="back" value="Back" onclick="javascript:history.back()"/>
 				<html:button property="export" value="Export" onclick="submitPage()"/>
  				</center>
 			</logic:notEmpty>
@@ -117,7 +119,7 @@
 				<br>
 				<input type="hidden" name="dataToExp"/>
 				<input type="hidden" name="op" value='<%=session.getAttribute("polyType") %>'/>
-				<html:button property="back" value="Back" onclick="earlierPage()"/>
+				<html:button property="back" value="Back" onclick="javascript:history.back()"/>
 				
 	 			</center>
 			</logic:empty>		
@@ -138,10 +140,14 @@ var mapUnit=document.forms[0].mapUnit.value;
 		}
 	}
 
-	function earlierPage(){
-		document.forms[0].action="genotypingpage.do?poly";		
+	/*function earlierPage(){
+		//alert(document.forms[0].elements['fromPage'].value);
+		if(document.forms[0].elements['fromPage'].value=='map')
+			document.forms[0].action="retrievalmapsqtls.do";
+		else				
+			document.forms[0].action="genotypingpage.do?poly";		
 		document.forms[0].submit();
-	}
+	}*/
 	
 	function funCheckMarkers(val){
 		if(document.forms[0].elements['traitM'].checked==true){	
