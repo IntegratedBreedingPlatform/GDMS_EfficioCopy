@@ -37,6 +37,7 @@ public class MaxIdValue {
 			//Query query=session.createSQLQuery("select max("+ fldName +") from " + tblName);			
 			
 			// changed from max to min because now we have all ids as -ve
+			//System.out.println("select min("+ fldName +") from " + tblName);
 			Query query=session.createSQLQuery("select min("+ fldName +") from " + tblName);
 			
 			listValues=query.list();
@@ -56,7 +57,7 @@ public class MaxIdValue {
 			Object obj=null;
 			Iterator itList=null;
 			List listValues=new ArrayList<String>();
-			System.out.println("select "+ fldName +" from " + tblName +" where "+ wField.toLowerCase()+" in ("+mNames.toLowerCase()+")");
+			//System.out.println("select "+ fldName +" from " + tblName +" where "+ wField.toLowerCase()+" in ("+mNames.toLowerCase()+")");
 			SQLQuery query=session.createSQLQuery("select "+ fldName +" from " + tblName +" where "+ wField.toLowerCase()+" in ("+mNames.toLowerCase()+")");
 	        //SQLQuery query=session.createSQLQuery("SELECT marker_id, principal_investigator FROM marker_user_info;");
 			//String[] fldNames=fldName.split(",");
@@ -79,7 +80,7 @@ public class MaxIdValue {
 			Iterator itList=null;
 			List listValues=new ArrayList<String>();
 			SQLQuery query=session.createSQLQuery("select "+ fldName +" from " + tblName +" where "+ wField+" in ("+pi+") order by "+wField+" desc");
-			System.out.println(query);
+			//System.out.println(query);
 	                //SQLQuery query=session.createSQLQuery("SELECT marker_id, principal_investigator FROM marker_user_info;");
 	                query.addScalar("gid",Hibernate.INTEGER);
 	                query.addScalar("nval",Hibernate.STRING);
@@ -101,7 +102,7 @@ public class MaxIdValue {
 			Iterator itList=null;
 			List listValues=new ArrayList<String>();
 			SQLQuery query=session.createSQLQuery("select "+ fldName +" from " + tblName +" where "+ wField+" in ("+pi+")");
-			System.out.println(query);
+			//System.out.println(query);
 	                //SQLQuery query=session.createSQLQuery("SELECT marker_id, principal_investigator FROM marker_user_info;");
 	                query.addScalar("gid",Hibernate.INTEGER);
 	                query.addScalar("nid",Hibernate.INTEGER);

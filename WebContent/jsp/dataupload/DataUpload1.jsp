@@ -228,9 +228,30 @@ function msg(){
 		
 		
 	}
+	function refresh(){
+		//alert('<%=request.getQueryString()%>'+"   "+'<%=upType%>');
+		var op='<%=request.getQueryString()%>';
+		var radList = document.getElementsByName('uploadType');
+		var radList1 = document.getElementsByName('radios');
+		var radList2 = document.getElementsByName('opMap');
+		for (var i = 0; i < radList.length; i++) {			
+			if(radList[i].checked && radList[i].value!=op) radList[i].checked = false;
+			//if(radList[i].checked && radList1[i].value!=op) radList[i].checked = false;
+		}
+		
+		for (var i = 0; i < radList1.length; i++) {
+			if(radList1[i].checked && radList1[i].value!=op) radList1[i].checked = false;
+		}
+
+		
+		for (var i = 0; i < radList2.length; i++) {
+			if(radList2[i].checked && radList2[i].value!=op) radList2[i].checked = false;
+		}
+
+	}
 </script>
 </head>
-<body onload="msg()">
+<body onload="msg(); refresh();">
 <html:form method="post" action="/dataupload.do"  enctype="multipart/form-data">
 <logic:notEmpty name="user">
 	<div class="heading" align="center">Data Uploading</div>
@@ -242,7 +263,7 @@ function msg(){
 	<br>
 	<html:errors/>
 	<br>
-	
+
 	<div align="center" class="displayText">(Data can be uploaded using provided templates.<br> To upload, select button, browse & upload template containing data.)</div>
 	<br>
 	<div align="center" class="displayText">Please upload Marker Information before uploading Genotyping Data</div>
@@ -252,7 +273,7 @@ function msg(){
 		<tr class="displayText">
 			<td width="32%" align="center"><html:radio property="uploadType" value="markers" onclick="retOtherOptions(this)"/>&nbsp;Marker Information</td>
 			<td width="35%" align="center"><html:radio property="uploadType" value="geno" onclick="retOtherOptions(this)"/>&nbsp;Genotyping Data</td>
-			<td align="center"><html:radio property="uploadType" value="mapsQtls" onclick="retOtherOptions(this)"/>&nbsp;Maps/QTLs  </td>
+			<td align="center"><html:radio property="uploadType" value="mapsQtls" onclick="retOtherOptions(this)"/>&nbsp;Maps/QTLs/MTAs</td>
 		</tr>			
 	</table>
 	<%} %>
@@ -264,7 +285,7 @@ function msg(){
 		<tr class="displayText">
 			<td width="32%" align="center"><html:radio property="uploadType" value="markers" onclick="retOtherOptions1(this)"/>&nbsp;Marker Information</td>
 			<td width="35%" align="center"><html:radio property="uploadType" value="geno" onclick="retOtherOptions1(this)"/>&nbsp;Genotyping Data</td>
-			<td align="center"><html:radio property="uploadType" value="mapsQtls" onclick="retOtherOptions1(this)"/>&nbsp;Maps/QTLs </td>			
+			<td align="center"><html:radio property="uploadType" value="mapsQtls" onclick="retOtherOptions1(this)"/>&nbsp;Maps/QTLs/MTAs</td>			
 		</tr>			
 	</table>
 	<br>
@@ -287,7 +308,7 @@ function msg(){
 		<tr class="displayText">
 			<td width="32%" align="center"><html:radio property="uploadType" value="markers" onclick="retOtherOptions1(this)"/>&nbsp;Marker Information</td>
 			<td width="35%" align="center"><html:radio property="uploadType" value="geno" onclick="retOtherOptions1(this)"/>&nbsp;Genotyping Data</td>
-			<td align="center"><html:radio property="uploadType" value="mapsQtls" onclick="retOtherOptions1(this)"/>&nbsp;Maps/QTLs </td>			
+			<td align="center"><html:radio property="uploadType" value="mapsQtls" onclick="retOtherOptions1(this)"/>&nbsp;Maps/QTLs/MTAs </td>			
 		</tr>			
 	</table>
 	<br>
@@ -336,7 +357,8 @@ function msg(){
 							<span style="visibility: hidden;" id="secOption">				
 								<table width="50%" border=0 align="rigth">
 									<tr class="displayText">
-									<td align="right" width="55%"><html:radio property="uploadDataType" value="ssr" />&nbsp;SSR</td><td align="center"><html:radio property="uploadDataType" value="snp"/>&nbsp;SNP</td>
+									<td align="right" width="55%"><html:radio property="uploadDataType" value="ssr" />&nbsp;SSR</td>
+									<td align="center"><html:radio property="uploadDataType" value="snp"/>&nbsp;SNP</td>
 									<td><html:radio property="uploadDataType" value="dart"/>&nbsp;DArT</td>
 									</tr>
 								</table>							
@@ -346,25 +368,63 @@ function msg(){
 				</table>
 			</span>
 		</td></tr>
+		<tr><td colspan=3>
+			<span id="option1" style="visibility: hidden;">
+				<table border=0 width="100%">
+					<tr><td width="6%">&nbsp;</td>
+						<td class="displayText" width="15%" align="center" nowrap="nowrap">K-BioScience Format</td>
+						<td width="15%">
+							<html:radio property="opMap" value="yes" onclick="retrieveSNP(this)">Yes</html:radio>&nbsp;
+							<html:radio property="opMap" value="no" onclick="retrieveSNP(this)">No</html:radio></td>
+						<td>				
+							<span style="visibility: hidden;" id="FirstlistSNP">					
+								<table border=0>
+									<tr>
+										<td class="displayText" nowrap="nowrap">K-BioScience Genotyping Grid file </div></td>
+										<td>&nbsp;&nbsp;<html:file property="KBfileuploads"/></td>
+									</tr>
+									
+								</table>
+							</span>
+						</td>						
+					</tr>
+					
+				</table>
+			</span>
+		</td></tr>
 		<tr><td colspan=3>&nbsp;</td></tr>
-		<tr><td colspan=3 align="center"><html:file property="fileuploads"/></td></tr>
+		<tr>
+			<td colspan="2" align="right">
+				<span style="visibility: hidden;" id="FirstlistSNP1">					
+					<table border=0>
+						<tr>
+							<td class="displayText" nowrap="nowrap">KBio genotyping additional information</td>
+							
+						</tr>
+						
+					</table>
+				</span>
+			</td>
+			<td colspan=1 align="left"><html:file property="fileuploads"/></td>
+		</tr>
 		<tr><td colspan=3>&nbsp;</td></tr>
 		<tr><td>&nbsp;</td><td>&nbsp;</td><td><html:submit property="dupload" onclick="return chkFile()"/></td></tr>
 		<tr><td colspan=3>&nbsp;</td></tr>
 	<%} %>
 	
-	<%if((request.getQueryString().equals("mapsQtls"))||((res.equals("yes"))&&((upType.equalsIgnoreCase("Map"))||(upType.equalsIgnoreCase("QTL"))))){%>
+	<%if((request.getQueryString().equals("mapsQtls"))||((res.equals("yes"))&&((upType.equalsIgnoreCase("Map"))||(upType.equalsIgnoreCase("QTL"))||(upType.equalsIgnoreCase("MTA"))))){%>
 	<table width="50%" border=0>
 		<tr class="displayText">
 			<td width="32%" align="center"><html:radio property="uploadType" value="markers" onclick="retOtherOptions1(this)"/>&nbsp;Marker Information</td>
 			<td width="35%" align="center"><html:radio property="uploadType" value="geno" onclick="retOtherOptions1(this)"/>&nbsp;Genotyping Data</td>
-			<td align="center"><html:radio property="uploadType" value="mapsQtls" onclick="retOtherOptions1(this)"/>&nbsp;Maps/QTLs </td>			
+			<td align="center"><html:radio property="uploadType" value="mapsQtls" onclick="retOtherOptions1(this)"/>&nbsp;Maps/QTLs/MTAs</td>			
 		</tr>			
 	</table>
 	<br>
 	<table border=0 cellpadding=3 cellspacing=1 width="60%"  bgcolor="white">		
 		<tr><td width="10%" align=right class="displayText"><html:radio property="radios" value="Map" onclick="funcShowOption(this.value)" /></td><td width="15%" class="displayText">Map</td><td width="35%" class="displayText"><a href="<%=request.getContextPath()%>/jsp/dataupload/MapTemplate.xls" target="new">Map Sample Template</a></td></tr>		
 		<tr><td width="10%" align=right class="displayText"><html:radio property="radios" value="QTL" onclick="funcShowOption(this.value)" /></td><td width="15%" class="displayText">QTL</td><td width="35%" class="displayText"><a href="<%=request.getContextPath()%>/jsp/dataupload/QTLTemplate.xls" target="new">QTL Sample Template</a></td></tr>		
+		<tr><td width="10%" align=right class="displayText"><html:radio property="radios" value="MTA" onclick="funcShowOption(this.value)" /></td><td width="15%" class="displayText">MTA</td><td width="35%" class="displayText"><a href="<%=request.getContextPath()%>/jsp/dataupload/MTATemplate.xls" target="new">MTA Sample Template</a></td></tr>
 		<tr><td colspan=3>
 			<span id="option" style="visibility: hidden;">
 				<table border=0 width="100%">
@@ -456,18 +516,50 @@ function funcShowOption(a){
 		document.getElementById("text2").innerHTML="Corresponding Map exists ";
 		document.getElementById('firstOption').style.visibility='visible';
 		document.getElementById('option').style.visibility='visible';
+		document.getElementById('option1').style.visibility='hidden';
+		document.getElementById('FirstlistSNP').style.visibility='hidden';
+		document.getElementById('FirstlistSNP1').style.visibility='hidden';
 	}else if(a=="Map"){
 		document.getElementById("text2").innerHTML="Corresponding Mapping data exists ";
 		document.getElementById('option').style.visibility='visible';
 		document.getElementById('secOption').style.visibility='hidden';
 		document.getElementById('firstOption').style.visibility='hidden';
+		document.getElementById('option1').style.visibility='hidden';
+		document.getElementById('FirstlistSNP').style.visibility='hidden';
+		document.getElementById('FirstlistSNP1').style.visibility='hidden';
+	}else if(a=="SNPGenotype"){
+		document.getElementById("text2").innerHTML="K-BioScience Output";
+		//document.getElementById('firstOption').style.visibility='visible';
+		document.getElementById('option').style.visibility='hidden';
+		//document.getElementById("text2").innerHTML="Corresponding Map exists ";
+		//document.getElementById('firstOption').style.visibility='hidden';
+		document.getElementById('option1').style.visibility='visible';
 	}else{
 		document.getElementById('option').style.visibility='hidden';
 		document.getElementById('secOption').style.visibility='hidden';
 		document.getElementById('firstOption').style.visibility='hidden';
 		document.getElementById('Firstlist').style.visibility='hidden';
+		document.getElementById('option1').style.visibility='hidden';
+		document.getElementById('FirstlistSNP').style.visibility='hidden';
+		document.getElementById('FirstlistSNP1').style.visibility='hidden';
 	}
 	
+}
+
+function retrieveSNP(a){
+	var type=document.forms[0].elements['UploadingOption'].value;
+	var val="";
+	var name="List1";
+	val=a.value;
+	var msg="";
+	//alert(type)
+	if(val=="yes"){
+		document.getElementById("FirstlistSNP").style.visibility="visible";
+		document.getElementById("FirstlistSNP1").style.visibility="visible";
+	}else{
+		document.getElementById("FirstlistSNP").style.visibility="hidden";
+		document.getElementById("FirstlistSNP1").style.visibility="hidden";
+	}
 }
 
 function retrieveData(ab){	
@@ -477,6 +569,7 @@ function retrieveData(ab){
 	var name="List1";
 	val=ab.value;
 	var msg="";
+	//alert(type)
 	if(type=="Mapping")
 		msg="Map";
 	else if(type=="Map")

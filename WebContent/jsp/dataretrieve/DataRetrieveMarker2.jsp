@@ -284,7 +284,22 @@
 			<%} %>
 					<br>
 				<html:button property="back" value="Back" onclick="javascript:history.back()"/>
+				<%System.out.println(".............................."+request.getSession().getAttribute("markerType")); %>
+				<%if(request.getSession().getAttribute("markerType").equals("snp")){ %>
+					<html:button property="nButton" onclick="funcSubmitPage()" value="Create KBio Order Form"/>
+					<html:hidden property="kbioMarkers"/>
+				<%} %>
 		</center>
 		</html:form>
 	</body>
 </html:html>
+<script>
+function funcSubmitPage(val){
+		//document.forms[0].kbioMarkers.value='<%=request.getSession().getAttribute("kbioMarkers")%>';
+		document.forms[0].action="exportKBIOFile.do?markers";
+		document.forms[0].submit();
+	
+}
+</script>
+
+

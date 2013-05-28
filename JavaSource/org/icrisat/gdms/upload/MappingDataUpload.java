@@ -4,7 +4,9 @@
 package org.icrisat.gdms.upload;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,6 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -42,7 +45,7 @@ import org.icrisat.gdms.common.MaxIdValue;
 public class MappingDataUpload {
 	private Session session;
 		private Transaction tx;
-		Connection con = null;
+		//Connection con = null;
 		HttpServletRequest request;
 		/*String crop=request.getSession().getAttribute("crop").toString();
 		public MappingDataUpload(){
@@ -51,10 +54,13 @@ public class MappingDataUpload {
 			tx=session.beginTransaction();		
 		}*/
 		String marker="";	String data="";
+		java.sql.Connection conn;
+		java.sql.Connection con;
 		static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();
+		Properties prop=new Properties();
 		public String setMappingDetails(HttpServletRequest request, String mapfile) throws SQLException{
 			String result = "";
-			
+			ArrayList result1=new ArrayList();
 			DatasetBean db=new DatasetBean();
 			GenotypeUsersBean usb=new GenotypeUsersBean();	
 			ConditionsBean ubConditions=new ConditionsBean();
@@ -69,6 +75,33 @@ public class MappingDataUpload {
 					result="logout";			
 					return result;
 				}
+				
+				prop.load(new FileInputStream(request.getSession().getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+			    String host=prop.getProperty("central.host");
+			    String port=prop.getProperty("central.port");
+			    String url = "jdbc:mysql://"+host+":"+port+"/";
+			    String dbName = prop.getProperty("central.dbname");
+			    String driver = "com.mysql.jdbc.Driver";
+			    String userName = prop.getProperty("central.username"); 
+			    String password = prop.getProperty("central.password");
+			    
+			    Class.forName(driver).newInstance();
+			    conn = DriverManager.getConnection(url+dbName,userName,password);
+			    Statement stCen=conn.createStatement();
+			    
+			    
+			    String hostL=prop.getProperty("local.host");
+			    String portL=prop.getProperty("local.port");
+			    String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+			    String dbNameL = prop.getProperty("local.dbname");
+			    //String driver = "com.mysql.jdbc.Driver";
+			    String userNameL = prop.getProperty("local.username"); 
+			    String passwordL = prop.getProperty("local.password");
+			    
+			    Class.forName(driver).newInstance();
+			    con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+			    Statement stLoc=con.createStatement();
+				
 				
 				/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
 				DatabaseConnectionParameters central = new DatabaseConnectionParameters("localhost", "3306", "ibdb_ivis", "root", "root");*/
@@ -93,6 +126,11 @@ public class MappingDataUpload {
 				
 				Statement st1 = con.createStatement();
 				ResultSet rs1=null;
+				ResultSet rsL=null;
+				ResultSet rsML=null;
+				ResultSet rsMC=null;
+				ResultSet rsLoc=null;
+				ResultSet rsCen=null;
 				
 				String dataset_type="mapping";
 				String marker_type="SSR";
@@ -271,13 +309,23 @@ public class MappingDataUpload {
 						
 						
 					//	System.out.println("select dataset_id from gdms_acc_metadataset where gid in("+parentGids.substring(0,parentGids.length()-1)+")");
-						rs=st.executeQuery("select dataset_id from gdms_acc_metadataset where gid in("+parentGids.substring(0,parentGids.length()-1)+")");
+						
+						rsL=stLoc.executeQuery("select dataset_id from gdms_acc_metadataset where gid in("+parentGids.substring(0,parentGids.length()-1)+")");
+						if(rsL.next()){
+							dataset=rsL.getInt(1);							
+						}else
+							exists="no";
+						rs=stCen.executeQuery("select dataset_id from gdms_acc_metadataset where gid in("+parentGids.substring(0,parentGids.length()-1)+")");
 						if(rs.next()){
 							dataset=rs.getInt(1);							
 						}else
 							exists="no";
-						
 						//System.out.println("1 exists="+exists);
+						if(dataset>0){
+							st1=conn.createStatement();
+						}else{
+							st1=con.createStatement();
+						}
 						rs1=st1.executeQuery("select * from gdms_marker_metadataset where dataset_id="+dataset+" and marker_id in(select marker_id from gdms_marker where marker_name in("+marker.substring(0,marker.length()-1)+") order by marker_id)");	
 						if(rs1.next())
 							exists="yes";
@@ -434,6 +482,55 @@ public class MappingDataUpload {
 			           }
 					
 					}
+					 List lstMarkers = new ArrayList();
+					String markersForQuery="";
+					/** retrieving maximum marker id from 'marker' table of database **/
+					int maxMarkerId=uptMId.getMaxIdValue("marker_id","gdms_marker",session);
+					
+					HashMap<String, Object> markersMap = new HashMap<String, Object>();	
+					markersForQuery=marker.substring(0, marker.length()-1);
+					rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
+		            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
+		            
+		            while(rsMC.next()){
+		            	//lstMarIdNames.add(rsMC.getString(2)+":"+rsMC.getString(1));
+		            	lstMarkers.add(rsMC.getString(2));
+		            	markersMap.put(rsMC.getString(2), rsMC.getInt(1));		
+		            }
+		            while(rsML.next()){	            		
+		            	if(!lstMarkers.contains(rsML.getString(2))){
+		            		lstMarkers.add(rsML.getString(2));
+		            		//lstMarIdNames.add(rsML.getString(2)+":"+rsML.getString(1));
+		            	}
+		            	markersMap.put(rsML.getString(2), rsML.getInt(1));	
+		            }
+					
+					/*ArrayList lstMarIdNames=uptMId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, marker.substring(0, marker.length()-1));
+			        //System.out.println(".............."+lstMarIdNames.size());
+		            List lstMarkers = new ArrayList();
+		            List lstMids=new ArrayList();
+		            for(int w=0;w<lstMarIdNames.size();w++){
+		                 Object[] strMareO= (Object[])lstMarIdNames.get(w);
+		                 lstMids.add(Integer.parseInt(strMareO[0].toString()));
+		                 lstMarkers.add(strMareO[1]);
+		                 String strMa123 = (String)strMareO[1];
+		                 markersMap.put(strMa123, strMareO[0]);
+		                 
+		            }*/
+					ArrayList dataList=new ArrayList();
+					int ma=0;
+					for(int r=1;r<rowCount;r++){	
+						for (int a=3;a<colCount;a++){	
+							dataList.add(sheetDataList.getCell(1,r).getContents().trim()+"!~!"+markersMap.get(markersList.get(ma))+"!~!"+sheetDataList.getCell(a,r).getContents().trim());
+							//gids1=gids1+sheetDataList.getCell(1,r).getContents().trim()+"!~!"+sheetDataList.getCell(2,r).getContents().trim()+",";
+							ma++;
+						}
+						ma=0;
+					}
+					
+					
+					
+					//System.out.println("dataList=:"+dataList);
 					
 					
 					int intDatasetId=uptMId.getMaxIdValue("dataset_id","gdms_dataset",session);
@@ -466,10 +563,19 @@ public class MappingDataUpload {
 					
 					
 					dataset_name=sheetSource.getCell(1,3).getContents().trim();		
-					Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dataset_name+"'");				
+					//Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dataset_name+"'");				
+					//List result1= rsDatasetNames.list();
+					rsLoc=stLoc.executeQuery("select dataset_name from gdms_dataset where dataset_name='"+dataset_name+"'");
+					while(rsLoc.next()){
+						result1.add(rsLoc.getString(1));						
+					}
+					//System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+					rsCen=stCen.executeQuery("select dataset_name from gdms_dataset where dataset_name='"+dataset_name+"'");
+					while(rsCen.next()){
+						result1.add(rsCen.getString(1));	
+					}
 					
-					List result1= rsDatasetNames.list();
-					System.out.println(".............:"+result1.size());
+					//System.out.println(".............:"+result1.size());
 					if(result1.size()>0){
 						ErrMsg = "Dataset Name already exists.";
 		            	hsession.setAttribute("indErrMsg", ErrMsg);							
@@ -512,6 +618,11 @@ public class MappingDataUpload {
 					db.setDatatype("map");
 					db.setRemarks(remarks);
 					db.setMissing_data(missingData);
+					
+					db.setInstitute(sheetSource.getCell(1,0).getContents().trim());
+					db.setPrincipal_investigator(sheetSource.getCell(1,1).getContents().trim());
+					db.setEmail(sheetSource.getCell(1,2).getContents().trim());
+					db.setPurpose_of_study(sheetSource.getCell(1,14).getContents().trim());
 					//System.out.println("dataset id = ");
 					session.save(db);
 					
@@ -520,8 +631,8 @@ public class MappingDataUpload {
 					mb.setDataset_id(dataset_id);
 					//mb.setMp_id(mp_id);
 					mb.setMapping_type(mapType);
-					mb.setParent_a_gid(parentA_nid);
-					mb.setParent_b_gid(parentB_nid);
+					mb.setParent_a_nid(parentA_nid);
+					mb.setParent_b_nid(parentB_nid);
 					mb.setPopulation_size(Integer.parseInt(popSize));
 					mb.setPopulation_type(popType);
 					mb.setMapdata_desc(purposeOfStudy);	
@@ -577,23 +688,7 @@ public class MappingDataUpload {
 								
 					
 					//String markersList="";
-					/** retrieving maximum marker id from 'marker' table of database **/
-					int maxMarkerId=uptMId.getMaxIdValue("marker_id","gdms_marker",session);
 					
-					HashMap<String, Object> markersMap = new HashMap<String, Object>();			
-					
-					ArrayList lstMarIdNames=uptMId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, marker.substring(0, marker.length()-1));
-			        //System.out.println(".............."+lstMarIdNames.size());
-		            List lstMarkers = new ArrayList();
-		            List lstMids=new ArrayList();
-		            for(int w=0;w<lstMarIdNames.size();w++){
-		                 Object[] strMareO= (Object[])lstMarIdNames.get(w);
-		                 lstMids.add(Integer.parseInt(strMareO[0].toString()));
-		                 lstMarkers.add(strMareO[1]);
-		                 String strMa123 = (String)strMareO[1];
-		                 markersMap.put(strMa123, strMareO[0]);
-		                 
-		            }
 		            ArrayList gids=new ArrayList();
 		            String gidsList="";
 		            int rows=0;
@@ -884,6 +979,10 @@ public class MappingDataUpload {
 					}					
 					tx.commit();
 					result="inserted";
+					/*if(rs1!=null) rs1.close(); 
+					if(rsL!=null) rsL.close(); if(rsML!=null) rsML.close(); if(rsMC!=null) rsMC.close(); if(rsLoc!=null) rsLoc.close(); if(rsCen!=null) rsCen.close();
+					if(stCen!=null) stCen.close();if(stLoc!=null) stLoc.close(); if(st!=null) st.close(); if(st1!=null) st1.close();*/
+					if(con!=null) con.close(); if(conn!=null) conn.close();
 				}				
 			}catch(Exception e){
 				session.clear();
@@ -894,7 +993,7 @@ public class MappingDataUpload {
 			}finally{	
 				factory.close();
 				session.clear();
-				
+				conn.close();
 				con.close();
 			  }
 			return result;

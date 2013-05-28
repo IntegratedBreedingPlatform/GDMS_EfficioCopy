@@ -3,11 +3,14 @@
  */
 package org.icrisat.gdms.retrieve;
 
+import java.io.FileInputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Properties;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -27,7 +30,8 @@ import org.icrisat.gdms.common.HibernateSessionFactory;
 import org.icrisat.gdms.upload.MarkerDetailsBean;
 
 public class RetrieveMarkerDetailsAction extends Action{
-	Connection con=null;
+	java.sql.Connection conn;
+	java.sql.Connection con;
 	private Session hsession;	
 	private Transaction tx;
 	public ActionForward execute(ActionMapping am, ActionForm af,
@@ -42,13 +46,48 @@ public class RetrieveMarkerDetailsAction extends Action{
 		Query querysnp=null;
 		Query queryssr=null;
 		ArrayList mdet=new ArrayList();
+		Statement stCen=null;
+		Statement stLoc=null;
+		ResultSet rs=null;
+		ResultSet rsL=null;
+		ResultSet rs2=null;
+		Statement st2=null;
 		try{			
+			Properties prop=new Properties();
 			
-			ServletContext context = servlet.getServletContext();
-			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
-			con=dataSource.getConnection();	
+			prop.load(new FileInputStream(req.getSession().getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+			String host=prop.getProperty("central.host");
+			String port=prop.getProperty("central.port");
+			String url = "jdbc:mysql://"+host+":"+port+"/";
+			String dbName = prop.getProperty("central.dbname");
+			String driver = "com.mysql.jdbc.Driver";
+			String userName = prop.getProperty("central.username"); 
+			String password = prop.getProperty("central.password");
+			//System.out.println(host+"   "+port+"   "+url+"   "+dbName+"   "+driver+"   "+userName+"   "+password);
+			Class.forName(driver).newInstance();
+			conn = DriverManager.getConnection(url+dbName,userName,password);
+			stCen=conn.createStatement();	
 			
 			
+			String hostL=prop.getProperty("local.host");
+			String portL=prop.getProperty("local.port");
+			String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+			String dbNameL = prop.getProperty("local.dbname");
+			//String driver = "com.mysql.jdbc.Driver";
+			String userNameL = prop.getProperty("local.username"); 
+			String passwordL = prop.getProperty("local.password");
+			
+			Class.forName(driver).newInstance();
+			con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+			stLoc=con.createStatement();
+			
+			st2=con.createStatement();
+			
+			if(session!=null){
+				session.removeAttribute("markerType");	
+				session.removeAttribute("kbioMarkers");	
+			}
+			String marker_type="";
 			String AnnealingTemp="",ElongationTemp="";
 			String SelctedName="";
 			String QueryFeilds="";
@@ -78,7 +117,7 @@ public class RetrieveMarkerDetailsAction extends Action{
 			
 			//retrieve selected feilds
 			String SelectedOption=req.getParameter("SelectedOption");
-			System.out.println("SelectedOption="+SelectedOption);
+			//System.out.println("SelectedOption="+SelectedOption);
 			int a=3;int Geno_position=-1;
 			//boolean cmap=false;
 			boolean AllFeilds=false;
@@ -240,13 +279,18 @@ public class RetrieveMarkerDetailsAction extends Action{
 					
 					s1="where "+s1;				
 			}
-			System.out.println("S1="+s1);
+			//System.out.println("S1="+s1);
 			if(SelctedName.equals("")){		
 				if(!(SearchM.equals(""))){
-					Statement markerTypeSt=con.createStatement();
-					ResultSet markerTypeRS=markerTypeSt.executeQuery("select gdms_marker.marker_type from gdms_marker where gdms_marker.marker_name='"+SearchM+"'");
+					//Statement markerTypeSt=con.createStatement();
+					ResultSet markerTypeRS=stCen.executeQuery("select gdms_marker.marker_type from gdms_marker where gdms_marker.marker_name='"+SearchM+"'");
 					while(markerTypeRS.next()){
 						SelctedName=markerTypeRS.getString(1);
+					}
+					ResultSet mTypeRS=stLoc.executeQuery("select gdms_marker.marker_type from gdms_marker where gdms_marker.marker_name='"+SearchM+"'");
+					while(mTypeRS.next()){
+						if(SelctedName.equals(""))
+							SelctedName=mTypeRS.getString(1);
 					}
 					/*query=hsession.createQuery("from Markers where marker_name ='"+SearchM+"'");
 					mdet=(ArrayList)query.list();
@@ -255,24 +299,28 @@ public class RetrieveMarkerDetailsAction extends Action{
 						//marker_id=rmb.getMarker_id();
 						SelctedName=rmb.getMarker_type();
 					}*/
+					marker_type=SelctedName;
 				}else{
 					SelctedName="SSR";
+					marker_type="SSR";
 				}
 			}
-			String marker_type="";
+			marker_type="SSR";
+			//System.out.println("marker type="+marker_type);
 			Query=strQuery+" from gdms_marker_retrieval_info "+s1;
 			//query=hsession.createQuery(strQuery+" from RetrievalMarkerInfoBean where marker_name ='"+SearchM+"'");
 			//System.out.println("Query="+Query);
-			Statement st=con.createStatement();
-			ResultSet rs=st.executeQuery(Query);
-			Statement st1=con.createStatement();
-			
+			Statement st=conn.createStatement();			
+			//Statement st1=con.createStatement();			
 			ArrayList SNPlist=new ArrayList();
 			ArrayList SSRlist=new ArrayList();
 			ArrayList CAPlist=new ArrayList();
 			ArrayList CISRlist=new ArrayList();
 			int Count=0;
 			int GenotypeCount=0;
+			//ArrayList kbioMarkers=new ArrayList();
+			String kbioMarkers="";
+			rs=st.executeQuery(Query);			
 			while (rs.next()){		
 				if(Count==0){
 					SSRlist.add(str123+SSR);
@@ -282,7 +330,12 @@ public class RetrieveMarkerDetailsAction extends Action{
 				}	
 				str123="";
 				Count++;
-				
+				if(rs.getString("marker_type").equalsIgnoreCase("snp")){
+					//kbioMarkers.add(rs.getString("marker_name"));
+					marker_type="snp";
+					kbioMarkers=kbioMarkers+"'"+rs.getString("marker_name")+"',";
+					
+				}
 				GenotypeCount=rs.getInt("genotypes_count");
 				//System.out.println("AllFeilds="+AllFeilds);
 				if(AllFeilds==true){
@@ -304,11 +357,14 @@ public class RetrieveMarkerDetailsAction extends Action{
 					
 				//str123=str123+GenotypeCount+"!~!"+rs.getInt(1)+"!!~~";
 				if(AllFeilds==true){				
-					Statement st2=con.createStatement();
-					ResultSet rs2=null;
-					if(rs.getString("marker_type").equals("SSR")){
+					
+					rs2=null;
+					if(rs.getString("marker_type").equalsIgnoreCase("SSR")){
+						int markerId=rs.getInt(1);
 						//rs2=st2.executeQuery("Select assay_type,repeats,no_of_repeats,ssr_type,sequence,sequence_length,min_allele,max_allele,ssr_nr,size_of_repeat_motif,forward_primer,reverse_primer,product_size,primer_length,forward_primer_temp,reverse_primer_temp,annealing_temp,elongation_temp,fragment_size_expected,fragment_size_observed,amplification from ssr_marker where marker_id='"+rs.getString(1)+"'");
-						rs2=st2.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.motif,gdms_marker_details.no_of_repeats,gdms_marker_details.motif_type,gdms_marker_details.sequence,gdms_marker_details.sequence_length,gdms_marker_details.min_allele,gdms_marker_details.max_allele,gdms_marker_details.ssr_nr,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.forward_primer_temp,gdms_marker_details.reverse_primer_temp,gdms_marker.annealing_temp,gdms_marker_details.elongation_temp,gdms_marker_details.fragment_size_expected,gdms_marker_details.fragment_size_observed,gdms_marker.amplification FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rs.getString(1));
+						rs2=stCen.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.motif,gdms_marker_details.no_of_repeats,gdms_marker_details.motif_type,gdms_marker_details.sequence,gdms_marker_details.sequence_length,gdms_marker_details.min_allele,gdms_marker_details.max_allele,gdms_marker_details.ssr_nr,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.forward_primer_temp,gdms_marker_details.reverse_primer_temp,gdms_marker.annealing_temp,gdms_marker_details.elongation_temp,gdms_marker_details.fragment_size_expected,gdms_marker_details.fragment_size_observed,gdms_marker.amplification FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rs.getString(1));
+						//System.out.println("SELECT gdms_marker.assay_type,gdms_marker.motif,gdms_marker_details.no_of_repeats,gdms_marker_details.motif_type,gdms_marker_details.sequence,gdms_marker_details.sequence_length,gdms_marker_details.min_allele,gdms_marker_details.max_allele,gdms_marker_details.ssr_nr,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.forward_primer_temp,gdms_marker_details.reverse_primer_temp,gdms_marker.annealing_temp,gdms_marker_details.elongation_temp,gdms_marker_details.fragment_size_expected,gdms_marker_details.fragment_size_observed,gdms_marker.amplification FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+markerId);
+						ResultSet rs2L=stLoc.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.motif,gdms_marker_details.no_of_repeats,gdms_marker_details.motif_type,gdms_marker_details.sequence,gdms_marker_details.sequence_length,gdms_marker_details.min_allele,gdms_marker_details.max_allele,gdms_marker_details.ssr_nr,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.forward_primer_temp,gdms_marker_details.reverse_primer_temp,gdms_marker.annealing_temp,gdms_marker_details.elongation_temp,gdms_marker_details.fragment_size_expected,gdms_marker_details.fragment_size_observed,gdms_marker.amplification FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+markerId);
 						if(rs2.next()){
 							if((rs2.getString(15).equals("0"))||(rs2.getString(15).equals(""))||(rs2.getString(15)==null)){								
 								double val1=0;
@@ -339,21 +395,49 @@ public class RetrieveMarkerDetailsAction extends Action{
 							str123=str123+"!!~~"+rs2.getString(1)+"!!~~"+rs2.getString(2)+"!!~~"+rs2.getString(3)+"!!~~"+rs2.getString(4)+"!!~~"+rs2.getString(5)+"!!~~"+rs2.getString(6)+"!!~~"+rs2.getString(7)+"!!~~"+rs2.getString(8)+"!!~~"+rs2.getString(9)+"!!~~"+rs2.getString(10)+"!!~~"+rs2.getString(11)+"!!~~"+rs2.getString(12)+"!!~~"+rs2.getString(13)+"!!~~"+rs2.getString(14)+"!!~~"+AnnealingTemp+"!!~~"+ElongationTemp+"!!~~"+rs2.getString(17)+"!!~~"+rs2.getString(18)+"!!~~"+rs2.getString(19);
 							//System.out.println(str123);							
 						}
+						if(rs2L.next()){
+							if((rs2L.getString(15).equals("0"))||(rs2L.getString(15).equals(""))||(rs2L.getString(15)==null)){								
+								double val1=0;
+								double val2=0;
+								double temp=0;
+								if(!rs2L.getString(13).equals("0")){
+									val1=Double.parseDouble(rs2L.getString(14));
+								}
+								if(!rs2L.getString(14).equals("0")){
+									val2=Double.parseDouble(rs2L.getString(15));
+								}
+								if((rs2L.getString(13).equals("0"))&&(rs2L.getString(14).equals("0"))){
+									temp=0;
+								}else{
+									temp= Math.round((((val1+val2)/2)-5)*100.0)/100.0;
+								}								
+								AnnealingTemp=String.valueOf(temp);
+							}else{
+								AnnealingTemp=rs2L.getString(15);						
+							}
+							if((rs2L.getString(16)==null)||rs2L.getString(16).equals("")||rs2L.getString(16).equals("null")){
+								ElongationTemp="72c";
+							}else{
+								ElongationTemp=rs2L.getString(16);
+							}
+							//str123="";							
+							//str123=str123+"!!~~"+rs2.getString(1)+"!!~~"+rs2.getString(2)+"!!~~"+rs2.getString(3)+"!!~~"+rs2.getString(4)+"!!~~"+rs2.getString(5)+"!!~~"+rs2.getString(6)+"!!~~"+rs2.getString(7)+"!!~~"+rs2.getString(8)+"!!~~"+rs2.getString(9)+"!!~~"+rs2.getString(10)+"!!~~"+rs2.getString(11)+"!!~~"+rs2.getString(12)+"!!~~"+rs2.getString(13)+"!!~~"+rs2.getString(14)+"!!~~"+rs2.getString(15)+"!!~~"+rs2.getString(16)+"!!~~"+AnnealingTemp+"!!~~"+ElongationTemp+"!!~~"+rs2.getString(19)+"!!~~"+rs2.getString(20)+"!!~~"+rs2.getString(21);
+							str123=str123+"!!~~"+rs2L.getString(1)+"!!~~"+rs2L.getString(2)+"!!~~"+rs2L.getString(3)+"!!~~"+rs2L.getString(4)+"!!~~"+rs2L.getString(5)+"!!~~"+rs2L.getString(6)+"!!~~"+rs2L.getString(7)+"!!~~"+rs2L.getString(8)+"!!~~"+rs2L.getString(9)+"!!~~"+rs2L.getString(10)+"!!~~"+rs2L.getString(11)+"!!~~"+rs2L.getString(12)+"!!~~"+rs2L.getString(13)+"!!~~"+rs2L.getString(14)+"!!~~"+AnnealingTemp+"!!~~"+ElongationTemp+"!!~~"+rs2L.getString(17)+"!!~~"+rs2L.getString(18)+"!!~~"+rs2L.getString(19);
+							//System.out.println(str123);							
+						}
 						SSRlist.add(str123);
-					}else if (rs.getString("marker_type").equals("SNP")){
-						/*querysnp=hsession.createQuery("from MarkerDetailsBean WHERE marker_id="+ rs.getString(1));
-						//query=hsession.createQuery("from RetrievalMarkers WHERE germplasm_name='5066-002'");
-						mdet=(ArrayList)querysnp.list();
-						for(Iterator iterator=mdet.iterator();iterator.hasNext();){
-							MarkerDetailsBean snp = (MarkerDetailsBean) iterator.next();
-							 str123=str123+"!!~~"+snp.getAssay_type()+"!!~~"+snp.getForward_primer()+"!!~~"+snp.getReverse_primer()+"!!~~"+snp.getProduct_size()+"!!~~"+snp.getExpected_product_size()+"!!~~"+snp.getPosition_on_reference_sequence()+"!!~~"+snp.getMotif()+"!!~~"+snp.getAnnealing_temp()+"!!~~"+snp.getSequence();
-						 }*/
-						rs2=st2.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.expected_product_size,gdms_marker_details.position_on_reference_sequence,gdms_marker.motif,gdms_marker.annealing_temp,gdms_marker_details.sequence FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rs.getString(1));
+					}else if (rs.getString("marker_type").equalsIgnoreCase("SNP")){
+						
+						rs2=stCen.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.expected_product_size,gdms_marker_details.position_on_reference_sequence,gdms_marker.motif,gdms_marker.annealing_temp,gdms_marker_details.sequence FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rs.getString(1));
+						ResultSet rs2L=stLoc.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.expected_product_size,gdms_marker_details.position_on_reference_sequence,gdms_marker.motif,gdms_marker.annealing_temp,gdms_marker_details.sequence FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rs.getString(1));
 						if(rs2.next()){
 							str123=str123+"!!~~"+rs2.getString(1)+"!!~~"+rs2.getString(2)+"!!~~"+rs2.getString(3)+"!!~~"+rs2.getString(4)+"!!~~"+rs2.getInt(5)+"!!~~"+rs2.getInt(6)+"!!~~"+rs2.getString(7)+"!!~~"+rs2.getFloat(8)+"!!~~"+rs2.getString(9);
 						}
+						if(rs2L.next()){
+							str123=str123+"!!~~"+rs2L.getString(1)+"!!~~"+rs2L.getString(2)+"!!~~"+rs2L.getString(3)+"!!~~"+rs2L.getString(4)+"!!~~"+rs2L.getInt(5)+"!!~~"+rs2L.getInt(6)+"!!~~"+rs2L.getString(7)+"!!~~"+rs2L.getFloat(8)+"!!~~"+rs2L.getString(9);
+						}
 						SNPlist.add(str123);
-					}else if(rs.getString("marker_type").equals("CISR")){
+					}else if(rs.getString("marker_type").equalsIgnoreCase("CISR")){
 						//System.out.println("Select assay_type,repeats,no_of_repeats,sequence,sequence_length,min_allele,max_allele,size_of_repeat_motif,forward_primer,reverse_primer,product_size,primer_length,forward_primer_temp,reverse_primer_temp,annealing_temp,fragment_size_expected,amplification from ssr_marker where marker_id='"+rs.getString(1)+"'");
 						//rs2=st2.executeQuery("Select assay_type,repeats,no_of_repeats,sequence,sequence_length,min_allele,max_allele,size_of_repeat_motif,forward_primer,reverse_primer,product_size,primer_length,forward_primer_temp,reverse_primer_temp,annealing_temp,fragment_size_expected,amplification from ssr_marker where marker_id='"+rs.getString(1)+"'");
 						rs2=st2.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.motif,gdms_marker_details.no_of_repeats,gdms_marker_details.sequence,gdms_marker_details.sequence_length,gdms_marker_details.min_allele,gdms_marker_details.max_allele,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.forward_primer_temp,gdms_marker_details.reverse_primer_temp,gdms_marker.annealing_temp,gdms_marker_details.fragment_size_expected,gdms_marker.amplification FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rs.getString(1));
@@ -387,13 +471,7 @@ public class RetrieveMarkerDetailsAction extends Action{
 							//System.out.println(str123);							
 						}
 						CISRlist.add(str123);
-					}else if (rs.getString("marker_type").equals("CAP")){
-						/*querysnp=hsession.createQuery("from SNPMarkerBean WHERE marker_id="+ rs.getString(1));						
-						mdet=(ArrayList)querysnp.list();
-						for(Iterator iterator=mdet.iterator();iterator.hasNext();){
-							SNPMarkerBean snp = (SNPMarkerBean) iterator.next();
-							 str123=str123+"!!~~"+snp.getAssay_type()+"!!~~"+snp.getForward_primer()+"!!~~"+snp.getReverse_primer()+"!!~~"+snp.getProduct_size()+"!!~~"+snp.getExpected_product_size()+"!!~~"+snp.getRestriction_enzyme_for_assay()+"!!~~"+snp.getPosition_on_reference_sequence()+"!!~~"+snp.getMotif()+"!!~~"+snp.getAnnealing_temp()+"!!~~"+snp.getSequence();
-						 }*/
+					}else if (rs.getString("marker_type").equalsIgnoreCase("CAP")){						
 						rs2=st2.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.expected_product_size,gdms_marker_details.position_on_reference_sequence,gdms_marker.motif,gdms_marker.annealing_temp,gdms_marker_details.sequence FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rs.getString(1));
 						if(rs2.next()){
 							str123=str123+"!!~~"+rs2.getString(1)+"!!~~"+rs2.getString(2)+"!!~~"+rs2.getString(3)+"!!~~"+rs2.getString(4)+"!!~~"+rs2.getInt(5)+"!!~~"+rs2.getInt(6)+"!!~~"+rs2.getString(7)+"!!~~"+rs2.getFloat(8)+"!!~~"+rs2.getString(9);
@@ -402,16 +480,142 @@ public class RetrieveMarkerDetailsAction extends Action{
 						CAPlist.add(str123);
 					}			
 				}else{
-					if(marker_type.equals("SSR")){
+					if(marker_type.equalsIgnoreCase("SSR")){
 						SSRlist.add(str123);
-					}else if (marker_type.equals("SNP")){
+					}else if (marker_type.equalsIgnoreCase("SNP")){
 						SNPlist.add(str123);
-					}else if(marker_type.equals("CISR")){
+					}else if(marker_type.equalsIgnoreCase("CISR")){
 						CISRlist.add(str123);
-					}else if (marker_type.equals("CAP")){
+					}else if (marker_type.equalsIgnoreCase("CAP")){
 						CAPlist.add(str123);
 					}					
 				}
+				session.setAttribute("kbioMarkers", kbioMarkers);
+				session.setAttribute("markerType", marker_type);
+			}
+			rsL=stLoc.executeQuery(Query);
+			while (rsL.next()){		
+				if(Count==0){
+					SSRlist.add(str123+SSR);
+					SNPlist.add(str123+SNP);
+					CAPlist.add(str123+CAP);
+					CISRlist.add(str123+CISR);
+				}	
+				str123="";
+				Count++;
+				if(rsL.getString("marker_type").equalsIgnoreCase("snp")){
+					//kbioMarkers.add(rs.getString("marker_name"));
+					marker_type="snp";
+					kbioMarkers=kbioMarkers+"'"+rsL.getString("marker_name")+"',";
+					
+				}
+				GenotypeCount=rsL.getInt("genotypes_count");
+				//System.out.println("AllFeilds="+AllFeilds);
+				if(AllFeilds==true){
+					//marker_type=;
+					//str123=str123+rsL.getString(3)+"!!~~"+rsL.getString(9)+"!!~~"+rsL.getString(10)+"!!~~"+rsL.getString(11)+"!!~~"+rsL.getString(12)+"!!~~"+rsL.getString(6)+"!!~~"+rsL.getString(4)+"!!~~"+rsL.getString(5)+"!!~~"+rsL.getString(7)+"!!~~"+rsL.getString(13)+"!~!"+rsL.getString(1);
+					//str123=str123+rsL.getString(3)+"!!~~"+rsL.getString(9)+"!!~~"+rsL.getString(10)+"!!~~"+rsL.getString(11)+"!!~~"+rsL.getString(6)+"!!~~"+rsL.getString(4)+"!!~~"+rsL.getString(5)+"!!~~"+rsL.getString(7)+"!!~~"+rsL.getString(12)+"!~!"+rsL.getString(1);
+					str123=str123+rsL.getString(3)+"!!~~"+rsL.getString(2)+"!!~~"+rsL.getString(15)+"!!~~"+rsL.getString(16)+"!!~~"+rsL.getString(17)+"!!~~"+rsL.getString(6)+"!!~~"+rsL.getString(4)+"!!~~"+rsL.getString(5)+"!!~~"+rsL.getString(7)+"!!~~"+GenotypeCount+"!~!"+rsL.getString(1);
+				}else{
+					String[] qf=QueryFeilds.split(",");
+					fStr="";
+					for(int i=1;i<=qf.length;i++){
+						fStr=fStr+rsL.getString(i)+"!!~~";	
+						//System.out.println(">>>>>>>>>>>>>>>>   "+MarkerName+"   "+MarkerName1);				
+					}
+					//System.out.println("fStr="+fStr);
+					marker_type=rsL.getString("marker_type");				
+					str123=rsL.getString("marker_name")+"!!~~"+fStr.substring(0,fStr.length()-4)+"!~!"+rsL.getString("marker_id")+"!!~~";
+				}
+					
+				//str123=str123+GenotypeCount+"!~!"+rsL.getInt(1)+"!!~~";
+				if(AllFeilds==true){				
+					
+					rs2=null;
+					if(rsL.getString("marker_type").equalsIgnoreCase("SSR")){
+						//rs2=st2.executeQuery("Select assay_type,repeats,no_of_repeats,ssr_type,sequence,sequence_length,min_allele,max_allele,ssr_nr,size_of_repeat_motif,forward_primer,reverse_primer,product_size,primer_length,forward_primer_temp,reverse_primer_temp,annealing_temp,elongation_temp,fragment_size_expected,fragment_size_observed,amplification from ssr_marker where marker_id='"+rs.getString(1)+"'");
+						rs2=st2.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.motif,gdms_marker_details.no_of_repeats,gdms_marker_details.motif_type,gdms_marker_details.sequence,gdms_marker_details.sequence_length,gdms_marker_details.min_allele,gdms_marker_details.max_allele,gdms_marker_details.ssr_nr,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.forward_primer_temp,gdms_marker_details.reverse_primer_temp,gdms_marker.annealing_temp,gdms_marker_details.elongation_temp,gdms_marker_details.fragment_size_expected,gdms_marker_details.fragment_size_observed,gdms_marker.amplification FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rsL.getString(1));
+						if(rs2.next()){
+							if((rs2.getString(15).equals("0"))||(rs2.getString(15).equals(""))||(rs2.getString(15)==null)){								
+								double val1=0;
+								double val2=0;
+								double temp=0;
+								if(!rs2.getString(13).equals("0")){
+									val1=Double.parseDouble(rs2.getString(14));
+								}
+								if(!rs2.getString(14).equals("0")){
+									val2=Double.parseDouble(rs2.getString(15));
+								}
+								if((rs2.getString(13).equals("0"))&&(rs2.getString(14).equals("0"))){
+									temp=0;
+								}else{
+									temp= Math.round((((val1+val2)/2)-5)*100.0)/100.0;
+								}								
+								AnnealingTemp=String.valueOf(temp);
+							}else{
+								AnnealingTemp=rs2.getString(15);						
+							}
+							if((rs2.getString(16)==null)||rs2.getString(16).equals("")||rs2.getString(16).equals("null")){
+								ElongationTemp="72c";
+							}else{
+								ElongationTemp=rs2.getString(16);
+							}
+							str123=str123+"!!~~"+rs2.getString(1)+"!!~~"+rs2.getString(2)+"!!~~"+rs2.getString(3)+"!!~~"+rs2.getString(4)+"!!~~"+rs2.getString(5)+"!!~~"+rs2.getString(6)+"!!~~"+rs2.getString(7)+"!!~~"+rs2.getString(8)+"!!~~"+rs2.getString(9)+"!!~~"+rs2.getString(10)+"!!~~"+rs2.getString(11)+"!!~~"+rs2.getString(12)+"!!~~"+rs2.getString(13)+"!!~~"+rs2.getString(14)+"!!~~"+AnnealingTemp+"!!~~"+ElongationTemp+"!!~~"+rs2.getString(17)+"!!~~"+rs2.getString(18)+"!!~~"+rs2.getString(19);							
+						}
+						SSRlist.add(str123);
+					}else if (rsL.getString("marker_type").equalsIgnoreCase("SNP")){						
+						rs2=st2.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.expected_product_size,gdms_marker_details.position_on_reference_sequence,gdms_marker.motif,gdms_marker.annealing_temp,gdms_marker_details.sequence FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rsL.getString(1));
+						if(rs2.next()){
+							str123=str123+"!!~~"+rs2.getString(1)+"!!~~"+rs2.getString(2)+"!!~~"+rs2.getString(3)+"!!~~"+rs2.getString(4)+"!!~~"+rs2.getInt(5)+"!!~~"+rs2.getInt(6)+"!!~~"+rs2.getString(7)+"!!~~"+rs2.getFloat(8)+"!!~~"+rs2.getString(9);
+						}
+						SNPlist.add(str123);
+					}else if(rsL.getString("marker_type").equalsIgnoreCase("CISR")){
+						rs2=st2.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.motif,gdms_marker_details.no_of_repeats,gdms_marker_details.sequence,gdms_marker_details.sequence_length,gdms_marker_details.min_allele,gdms_marker_details.max_allele,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.forward_primer_temp,gdms_marker_details.reverse_primer_temp,gdms_marker.annealing_temp,gdms_marker_details.fragment_size_expected,gdms_marker.amplification FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rsL.getString(1));
+						if(rs2.next()){
+							if((rs2.getString(13).equals("0"))||(rs2.getString(13).equals(""))||(rs2.getString(13)==null)){								
+								double val1=0;
+								double val2=0;
+								double temp=0;
+								if(!rs2.getString(11).equals("0")){
+									val1=Double.parseDouble(rs2.getString(12));
+								}
+								if(!rs2.getString(12).equals("0")){
+									val2=rs2.getDouble(11);
+								}
+								if((rs2.getString(11).equals("0"))&&(rs2.getString(12).equals("0"))){
+									temp=0;
+								}else{
+									temp= Math.round((((val1+val2)/2)-5)*100.0)/100.0;
+								}								
+								AnnealingTemp=String.valueOf(temp);
+							}else{
+								AnnealingTemp=rs2.getString(13);						
+							}														
+							str123=str123+"!!~~"+rs2.getString(1)+"!!~~"+rs2.getString(2)+"!!~~"+rs2.getString(3)+"!!~~"+rs2.getString(4)+"!!~~"+rs2.getString(5)+"!!~~"+rs2.getString(6)+"!!~~"+rs2.getString(7)+"!!~~"+rs2.getString(8)+"!!~~"+rs2.getString(9)+"!!~~"+rs2.getString(10)+"!!~~"+rs2.getString(11)+"!!~~"+rs2.getString(12)+"!!~~"+AnnealingTemp+"!!~~"+rs2.getString(14)+"!!~~"+rs2.getString(15);
+												
+						}
+						CISRlist.add(str123);
+					}else if (rsL.getString("marker_type").equalsIgnoreCase("CAP")){						
+						rs2=st2.executeQuery("SELECT gdms_marker.assay_type,gdms_marker.forward_primer,gdms_marker.reverse_primer,gdms_marker.product_size,gdms_marker_details.expected_product_size,gdms_marker_details.position_on_reference_sequence,gdms_marker.motif,gdms_marker.annealing_temp,gdms_marker_details.sequence FROM gdms_marker JOIN gdms_marker_details ON gdms_marker.marker_id=gdms_marker_details.marker_id WHERE gdms_marker.marker_id="+rsL.getString(1));
+						if(rs2.next()){
+							str123=str123+"!!~~"+rs2.getString(1)+"!!~~"+rs2.getString(2)+"!!~~"+rs2.getString(3)+"!!~~"+rs2.getString(4)+"!!~~"+rs2.getInt(5)+"!!~~"+rs2.getInt(6)+"!!~~"+rs2.getString(7)+"!!~~"+rs2.getFloat(8)+"!!~~"+rs2.getString(9);
+						}
+						
+						CAPlist.add(str123);
+					}			
+				}else{
+					if(marker_type.equalsIgnoreCase("SSR")){
+						SSRlist.add(str123);
+					}else if (marker_type.equalsIgnoreCase("SNP")){
+						SNPlist.add(str123);
+					}else if(marker_type.equalsIgnoreCase("CISR")){
+						CISRlist.add(str123);
+					}else if (marker_type.equalsIgnoreCase("CAP")){
+						CAPlist.add(str123);
+					}					
+				}
+				session.setAttribute("kbioMarkers", kbioMarkers);
+				session.setAttribute("markerType", marker_type);
 			}
 			//System.out.println(SSRlist);
 			if(SSRlist.size()>1){
@@ -427,11 +631,19 @@ public class RetrieveMarkerDetailsAction extends Action{
 				al.add(CAPlist);
 			}
 			session.setAttribute("al", al);
+			/*if(rs!=null) rs.close(); if(rsL!=null) rsL.close(); if(rs2!=null) rs2.close();
+			if(stCen!=null) stCen.close(); if(stLoc!=null) stLoc.close(); if(st2!=null) st2.close();*/
+			if(conn!=null) con.close(); if(con!=null)con.close();
 		}catch(Exception e){
 			e.printStackTrace();
 		}finally{
 			try{
 				if(con!=null) con.close();hsession.disconnect();
+				if(conn!=null) conn.close();
+				if(stCen!=null)stCen.close();
+				if(stLoc!=null)stLoc.close();
+				if(rs!=null)rs.close();
+				if(rsL!=null)rsL.close();
 			}catch(Exception e){System.out.println(e);}
 		}	
 		return am.findForward("ret");

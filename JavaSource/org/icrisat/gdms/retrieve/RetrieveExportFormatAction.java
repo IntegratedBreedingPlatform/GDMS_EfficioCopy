@@ -4,8 +4,10 @@
 package org.icrisat.gdms.retrieve;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.DecimalFormat;
@@ -15,6 +17,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
@@ -45,6 +48,10 @@ import com.sun.org.apache.bcel.internal.generic.NEW;
 
 public class RetrieveExportFormatAction extends Action{
 	
+	java.sql.Connection conn;
+	java.sql.Connection con;
+	
+	
 	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();  
 	
 	
@@ -54,7 +61,7 @@ public class RetrieveExportFormatAction extends Action{
 	HashMap<String,Object> markerPAAlleles= new HashMap<String,Object>();
 	HashMap<String,Object> markerPBAlleles= new HashMap<String,Object>();
 	
-	Connection con=null;
+	//Connection con=null;
 	String str="";
 	String map="";
 	String mapData="";
@@ -68,12 +75,26 @@ public class RetrieveExportFormatAction extends Action{
 			throws Exception {
 		
 		//String crop=req.getSession().getAttribute("crop").toString();
-		ManagerFactory factory = null;
-		
+		ManagerFactory factory = null;		
+		Properties prop=new Properties();		
 		HttpSession session = req.getSession(true);
 		if(session!=null){
 			session.removeAttribute("qtlExistsSes");
 		}
+		
+		/*List alleleList=new ArrayList();
+		List charList=new ArrayList(); 
+		List mapCharList=new ArrayList(); */
+		int alleleCount=0;
+		int charCount=0;
+		int mapCharCount=0;
+		int cenAlleleCount=0;
+		int cenCharCount=0;
+		int cenMapCharCount=0;
+		int locAlleleCount=0;
+		int locCharCount=0;
+		int locMapCharCount=0;
+		
 		MaxIdValue r=new MaxIdValue();
 		ArrayList gListExp=new ArrayList();
 		HashMap gListExp1=new HashMap();
@@ -85,7 +106,8 @@ public class RetrieveExportFormatAction extends Action{
 		String markers="";
 		String gids="";
 		String gidslist="";
-		String datasetName="";
+		//String datasetName="";
+		int datasetId=0;
 		DynaActionForm df = (DynaActionForm) af;
 		//System.out.println("********************  "+df.get("opType"));
 		String op=df.get("opType").toString();
@@ -96,6 +118,12 @@ public class RetrieveExportFormatAction extends Action{
 		String markerslist="";
 		String accessionslist="";
 		String filePath="";
+		ArrayList markersInMap=new ArrayList();
+		ArrayList markerIDsList=new ArrayList();
+		ArrayList markerIdList=new ArrayList();
+		String markerIDs="";
+		//SortedMap markersMap=
+		SortedMap marNamesMap = new TreeMap();
 		filePath=req.getSession().getServletContext().getRealPath("//");
 		if(!new File(filePath+"/jsp/analysisfiles").exists())
 	   		new File(filePath+"/jsp/analysisfiles").mkdir();
@@ -108,11 +136,14 @@ public class RetrieveExportFormatAction extends Action{
 		Calendar now = Calendar.getInstance();
 		String mSec=now.getTimeInMillis()+"";
 		//String fname=filePath+"/jsp/analysisfiles/matrix"+mSec+".xls";
-		
+		ArrayList tidsList=new ArrayList();
+		SortedMap traitsMap = new TreeMap();
 		if(session!=null){
 			session.removeAttribute("msec");			
 		}
 		try{
+			ResultSet rs1C=null;
+			ResultSet rsC=null;
 			ResultSet rs=null;			
 			ResultSet rs1=null;
 			ResultSet rsG=null;	
@@ -122,22 +153,48 @@ public class RetrieveExportFormatAction extends Action{
 			ResultSet rsN=null;
 			ResultSet rsMT=null;
 			ResultSet rsPD=null;
-			ResultSet rsP=null;
-			ResultSet rs3=null;
-			ResultSet rsQ=null;
+			ResultSet rsP=null;ResultSet rsPDL=null;
+			ResultSet rs3=null;ResultSet rsMTL=null;
+			ResultSet rsQ=null; ResultSet rsDetL=null;
+			ResultSet rsL=null; ResultSet rscL=null;
+			ResultSet rsP1=null; ResultSet rsc=null;
+			ResultSet rsP2=null; ResultSet rsaL=null;
+			ResultSet rsML=null; ResultSet rsa=null;
+			ResultSet rsMC=null; ResultSet rs2L=null;
+			ResultSet rsMap=null; ResultSet rs1L=null;
+			ResultSet rsMapL=null; ResultSet rs2C=null;
+			ResultSet rsM1=null;
 			
-			ResultSet rsP1=null;
-			ResultSet rsP2=null;
+			prop.load(new FileInputStream(session.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+			String host=prop.getProperty("central.host");
+			String port=prop.getProperty("central.port");
+			String url = "jdbc:mysql://"+host+":"+port+"/";
+			String dbName = prop.getProperty("central.dbname");
+			String driver = "com.mysql.jdbc.Driver";
+			String userName = prop.getProperty("central.username"); 
+			String password = prop.getProperty("central.password");
+			
+			Class.forName(driver).newInstance();
+			conn = DriverManager.getConnection(url+dbName,userName,password);
+			Statement stCen=conn.createStatement();
 			
 			
-			ServletContext context = servlet.getServletContext();
-			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
-			con=dataSource.getConnection();
 			
-			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
-			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
-			*/
-		//	factory = new ManagerFactory(local, central);
+			String hostL=prop.getProperty("local.host");
+			String portL=prop.getProperty("local.port");
+			String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+			String dbNameL = prop.getProperty("local.dbname");
+			//String driver = "com.mysql.jdbc.Driver";
+			String userNameL = prop.getProperty("local.username"); 
+			String passwordL = prop.getProperty("local.password");
+			
+			Class.forName(driver).newInstance();
+			con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+			Statement stLoc=con.createStatement();			
+			
+			ArrayList lstMarkers = new ArrayList();			
+					
+			//factory = new ManagerFactory(local, central);
 			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
 			GermplasmDataManager manager = factory.getGermplasmDataManager();
 			
@@ -154,21 +211,21 @@ public class RetrieveExportFormatAction extends Action{
 			String parents="";
 			String parentB="";
 			String parentA="";
-			Statement stmt=con.createStatement();
-			Statement stmt1=con.createStatement();
-			Statement stmt2=con.createStatement();
-			Statement stmtM=con.createStatement();
-			Statement st=con.createStatement();
-			Statement stmtG=con.createStatement();
-			Statement stmtN=con.createStatement();
-			Statement stmtMT=con.createStatement();
-			Statement stmtPD=con.createStatement();
-			Statement stmtP=con.createStatement();
-			Statement stP=con.createStatement();
-			Statement stQ=con.createStatement();
-			
-			Statement stP1=con.createStatement();
-			Statement stP2=con.createStatement();
+			Statement stLC=null;
+			Statement stmt=null;
+			Statement stmt1=null;
+			Statement stmt2=null;
+			Statement stmtM=null;
+			Statement st=null;
+			Statement stmtG=null;
+			Statement stmtN=null;
+			Statement stmtMT=null;
+			Statement stmtPD=null;
+			Statement stmtP=null;
+			Statement stP=null;
+			Statement stQ=null;			
+			Statement stP1=null;
+			Statement stP2=null;
 			
 			
 			req.getSession().setAttribute("msec", mSec);
@@ -181,30 +238,59 @@ public class RetrieveExportFormatAction extends Action{
 			String exportOpType="";
 			
 			if(format.equalsIgnoreCase("flapjack")){
-				exportOpType=df.get("exportTypeH").toString();
-				//System.out.println(",,,,,,,,,,,,,,,:"+df.get("exportTypeH"));
-			}
+				exportOpType=df.get("exportTypeH").toString();				
+			}		
 			
-			
-			if(op.equalsIgnoreCase("dataset")){
+			if(op.equalsIgnoreCase("dataset")){	
 				
 				/** retrieving data of the whole dataset for export formats **/				
-				datasetName=df.get("dataset").toString();
-				  HashMap<Object, String> gMap = new HashMap<Object, String>();
-				  HashMap<Object, String> mMap = new HashMap<Object, String>();
-				int datasetId=0;
+				datasetId=Integer.parseInt(df.get("dataset").toString());
+				HashMap<Object, String> gMap = new HashMap<Object, String>();
+				HashMap<Object, String> mMap = new HashMap<Object, String>();
+				
 				ArrayList parentsData=new ArrayList();
 				ArrayList parentAData=new ArrayList();
 				ArrayList parentBData=new ArrayList();
-				//String datasetType="";
-			
-				//Statement st=con.createStatement();
-				//list.clear();
-				//System.out.println("select dataset_id,dataset_type from dataset where dataset_desc='"+datasetDesc+"'");
-				//rs=stmt.executeQuery("select dataset_id,dataset_type from dataset where dataset_desc='"+datasetDesc+"'");
-				rs=stmt.executeQuery("select dataset_id,dataset_type from gdms_dataset where dataset_name='"+datasetName+"'");
+				//System.out.println("datasetId=:"+datasetId);
+				if(datasetId > 0){
+					stLC=conn.createStatement();	
+					stmt=conn.createStatement();
+					stmt1=conn.createStatement();
+					stmt2=conn.createStatement();
+					stmtM=conn.createStatement();
+					st=conn.createStatement();
+					stmtG=conn.createStatement();
+					stmtN=conn.createStatement();
+					stmtMT=conn.createStatement();
+					stmtPD=conn.createStatement();
+					stmtP=conn.createStatement();
+					stP=conn.createStatement();
+					stQ=conn.createStatement();					
+					stP1=conn.createStatement();
+					stP2=conn.createStatement();
+				}else{				
+					stLC=con.createStatement();		
+					stmt=con.createStatement();
+					stmt1=con.createStatement();
+					stmt2=con.createStatement();
+					stmtM=con.createStatement();
+					st=con.createStatement();
+					stmtG=con.createStatement();
+					stmtN=con.createStatement();
+					stmtMT=con.createStatement();
+					stmtPD=con.createStatement();
+					stmtP=con.createStatement();
+					stP=con.createStatement();
+					stQ=con.createStatement();					
+					stP1=con.createStatement();
+					stP2=con.createStatement();
+				}
+				
+				
+				
+				rs=stLC.executeQuery("select dataset_id,dataset_type from gdms_dataset where dataset_id="+datasetId);
 				while(rs.next()){
-					datasetId=rs.getInt(1);
+					//datasetId=rs.getInt(1);
 					datasetType=rs.getString(2);					
 				}
 				String gid="";
@@ -212,15 +298,10 @@ public class RetrieveExportFormatAction extends Action{
 				int parentAint=0;
 				int parentBint=0;
 				String pgids="";
-				ArrayList markersList=new ArrayList();
-				
+				ArrayList markersList=new ArrayList();		
 				
 				long startTime = System.currentTimeMillis();
-				//System.out.println("............"+datasetId+"   "+datasetType);
-				//rs2=stmt2.executeQuery("SELECT gid from acc_metadataset where dataset_id="+datasetId);
 				
-				//System.out.println("<<<<<<<<<<<<<<<<<<<< gid="+gid);
-				//System.out.println("select marker_id from marker_metadataset where dataset_id="+datasetId+" order by marker_id");
 				rs=stmt.executeQuery("select marker_id from gdms_marker_metadataset where dataset_id="+datasetId+" order by marker_id");
 				while(rs.next()){
 					mid=mid+rs.getInt(1)+",";
@@ -228,14 +309,32 @@ public class RetrieveExportFormatAction extends Action{
 						markersList.add(rs.getInt(1));
 					
 				}
+				mid=mid.substring(0, mid.length()-1);
+				//lstMarkers.clear();
+				HashMap<Integer, Object> markersMap = new HashMap<Integer, Object>();
+	            //System.out.println("select distinct marker_id, marker_name from gdms_marker where marker_id in ("+mid+") order by marker_id asc");
+	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_id in ("+mid+") order by marker_id asc");
+	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_id in ("+mid+") order by marker_id asc");
+	            
+	            while(rsMC.next()){	            	
+	            	markersMap.put(rsMC.getInt(1), rsMC.getString(2));		
+	            }
+	            while(rsML.next()){            	
+	            	markersMap.put(rsML.getInt(1), rsML.getString(2));	
+	            }
 				
-				rsMT=stmtMT.executeQuery("select distinct marker_type from gdms_marker where marker_id in("+mid.substring(0,mid.length()-1)+")");
+				for(int mp=0;mp<markersList.size();mp++){					
+					lstMarkers.add(markersMap.get(Integer.parseInt(markersList.get(mp).toString())));					
+				}
+				
+				//System.out.println("select distinct marker_type from gdms_marker where marker_id in("+mid+")");
+				rsMT=stmtMT.executeQuery("select distinct marker_type from gdms_marker where marker_id in("+mid+")");
 				while (rsMT.next()){
 					mType=rsMT.getString(1);
 				}
 				if(datasetType.equalsIgnoreCase("mapping")){
 					//System.out.println("IF Mapping ...................");
-					rsP=stmt2.executeQuery("select parent_a_gid, parent_b_gid from gdms_mapping_pop where dataset_id="+datasetId);
+					rsP=stmt2.executeQuery("select parent_a_nid, parent_b_nid from gdms_mapping_pop where dataset_id="+datasetId);
 					rs1=stmt1.executeQuery("select mapping_type from gdms_mapping_pop where dataset_id="+datasetId);
 					while(rs1.next()){
 						mapping_type=rs1.getString(1);
@@ -310,7 +409,7 @@ public class RetrieveExportFormatAction extends Action{
 							if(!(pgidsList.contains(names.getGermplasmId())))
 								pgidsList.add(names.getGermplasmId());
 							gMap.put(names.getGermplasmId(), names.getNval());
-							//gids=gids+names.getGermplasmId()+",";
+							
 						}
 						if(pgidsList.contains(parentAint)){
 							parents=parents+gMap.get(parentAint)+"!~!";
@@ -350,7 +449,7 @@ public class RetrieveExportFormatAction extends Action{
 					
 						
 					//}
-						//System.out.println(",,,,,,,,,,,,,,,,,,,,,,,,,,,  parents:"+pgidsList);
+						System.out.println(",,,,,,,,,,,,,,,,,,,,,,,,,,,  mType:"+mType);
 					/*System.out.println(",,,,,,,,,,,,,,,,,,,,,,,,,,,  parents:"+parents);
 					System.out.println("pgids=:"+pgids);
 					System.out.println("mids=:"+mid);*/
@@ -359,10 +458,11 @@ public class RetrieveExportFormatAction extends Action{
 					if(mapping_type.equalsIgnoreCase("allelic")){							
 						//System.out.println("....."+"select gid,marker_id, char_value from gdms_char_values where gid in("+pgids.substring(0,pgids.length()-1)+") and marker_id in("+mid.substring(0,mid.length()-1)+") order by gid, marker_id");
 						if((mType.equalsIgnoreCase("SSR"))||(mType.equalsIgnoreCase("DArT"))){
-							rsPD=stmtPD.executeQuery("select gid,marker_id, allele_bin_value from gdms_allele_values where gid in("+pgids.substring(0,pgids.length()-1)+") and marker_id in("+mid.substring(0,mid.length()-1)+") order by gid, marker_id");
+							rsPD=stmtPD.executeQuery("select gid,marker_id, allele_bin_value from gdms_allele_values where gid in("+pgids.substring(0,pgids.length()-1)+") and marker_id in("+mid+") order by gid, marker_id");
 						}else if(mType.equalsIgnoreCase("SNP")){
 							//System.out.println("select gid,marker_id, char_value from gdms_char_values where gid in("+pgids.substring(0,pgids.length()-1)+") and marker_id in("+mid.substring(0,mid.length()-1)+") order by gid, marker_id");
-							rsPD=stmtPD.executeQuery("select gid,marker_id, char_value from gdms_char_values where gid in("+pgids.substring(0,pgids.length()-1)+") and marker_id in("+mid.substring(0,mid.length()-1)+") order by gid, marker_id");
+							//System.out.println("select gid,marker_id, char_value from gdms_char_values where gid in("+pgids.substring(0,pgids.length()-1)+") and marker_id in("+mid.substring(0,mid.length()-1)+") order by gid, marker_id");
+							rsPD=stmtPD.executeQuery("select gid,marker_id, char_value from gdms_char_values where gid in("+pgids.substring(0,pgids.length()-1)+") and marker_id in("+mid+") order by gid, marker_id");
 						}
 						while(rsPD.next()){
 							parentsData.add(rsPD.getInt(1)+","+rsPD.getInt(2)+","+rsPD.getString(3));
@@ -375,8 +475,7 @@ public class RetrieveExportFormatAction extends Action{
 							 while(stzP.hasMoreTokens()){
 								 arrP[iP] = stzP.nextToken();
 								 iP++;
-							 }	
-							
+							 }							
 							 if(Integer.parseInt(arrP[0])==parentAint){								
 								 parentAData.add(parentAint+","+arrP[1]+","+arrP[2]);
 							 }else if(Integer.parseInt(arrP[0])==parentBint){									
@@ -457,30 +556,6 @@ public class RetrieveExportFormatAction extends Action{
 					*/					
 				}
 				//System.out.println("gMap=:"+gMap);
-								
-				//System.out.println("select marker_id, marker_name from marker where marker_id in("+ mid.substring(0,mid.length()-1) +") order by marker_id ASC");
-				rsM=stmtM.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in("+ mid.substring(0,mid.length()-1) +") order by marker_id ASC");
-				
-				if(datasetType.equalsIgnoreCase("SNP")){
-					//System.out.println("select gid, marker_id, char_value from gdms_char_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
-					rsD=st.executeQuery("select gid, marker_id, char_value from gdms_char_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
-					
-				}else if((datasetType.equalsIgnoreCase("SSR"))||(datasetType.equalsIgnoreCase("DArT"))){
-					//System.out.println("select gid, marker_id, allele_bin_value from gdms_allele_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
-					rsD=st.executeQuery("select gid, marker_id, allele_bin_value from gdms_allele_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
-					
-				}else if(datasetType.equalsIgnoreCase("mapping")){
-					//System.out.println("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
-					rsD=st.executeQuery("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
-					
-					session.setAttribute("dataset", datasetId);
-				}
-				while(rsM.next()){
-					mMap.put(rsM.getInt(1), rsM.getString(2));
-					midsList.add(rsM.getString(1));
-					if(!(mListExp.contains(rsM.getString(2))))
-					mListExp.add(rsM.getString(2));
-				}
 				String str="";
 				if((format.contains("Genotyping X Marker Matrix"))&&(mapping_type.equalsIgnoreCase("allelic"))){
 					/*if(!(gListExp.contains(parentAint+"")))
@@ -515,13 +590,41 @@ public class RetrieveExportFormatAction extends Action{
 				//System.out.println("format="+format);
 				if(((format.contains("Flapjack"))&&(mapping_type.equalsIgnoreCase("abh")))||((format.contains("Genotyping X Marker Matrix"))&&(mapping_type.equalsIgnoreCase("abh")))){
 					//System.out.println("only flapjack and abh");
-					for(int m=0; m<midsList.size(); m++){
-						strL.add(parentAint+","+midsList.get(m)+","+"A");
+					for(int m=0; m<markersList.size(); m++){
+						strL.add(parentAint+","+markersList.get(m)+","+"A");
 					}
-					for(int m=0; m<midsList.size(); m++){
-						strL.add(parentBint+","+midsList.get(m)+","+"B");
+					for(int m=0; m<markersList.size(); m++){
+						strL.add(parentBint+","+markersList.get(m)+","+"B");
 					}
 				}
+				//System.out.println("strL=:"+strL);
+				//System.out.println("select marker_id, marker_name from marker where marker_id in("+ mid.substring(0,mid.length()-1) +") order by marker_id ASC");
+				//rsM=stmtM.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in("+ mid.substring(0,mid.length()-1) +") order by marker_id ASC");
+				//System.out.println("datasetType="+datasetType);
+				if(datasetType.equalsIgnoreCase("SNP")){
+					//System.out.println("..................SNP.................");
+					//System.out.println("select gid, marker_id, char_value from gdms_char_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					rsD=st.executeQuery("select gid, marker_id, char_value from gdms_char_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					
+				}else if((datasetType.equalsIgnoreCase("SSR"))||(datasetType.equalsIgnoreCase("DArT"))){
+					//System.out.println("**************************  DArT / SSR *****************************");
+					//System.out.println("select gid, marker_id, allele_bin_value from gdms_allele_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					rsD=st.executeQuery("select gid, marker_id, allele_bin_value from gdms_allele_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					
+				}else if(datasetType.equalsIgnoreCase("mapping")){
+					//System.out.println("%%%%%%%%%%%%%%%%%%%%%%%%%%  Mapping %%%%%%%%%%%%%%%%%%%%%%");
+					//System.out.println("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					rsD=st.executeQuery("select gid, marker_id, map_char_value from gdms_mapping_pop_values where dataset_id="+datasetId+" ORDER BY gid, marker_id ASC");
+					
+					session.setAttribute("dataset", datasetId);
+				}
+				/*while(rsM.next()){
+					mMap.put(rsM.getInt(1), rsM.getString(2));
+					midsList.add(rsM.getString(1));
+					if(!(mListExp.contains(rsM.getString(2))))
+					mListExp.add(rsM.getString(2));
+				}*/
+				
 				//System.out.println(".......1212121......:"+strL);
 				while(rsD.next()){
 					//strL=strL+rsD.getInt(1)+","+rsD.getInt(2)+","+rsD.getString(3)+"!~!";
@@ -543,7 +646,8 @@ public class RetrieveExportFormatAction extends Action{
 				Map<Object, String> sortedMap = new TreeMap<Object, String>(gMap);
 				Map<Object, String> sortedMarkerMap = new TreeMap<Object, String>(mMap);
 	           	Set keys = sortedMap.keySet();
-	           	int mcount=mListExp.size();
+	           //	int mcount=mListExp.size();
+	           	int mcount=lstMarkers.size();
 
 				for (Iterator i = keys.iterator(); i.hasNext(); ){
 					int key = Integer.parseInt(i.next().toString());
@@ -576,89 +680,141 @@ public class RetrieveExportFormatAction extends Action{
 					//if((midsList.contains(arr[1]))&&(gidsList.contains(arr[0]))){
 						//list.add(sortedMap.get(Integer.parseInt(arr[0]))+","+sortedMarkerMap.get(Integer.parseInt(arr[1]))+","+arr[2]);
 					if((format.contains("Flapjack"))&&(exportOpType.equals("gname"))){
-						list.add(sortedMap.get(Integer.parseInt(arr[0]))+","+sortedMarkerMap.get(Integer.parseInt(arr[1]))+","+arr[2]);
+						list.add(sortedMap.get(Integer.parseInt(arr[0]))+","+markersMap.get(Integer.parseInt(arr[1]))+","+arr[2]);
 					}else{
-						list.add(arr[0]+","+sortedMarkerMap.get(Integer.parseInt(arr[1]))+","+arr[2]);
+						list.add(arr[0]+","+markersMap.get(Integer.parseInt(arr[1]))+","+arr[2]);
 					}
 					//}					
 				}
 				//System.out.println("list="+list);
 				
 				mapData="";
-				ArrayList markersInMap=new ArrayList();
+				
 				//qtl_id
 				/** retrieving map data for flapjack .map file **/
-				if(format.contains("Flapjack")){
-					//System.out.println("map="+map.split(" ("));
+				if(format.contains("Flapjack")){					
 				    String mapName  = map.substring(0,map.lastIndexOf("("));
-				    //System.out.println("select marker_name, linkage_group, start_position from mapping_data where map_name in ('"+mapName+"') order by linkage_group, start_position,marker_name");
-					rs=stmt.executeQuery("select marker_name, linkage_group, start_position, marker_id from gdms_mapping_data where map_name in ('"+mapName+"') order by linkage_group, start_position,marker_name");
+				    rsMC=stCen.executeQuery("select gdms_markers_onmap.marker_id from gdms_markers_onmap, gdms_map where gdms_map.map_name='"+mapName+"'");
+				    while(rsMC.next()){
+				    	markerIDsList.add(rsMC.getInt(1));
+				    	markerIDs=markerIDs+rsMC.getInt(1)+",";
+				    }
+				    rsML=stLoc.executeQuery("select gdms_markers_onmap.marker_id from gdms_markers_onmap, gdms_map where gdms_map.map_name='"+mapName+"'");
+				    while(rsML.next()){
+				    	if(!markerIDsList.contains(rsML.getInt(1))){
+				    		markerIDsList.add(rsML.getInt(1));
+				    		markerIDs=markerIDs+rsML.getInt(1)+",";
+				    	}				    	
+				    }
+				   // markerIDsList
+				    rsM=stCen.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in("+markerIDs.substring(0, markerIDs.length()-1)+")");
+				    while(rsM.next()){
+				    	markerIdList.add(rsM.getString(2));
+				    	marNamesMap.put(rsM.getInt(1), rsM.getString(2));
+				    }
+				    rsM1=stLoc.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in("+markerIDs.substring(0, markerIDs.length()-1)+")");
+				    while(rsM1.next()){
+				    	if(!markerIdList.contains(rsM1.getString(2))){
+				    		markerIdList.add(rsM1.getString(2));
+				    		marNamesMap.put(rsM1.getInt(1), rsM1.getString(2));
+				    	}
+				    	
+				    }
+				    
+				    System.out.println("select marker_id, linkage_group, start_position from gdms_markers_onmap, gdms_map where gdms_map.map_name ='"+mapName+"' AND gdms_map.map_id=gdms_markers_onmap.map_id order by linkage_group, start_position,marker_id");
+					rs=stCen.executeQuery("select marker_id, linkage_group, start_position from gdms_markers_onmap, gdms_map where gdms_map.map_name='"+mapName+"' AND gdms_map.map_id=gdms_markers_onmap.map_id order by linkage_group, start_position,marker_id");
 					while(rs.next()){
 						//System.out.println(rs.getString(1)+"   "+rs.getString(2)+"   "+rs.getFloat(3));
-						mapData=mapData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getFloat(3)+"~~!!~~";
-						if(!markersInMap.contains(rs.getInt(4)))
-							markersInMap.add(rs.getInt(4));
+						mapData=mapData+marNamesMap.get(rs.getInt(1)).toString()+"!~!"+rs.getString(2)+"!~!"+rs.getFloat(3)+"~~!!~~";
+						if(!markersInMap.contains(rs.getInt(1)))
+							markersInMap.add(rs.getInt(1));
 					}
+					rsL=stLoc.executeQuery("select marker_id, linkage_group, start_position from gdms_markers_onmap, gdms_map where gdms_map.map_name='"+mapName+"' AND gdms_map.map_id=gdms_markers_onmap.map_id order by linkage_group, start_position,marker_id");
+					while(rsL.next()){
+						//System.out.println(rs.getString(1)+"   "+rs.getString(2)+"   "+rs.getFloat(3));
+						mapData=mapData+marNamesMap.get(rsL.getInt(1)).toString()+"!~!"+rsL.getString(2)+"!~!"+rsL.getFloat(3)+"~~!!~~";
+						if(!markersInMap.contains(rsL.getInt(1)))
+							markersInMap.add(rsL.getInt(1));
+					}
+					
+					System.out.println(markersList);
+					System.out.println("......:"+markersInMap);
 					for(int m=0;m<markersList.size();m++){
 						if(!(markersInMap.contains(markersList.get(m)))){
-							mapData=mapData+mMap.get(markersList.get(m))+"!~!"+"unmapped"+"!~!"+"0"+"~~!!~~";
+							mapData=mapData+markersMap.get(markersList.get(m))+"!~!"+"unmapped"+"!~!"+"0"+"~~!!~~";
 						}
 					}
-					ResultSet rsMap=st.executeQuery("select qtl_id from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+mapName+"')");
+					//System.out.println("mapData=:"+mapData);
+					rsMap=stCen.executeQuery("select qtl_id from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+mapName+"')");
 					//rsQ=stQ.executeQuery("");
 					while(rsMap.next()){
 						//System.out.println("..............:"+rsMap.getInt(1));
 						qtlCount++;
 						qtl_id=qtl_id+rsMap.getInt(1)+",";
 					}
+					rsMapL=stLoc.executeQuery("select qtl_id from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+mapName+"')");
+					//rsQ=stQ.executeQuery("");
+					while(rsMapL.next()){
+						//System.out.println("..............:"+rsMap.getInt(1));
+						qtlCount++;
+						qtl_id=qtl_id+rsMapL.getInt(1)+",";
+					}
 					if(qtlCount>0){
+						rsC=stCen.executeQuery("select distinct trabbr, tid from tmstraits");
+						while(rsC.next()){							
+							tidsList.add(rsC.getInt(2));
+								traitsMap.put(rsC.getInt(2), rsC.getString(1));
+							
+						}
+						rsN=stmtN.executeQuery("select distinct trabbr, tid from tmstraits");
+						while(rsN.next()){							
+							if(!tidsList.contains(rsN.getInt(2)))
+								traitsMap.put(rsN.getInt(2), rsN.getString(1));
+						}
+						
+						
+						
 						qtlExists=true;
 						//System.out.println("................;"+qtl_id);
 						//System.out.println("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
-						rsQ=stQ.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
+						rsQ=stCen.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
 						while(rsQ.next()){
-							/*String Fmarkers=rsQ.getString(13)+"/"+rsQ.getString(14);
-							//float pos=(rsQ.getFloat(3)+rsQ.getFloat(4))/2;
-							//System.out.println(",,,,,,,,,,,,,,,,,,,,,,  :"+rsQ.getString(5));
-							qtlData.add(rsQ.getString(16)+"!~!"+rsQ.getString(11)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getFloat(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getFloat(10)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(8));*/
 							String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);
-							qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7));
+							qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+traitsMap.get(rsQ.getInt(5)).toString()+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(16)+"!~!"+rsQ.getString(17)+"!~!"+rsQ.getString(18)+"!~!"+rsQ.getString(19)+"!~!"+rsQ.getString(20));
 						
 						}
+						rsDetL=stLoc.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
+						while(rsDetL.next()){
+							String Fmarkers=rsDetL.getString(12)+"/"+rsDetL.getString(13);
+							qtlData.add(rsDetL.getString(22)+"!~!"+rsDetL.getString(10)+"!~!"+rsDetL.getFloat(14)+"!~!"+rsDetL.getFloat(3)+"!~!"+rsDetL.getFloat(4)+"!~!"+traitsMap.get(rsDetL.getInt(5)).toString()+"!~!"+rsDetL.getString(6)+"!~!"+rsDetL.getString(6)+"!~!"+rsDetL.getFloat(8)+"!~!"+rsDetL.getFloat(9)+"!~!"+rsDetL.getString(6)+"!~!"+Fmarkers+"!~!"+rsDetL.getString(7)+"!~!"+rsDetL.getString(16)+"!~!"+rsDetL.getString(17)+"!~!"+rsDetL.getString(18)+"!~!"+rsDetL.getString(19)+"!~!"+rsDetL.getString(20));
+						
+						}
+						//System.out.println("qtlData="+qtlData);
 					}else
 						qtlExists=false;
 					session.setAttribute("qtlExistsSes", qtlExists);
 				}
 				
-				//System.out.println("*************qtlData="+qtlData);
-				
-				
-				//System.out.println("........list="+list);
-				//System.out.println(gListExp);
-				//System.out.println("List="+list);
-				//System.out.println(" gListExp="+ gListExp);
-				//System.out.println(" mListExp="+ mListExp);
-				
 				if((format.contains("Genotyping X Marker Matrix"))&&(datasetType.equalsIgnoreCase("SNP"))){
-					ef.MatrixDataSNPDataset(list, filePath, req, gListExp, mListExp, sortedMap);
+					ef.MatrixDataSNPDataset(list, filePath, req, gListExp, lstMarkers, sortedMap);
 					session.setAttribute("datasetType", datasetType);
 				}else if((format.contains("Genotyping X Marker Matrix"))&&(datasetType.equalsIgnoreCase("mapping"))){
-					ef.mapMatrix(list, filePath, req, gListExp, mListExp, parentsListToWrite, sortedMap);			
+					ef.mapMatrix(list, filePath, req, gListExp, lstMarkers, parentsListToWrite, sortedMap);			
 					session.setAttribute("datasetType", datasetType);
 				}else if((format.contains("Genotyping X Marker Matrix"))&&(datasetType.equalsIgnoreCase("SSR"))){
 					if(mcount>252){
 						session.setAttribute("datasetType", "SNP");
-						ef.MatrixDataSNPDataset(list, filePath, req, gListExp, mListExp, sortedMap);
+						ef.MatrixDataSNPDataset(list, filePath, req, gListExp, lstMarkers, sortedMap);
 					}else{
 						session.setAttribute("datasetType", "SSR");
-						ef.Matrix(list, filePath, req, gListExp, mListExp, sortedMap);
+						ef.Matrix(list, filePath, req, gListExp, lstMarkers, sortedMap);
 					}
 						
 					//ef.Matrix(list, filePath, req, gListExp, mListExp);
 					//ef.Matrix(list, filePath, req);
 				}else if((format.contains("Genotyping X Marker Matrix"))&&(datasetType.equalsIgnoreCase("DArT"))){
 					session.setAttribute("datasetType", datasetType);
-					ef.Matrix(list, filePath, req, gListExp, mListExp, sortedMap);
+					ef.Matrix(list, filePath, req, gListExp, lstMarkers, sortedMap);
 				}
 				if(format.contains("Flapjack")){
 					if(session!=null){
@@ -673,7 +829,7 @@ public class RetrieveExportFormatAction extends Action{
 					
 					ef.MatrixDat(list, mapData, FlapjackPath, req, gListExp, mListExp, qtlData, exportOpType, qtlExists, mapEx, gListExp1);*/
 					
-					ef.FlapjackDat(list, mapData, FlapjackPath, req, gListExp, mListExp, qtlData, exportOpType, qtlExists);
+					ef.FlapjackDat(list, mapData, FlapjackPath, req, gListExp, lstMarkers, qtlData, exportOpType, qtlExists);
 					
 					//ef.MatrixDat(list, mapData, filePath, req);
 					//ef.Matrix(list, filePath, request);
@@ -696,9 +852,11 @@ public class RetrieveExportFormatAction extends Action{
 				int count=0;
 				list.clear();
 				String f1="";
+				int mapId=0;
 				String type=req.getSession().getAttribute("type").toString();
 				//System.out.println("type="+req.getSession().getAttribute("type"));
 				if(type.equals("map")){
+					String[] maps=null;
 					String[] mapStr=null;
 					//session.setAttribute("mapsSess", df.get("selMaps"));
 					//System.out.println("***********************************  "+df.get("selMaps"));
@@ -714,12 +872,15 @@ public class RetrieveExportFormatAction extends Action{
 				   		new File(filePath+"/jsp/analysisfiles").mkdir();
 					session.setAttribute("count", (mapStr.length));
 					for(int c=0;c<mapStr.length;c++){
+						maps=mapStr[c].split("!~!");
+						mapId=Integer.parseInt(maps[1].substring(0, maps[1].length()-1));
+						//System.out.println("^^^^^^^^^^^^^^^^^^^^    :"+maps[0].substring(1));
 						if(session!=null){
 							session.removeAttribute("msec");			
 						}
 						mSec=now.getTimeInMillis()+"";
 						//System.out.println("msec="+mapStr[c]);			
-						f1=f1+mapStr[c]+"!~!"+mSec+c+";;";
+						f1=f1+maps[0].substring(1)+"!~!"+mSec+c+";;";
 						ArrayList dist=new ArrayList();
 						ArrayList CD=new ArrayList();
 						req.getSession().setAttribute("exportFormat","CMTV");
@@ -728,33 +889,78 @@ public class RetrieveExportFormatAction extends Action{
 						//ExportFormats ef=new ExportFormats();
 						//MaxIdValue r=new MaxIdValue();
 						String mapUnit="";
-						rs1=stmt1.executeQuery("select map_unit from gdms_mapping_data WHERE map_name="+mapStr[c]);
-						while (rs1.next()){
-							mapUnit=rs1.getString(1);
-						}
-						//System.out.println("mapUnit=:"+mapUnit);
-						//System.out.println("SELECT marker_name, linkage_group, start_position,map_name FROM gdms_mapping_data WHERE map_name=("+mapStr[c]+") ORDER BY linkage_group, start_position asc, marker_id,map_name");
-						rs=stmt.executeQuery("SELECT marker_name, linkage_group, start_position,map_name FROM gdms_mapping_data WHERE map_name =("+mapStr[c]+") ORDER BY linkage_group, start_position asc, marker_id, map_name");
-						while(rs.next()){
-							//mapData=mapData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getDouble(3)+"!~!"+rs.getString(4)+"~~!!~~";
-							//CD.add(rs.getString(2)+"!~!"+rs.getDouble(3)+"!~!"+rs.getString(1)+"!~!"+rs.getString(4));
-							if(mapUnit.equalsIgnoreCase("bp")){
-								CD.add(rs.getString(2)+"!~!"+new BigDecimal(rs.getString(3))+"!~!"+rs.getString(1)+"!~!"+rs.getString(4));
-							}else{
-								CD.add(rs.getString(2)+"!~!"+decfor.format(rs.getDouble(3))+"!~!"+rs.getString(1)+"!~!"+rs.getString(4));
+						String marker_id="";
+						HashMap<Integer, Object> markersMap = new HashMap<Integer, Object>();
+			            //List lstMarkers = new ArrayList();
+						if(mapId>0){
+							rsC=stCen.executeQuery("select map_unit from gdms_map where map_id="+mapId);
+							while (rsC.next()){
+								mapUnit=rsC.getString(1);
 							}
-							count=count+1;
-							//CD.add(rs.getFloat(3));
+							rs1C=stCen.executeQuery("select marker_id from gdms_markers_onmap where map_id="+mapId);
+							while(rs1C.next()){
+								marker_id=marker_id+rs1C.getInt(1)+",";
+							}
+							marker_id=marker_id.substring(0, marker_id.length()-1);
+							
+							rs2C=stCen.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in ("+marker_id+")");
+							while(rs2C.next()){
+								lstMarkers.add(rs2C.getInt(1));
+				            	markersMap.put(rs2C.getInt(1), rs2C.getString(2));						
+							}
+							
+							
+							//System.out.println("select gdms_markers_onmap.marker_id, gdms_markers_onmap.linkage_group, gdms_markers_onmap.start_position, gdms_map.map_name from gdms_markers_onmap, gdms_map where gdms_map.map_id="+mapId+" and gdms_map.map_id=gdms_markers_onmap.map_id ORDER BY linkage_group, start_position asc, marker_id, map_name");
+							rsMC=stCen.executeQuery("select gdms_markers_onmap.marker_id, gdms_markers_onmap.linkage_group, gdms_markers_onmap.start_position, gdms_map.map_name from gdms_markers_onmap, gdms_map where gdms_map.map_id="+mapId+" and gdms_map.map_id=gdms_markers_onmap.map_id ORDER BY linkage_group, start_position asc, marker_id, map_name");
+							while(rsMC.next()){
+								if(mapUnit.equalsIgnoreCase("bp")){
+									CD.add(rsMC.getString(2)+"!~!"+new BigDecimal(rsMC.getString(3))+"!~!"+markersMap.get(rsMC.getInt(1))+"!~!"+rsMC.getString(4));
+								}else{
+									CD.add(rsMC.getString(2)+"!~!"+decfor.format(rsMC.getDouble(3))+"!~!"+markersMap.get(rsMC.getInt(1))+"!~!"+rsMC.getString(4));
+								}
+								count=count+1;
+							}
+							
+						}else{
+							rsL=stLoc.executeQuery("select map_unit from gdms_map where map_id="+mapId);
+							while (rsL.next()){
+								mapUnit=rsL.getString(1);
+							}
+							
+							rs1L=stLoc.executeQuery("select marker_id from gdms_markers_onmap where map_id="+mapId);
+							while(rs1L.next()){
+								marker_id=marker_id+rs1L.getInt(1)+",";
+							}
+							marker_id=marker_id.substring(0, marker_id.length()-1);
+							
+							rs2C=stCen.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in ("+marker_id+")");
+							while(rs2C.next()){
+								lstMarkers.add(rs2C.getInt(1));
+				            	markersMap.put(rs2C.getInt(1), rs2C.getString(2));						
+							}
+							rs2L=stLoc.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in ("+marker_id+")");
+							while(rs2L.next()){
+								lstMarkers.add(rs2L.getInt(1));
+				            	markersMap.put(rs2L.getInt(1), rs2L.getString(2));						
+							}
+							
+							rsML=stLoc.executeQuery("select gdms_markers_onmap.marker_id, gdms_markers_onmap.linkage_group, gdms_markers_onmap.start_position, gdms_map.map_name from gdms_markers_onmap, gdms_map where gdms_map.map_id="+mapId+" and gdms_map.map_id=gdms_markers_onmap.map_id ORDER BY linkage_group, start_position asc, marker_id, map_name");
+							while(rsML.next()){
+								//mapData=mapData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getDouble(3)+"!~!"+rs.getString(4)+"~~!!~~";
+								//CD.add(rs.getString(2)+"!~!"+rs.getDouble(3)+"!~!"+rs.getString(1)+"!~!"+rs.getString(4));
+								if(mapUnit.equalsIgnoreCase("bp")){
+									CD.add(rsML.getString(2)+"!~!"+new BigDecimal(rsML.getString(3))+"!~!"+markersMap.get(rsML.getInt(1))+"!~!"+rsML.getString(4));
+								}else{
+									CD.add(rsML.getString(2)+"!~!"+decfor.format(rsML.getDouble(3))+"!~!"+markersMap.get(rsML.getInt(1))+"!~!"+rsML.getString(4));
+								}
+								count=count+1;
+								//CD.add(rs.getFloat(3));
+							}
+							
+							
+							
 						}
-						/*if(count==0){
-							ae.add("myerrors", new ActionError("trait.doesnot.exists"));
-							saveErrors(req, ae);				
-							//msg="chkPlateid";
-							return (new ActionForward(am.getInput()));
-							String ErrMsg = "Map Name not found";
-							req.getSession().setAttribute("indErrMsg", ErrMsg);
-							return am.findForward("ErrMsg");
-						}*/
+						
 						//System.out.println("CDistance="+CD);
 						String[] strArr=CD.get(0).toString().split("!~!");
 						double dis=Double.parseDouble(strArr[1]);
@@ -858,9 +1064,9 @@ public class RetrieveExportFormatAction extends Action{
 						//System.out.println("Marekrs="+markerslist+"  /n Gids="+gids);
 						mid=markerslist.substring(0,markerslist.length()-1);
 					}
-					int alleleCount=0;
-					int charCount=0;
-					int mapCharCount=0;
+					alleleCount=0;
+					charCount=0;
+					mapCharCount=0;
 					ArrayList markersList=new ArrayList();
 					
 					ArrayList nidList=new ArrayList();
@@ -869,28 +1075,87 @@ public class RetrieveExportFormatAction extends Action{
 					try{
 						String data="";
 						String nid="";
-						rs=stmt.executeQuery("select nid from gdms_acc_metadataset where gid in ("+gid+") order by gid");
+						rs=stCen.executeQuery("select nid from gdms_acc_metadataset where gid in ("+gid+") order by gid");
 						while(rs.next()){
 							if(!nidList.contains(rs.getInt(1)))
 								nidList.add(rs.getInt(1));
 							nid=nid+rs.getString(1)+",";
 						}
+						rsL=stLoc.executeQuery("select nid from gdms_acc_metadataset where gid in ("+gid+") order by gid");
+						while(rsL.next()){
+							if(!nidList.contains(rsL.getInt(1)))
+								nidList.add(rsL.getInt(1));
+							nid=nid+rsL.getString(1)+",";
+						}
+						
+						
 						
 						//System.out.println("select count(*) from gdms_allele_values where gid in ("+gid+")");
-						ResultSet rsa=stmt1.executeQuery("select count(*) from gdms_allele_values where gid in ("+gid+")");
+						rsa=stCen.executeQuery("select count(*) from gdms_allele_values where gid in ("+gid+")");
 						while (rsa.next()){
-							alleleCount=rsa.getInt(1);
+							//alleleList.add(rsa.getInt(1));
+							cenAlleleCount=rsa.getInt(1);
 						}
-						
-						ResultSet rsc=stmt2.executeQuery("select count(*) from gdms_char_values where gid in("+gid+")");
+						rsaL=stLoc.executeQuery("select count(*) from gdms_allele_values where gid in ("+gid+")");
+						while (rsaL.next()){
+							/*if(!alleleList.contains(rsaL.getInt(1)))
+								alleleList.add(rsaL.getInt(1));*/
+							locAlleleCount=rsaL.getInt(1);
+						}
+						//alleleCount=Integer.parseInt(alleleList.get(0).toString());
+						if(locAlleleCount>0)
+							alleleCount=locAlleleCount;
+						else if(cenAlleleCount>0)
+							alleleCount=cenAlleleCount;
+						else if(locAlleleCount>0 && cenAlleleCount > 0)
+							alleleCount=cenAlleleCount;
+						else
+							alleleCount=0;						
+						rsc=stCen.executeQuery("select count(*) from gdms_char_values where gid in("+gid+")");
 						while(rsc.next()){
-							charCount=rsc.getInt(1);
+							//charList.add(rsc.getInt(1));
+							cenCharCount=rsc.getInt(1);
 						}
 					
-						ResultSet rsMap=stmtM.executeQuery("select count(*) from gdms_mapping_pop_values where gid in("+gid+")");
-						while(rsMap.next()){
-							mapCharCount=rsMap.getInt(1);
+						rscL=stLoc.executeQuery("select count(*) from gdms_char_values where gid in("+gid+")");
+						while(rscL.next()){
+							/*if(!charList.contains(rscL.getInt(1)))
+							charList.add(rscL.getInt(1));*/
+							locCharCount=rscL.getInt(1);							
 						}
+						//charCount=Integer.parseInt(charList.get(0).toString());
+						if(locCharCount>0)
+							charCount=locCharCount;
+						else if(cenCharCount>0)
+							charCount=cenCharCount;
+						else if(locCharCount>0 && cenCharCount > 0)
+							charCount=cenCharCount;
+						else
+							charCount=0;						
+						
+						rsMap=stCen.executeQuery("select count(*) from gdms_mapping_pop_values where gid in("+gid+")");
+						while(rsMap.next()){
+							//mapCharList.add(rsMap.getInt(1));
+							cenMapCharCount=rsMap.getInt(1);
+						}
+						
+						rsML=stLoc.executeQuery("select count(*) from gdms_mapping_pop_values where gid in("+gid+")");
+						while(rsML.next()){
+							/*if(!mapCharList.contains(rsML.getInt(1)))
+							mapCharList.add(rsML.getInt(1));*/
+							locMapCharCount=rsML.getInt(1);
+						}
+						//mapCharCount=Integer.parseInt(mapCharList.get(0).toString());
+						if(locMapCharCount>0)
+							mapCharCount=locMapCharCount;
+						else if(cenMapCharCount>0)
+							mapCharCount=cenMapCharCount;
+						else if(locMapCharCount>0 && cenMapCharCount > 0)
+							mapCharCount=cenMapCharCount;
+						else
+							mapCharCount=0;
+						
+					
 						//System.out.println(alleleCount+"    "+charCount+"    "+mapCharCount);
 						ArrayList gidsList1=new ArrayList();
 						HashMap marker = new HashMap();
@@ -899,13 +1164,13 @@ public class RetrieveExportFormatAction extends Action{
 							markerAlleles.clear();
 							marker = new HashMap();
 							HashMap alleleMap=new HashMap();
-							System.out.println("SELECT distinct gdms_allele_values.gid,gdms_allele_values.allele_bin_value,gdms_marker.marker_name FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.marker_id=gdms_marker.marker_id AND gdms_allele_values.gid IN ("+gid+") AND gdms_allele_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_allele_values.gid, gdms_marker.marker_name");
-							rsDet=st.executeQuery("SELECT distinct gdms_allele_values.gid,gdms_allele_values.allele_bin_value,gdms_marker.marker_name"+
+							datasetType="mapping";
+							ArrayList glist = new ArrayList();
+							//System.out.println("SELECT distinct gdms_allele_values.gid,gdms_allele_values.allele_bin_value,gdms_marker.marker_name FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.marker_id=gdms_marker.marker_id AND gdms_allele_values.gid IN ("+gid+") AND gdms_allele_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_allele_values.gid, gdms_marker.marker_name");
+							rsDet=stCen.executeQuery("SELECT distinct gdms_allele_values.gid,gdms_allele_values.allele_bin_value,gdms_marker.marker_name"+
 									" FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.marker_id=gdms_marker.marker_id"+
 									" AND gdms_allele_values.gid IN ("+gid+") AND gdms_allele_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_allele_values.gid, gdms_marker.marker_name");
 							
-							datasetType="mapping";
-							ArrayList glist = new ArrayList();
 							while(rsDet.next()){								
 								if(!(mListExp.contains(rsDet.getString(3))))
 									mListExp.add(rsDet.getString(3));
@@ -915,6 +1180,22 @@ public class RetrieveExportFormatAction extends Action{
 								if(!(glist.contains(rsDet.getInt(1))))
 								glist.add(rsDet.getInt(1));					
 							}
+							rsDetL=stLoc.executeQuery("SELECT distinct gdms_allele_values.gid,gdms_allele_values.allele_bin_value,gdms_marker.marker_name"+
+									" FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.marker_id=gdms_marker.marker_id"+
+									" AND gdms_allele_values.gid IN ("+gid+") AND gdms_allele_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_allele_values.gid, gdms_marker.marker_name");
+							
+							
+							while(rsDetL.next()){								
+								if(!(mListExp.contains(rsDetL.getString(3))))
+									mListExp.add(rsDetL.getString(3));
+								
+								data=data+rsDetL.getInt(1)+"~!~"+rsDetL.getString(2)+"~!~"+rsDetL.getString(3)+"!~!";
+								markerAlleles.put(rsDetL.getInt(1)+"!~!"+rsDetL.getString(3), rsDetL.getString(2));
+								if(!(glist.contains(rsDetL.getInt(1))))
+								glist.add(rsDetL.getInt(1));					
+							}
+							
+							
 							List markerKey = new ArrayList();
 							markerKey.addAll(markerAlleles.keySet());
 							for(int g=0; g<glist.size(); g++){
@@ -936,13 +1217,12 @@ public class RetrieveExportFormatAction extends Action{
 							markerAlleles.clear();
 							marker = new HashMap();
 							HashMap CharMap=new HashMap();
-							System.out.println("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value as data,gdms_marker.marker_name FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id AND gdms_char_values.gid IN ("+gid+") AND gdms_char_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_char_values.gid, gdms_marker.marker_name");
-							rsDet=st.executeQuery("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value as data,gdms_marker.marker_name"+
-									" FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id"+
-									" AND gdms_char_values.gid IN ("+gid+") AND gdms_char_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_char_values.gid, gdms_marker.marker_name");
-							
 							datasetType="SNP";
 							ArrayList glist = new ArrayList();
+							//System.out.println("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value as data,gdms_marker.marker_name FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id AND gdms_char_values.gid IN ("+gid+") AND gdms_char_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_char_values.gid, gdms_marker.marker_name");
+							rsDet=stCen.executeQuery("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value as data,gdms_marker.marker_name"+
+									" FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id"+
+									" AND gdms_char_values.gid IN ("+gid+") AND gdms_char_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_char_values.gid, gdms_marker.marker_name");
 							while(rsDet.next()){								
 								if(!(mListExp.contains(rsDet.getString(3))))
 									mListExp.add(rsDet.getString(3));
@@ -953,6 +1233,22 @@ public class RetrieveExportFormatAction extends Action{
 								if(!(glist.contains(rsDet.getInt(1))))
 								glist.add(rsDet.getInt(1))	;					
 							}
+							
+							rsDetL=stLoc.executeQuery("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value as data,gdms_marker.marker_name"+
+									" FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id"+
+									" AND gdms_char_values.gid IN ("+gid+") AND gdms_char_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_char_values.gid, gdms_marker.marker_name");
+							while(rsDetL.next()){								
+								if(!(mListExp.contains(rsDetL.getString(3))))
+									mListExp.add(rsDetL.getString(3));
+								
+								data=data+rsDetL.getInt(1)+"~!~"+rsDetL.getString(2)+"~!~"+rsDetL.getString(3)+"!~!";
+								markerAlleles.put(rsDetL.getInt(1)+"!~!"+rsDetL.getString(3), rsDetL.getString(2));
+		
+								if(!(glist.contains(rsDetL.getInt(1))))
+								glist.add(rsDetL.getInt(1))	;					
+							}
+							
+							
 							List markerKey = new ArrayList();
 							markerKey.addAll(markerAlleles.keySet());
 							for(int g=0; g<glist.size(); g++){
@@ -978,45 +1274,60 @@ public class RetrieveExportFormatAction extends Action{
 							marker = new HashMap();
 							HashMap MappingMap=new HashMap();
 							ArrayList glist = new ArrayList();
-							rsDet=st.executeQuery("SELECT DISTINCT gdms_mapping_pop_values.gid,gdms_mapping_pop_values.map_char_value as data,gdms_marker.marker_name"+
+							rsDet=stCen.executeQuery("SELECT DISTINCT gdms_mapping_pop_values.gid,gdms_mapping_pop_values.map_char_value as data,gdms_marker.marker_name"+
 									" FROM gdms_mapping_pop_values,gdms_marker WHERE gdms_mapping_pop_values.marker_id=gdms_marker.marker_id "+
 									" AND gdms_mapping_pop_values.gid IN ("+gid+") AND gdms_mapping_pop_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_mapping_pop_values.gid, gdms_marker.marker_name");
-							while(rsDet.next()){
-								
+							while(rsDet.next()){								
 								if(!(mListExp.contains(rsDet.getString(3))))
-									mListExp.add(rsDet.getString(3));
-								
+									mListExp.add(rsDet.getString(3));								
 								data=data+rsDet.getInt(1)+"~!~"+rsDet.getString(2)+"~!~"+rsDet.getString(3)+"!~!";
 								//list.add(rsDet.getString(2)+","+rsDet.getString(5)+","+rsDet.getString(4));
-								markerAlleles.put(rsDet.getInt(1)+"!~!"+rsDet.getString(3), rsDet.getString(2));
-								
+								markerAlleles.put(rsDet.getInt(1)+"!~!"+rsDet.getString(3), rsDet.getString(2));								
 								if(!(glist.contains(rsDet.getInt(1))))
-								glist.add(rsDet.getInt(1))	;
-								List markerKey = new ArrayList();
-								markerKey.addAll(markerAlleles.keySet());
-								for(int g=0; g<glist.size(); g++){
-									for(int i=0; i<markerKey.size();i++){
-										if(!(mapEx.get(Integer.parseInt(glist.get(g).toString()))==null)){
-											 marker = (HashMap)mapEx.get(Integer.parseInt(glist.get(g).toString()));
-										 }else{
-											 marker = new HashMap();
-										 }
-										 if(Integer.parseInt(glist.get(g).toString())==Integer.parseInt(markerKey.get(i).toString().substring(0, markerKey.get(i).toString().indexOf("!~!")))){
-											 try {
-												marker.put(markerKey.get(i), markerAlleles.get(markerKey.get(i)));
-											} catch (Exception e) {
-												marker.put(markerKey.get(i), "");
-											}
-											 mapEx.put(Integer.parseInt(glist.get(g).toString()),(HashMap)marker);
-										 }									
-									}	
-								}
+								glist.add(rsDet.getInt(1));								
 							}
-							rsMT=stmtMT.executeQuery("SELECT DISTINCT gdms_mapping_pop_values.dataset_id,gdms_mapping_pop.mapping_type,gdms_mapping_pop.parent_a_gid,gdms_mapping_pop.parent_b_gid,gdms_marker.marker_type FROM gdms_mapping_pop_values,gdms_mapping_pop,gdms_marker WHERE gdms_mapping_pop_values.dataset_id=gdms_mapping_pop.dataset_id AND gdms_mapping_pop_values.marker_id=gdms_marker.marker_id  AND gdms_mapping_pop_values.gid IN ("+gid+") AND gdms_mapping_pop_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_mapping_pop_values.gid DESC, gdms_marker.marker_name");
+							rsDetL=stLoc.executeQuery("SELECT DISTINCT gdms_mapping_pop_values.gid,gdms_mapping_pop_values.map_char_value as data,gdms_marker.marker_name"+
+									" FROM gdms_mapping_pop_values,gdms_marker WHERE gdms_mapping_pop_values.marker_id=gdms_marker.marker_id "+
+									" AND gdms_mapping_pop_values.gid IN ("+gid+") AND gdms_mapping_pop_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_mapping_pop_values.gid, gdms_marker.marker_name");
+							while(rsDetL.next()){								
+								if(!(mListExp.contains(rsDetL.getString(3))))
+									mListExp.add(rsDetL.getString(3));								
+								data=data+rsDetL.getInt(1)+"~!~"+rsDetL.getString(2)+"~!~"+rsDetL.getString(3)+"!~!";
+								//list.add(rsDet.getString(2)+","+rsDet.getString(5)+","+rsDet.getString(4));
+								markerAlleles.put(rsDetL.getInt(1)+"!~!"+rsDetL.getString(3), rsDetL.getString(2));								
+								if(!(glist.contains(rsDetL.getInt(1))))
+								glist.add(rsDetL.getInt(1));								
+							}
+							List markerKey = new ArrayList();
+							markerKey.addAll(markerAlleles.keySet());
+							for(int g=0; g<glist.size(); g++){
+								for(int i=0; i<markerKey.size();i++){
+									if(!(mapEx.get(Integer.parseInt(glist.get(g).toString()))==null)){
+										 marker = (HashMap)mapEx.get(Integer.parseInt(glist.get(g).toString()));
+									 }else{
+										 marker = new HashMap();
+									 }
+									 if(Integer.parseInt(glist.get(g).toString())==Integer.parseInt(markerKey.get(i).toString().substring(0, markerKey.get(i).toString().indexOf("!~!")))){
+										 try {
+											marker.put(markerKey.get(i), markerAlleles.get(markerKey.get(i)));
+										} catch (Exception e) {
+											marker.put(markerKey.get(i), "");
+										}
+										 mapEx.put(Integer.parseInt(glist.get(g).toString()),(HashMap)marker);
+									 }									
+								}	
+							}
+							rsMT=stCen.executeQuery("SELECT DISTINCT gdms_mapping_pop_values.dataset_id,gdms_mapping_pop.mapping_type,gdms_mapping_pop.parent_a_nid,gdms_mapping_pop.parent_b_nid,gdms_marker.marker_type FROM gdms_mapping_pop_values,gdms_mapping_pop,gdms_marker WHERE gdms_mapping_pop_values.dataset_id=gdms_mapping_pop.dataset_id AND gdms_mapping_pop_values.marker_id=gdms_marker.marker_id  AND gdms_mapping_pop_values.gid IN ("+gid+") AND gdms_mapping_pop_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_mapping_pop_values.gid DESC, gdms_marker.marker_name");
 							while(rsMT.next()){
 								mapping_type=rsMT.getString(2);
 								parents=rsMT.getInt(3)+","+rsMT.getInt(4);
 								mType=rsMT.getString(5);
+							}
+							rsMTL=stLoc.executeQuery("SELECT DISTINCT gdms_mapping_pop_values.dataset_id,gdms_mapping_pop.mapping_type,gdms_mapping_pop.parent_a_nid,gdms_mapping_pop.parent_b_nid,gdms_marker.marker_type FROM gdms_mapping_pop_values,gdms_mapping_pop,gdms_marker WHERE gdms_mapping_pop_values.dataset_id=gdms_mapping_pop.dataset_id AND gdms_mapping_pop_values.marker_id=gdms_marker.marker_id  AND gdms_mapping_pop_values.gid IN ("+gid+") AND gdms_mapping_pop_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_mapping_pop_values.gid DESC, gdms_marker.marker_name");
+							while(rsMTL.next()){
+								mapping_type=rsMTL.getString(2);
+								parents=rsMTL.getInt(3)+","+rsMTL.getInt(4);
+								mType=rsMTL.getString(5);
 							}
 							String parentsExists="";
 							String nids="";
@@ -1042,10 +1353,15 @@ public class RetrieveExportFormatAction extends Action{
 									gListExp.add(parentAint);
 								if(!(gListExp.contains(parentBint)))
 									gListExp.add(parentBint);
-								rsP=stmtP.executeQuery("select nid from gdms_acc_metadataset where gid in("+parents+")");
+								rsP=stCen.executeQuery("select nid from gdms_acc_metadataset where gid in("+parents+")");
+								ResultSet rsPL=stLoc.executeQuery("select nid from gdms_acc_metadataset where gid in("+parents+")");
 								while(rsP.next()){
 									nids=nids+rsP.getInt(1)+",";
 									nidsList.add(rsP.getInt(1));
+								}
+								while(rsPL.next()){
+									nids=nids+rsPL.getInt(1)+",";
+									nidsList.add(rsPL.getInt(1));
 								}
 								//System.out.println("nids="+nids);
 								/*rs3=stP.executeQuery("select gid, nval from names where nid in ("+nids.substring(0, nids.length()-1)+")");
@@ -1074,17 +1390,20 @@ public class RetrieveExportFormatAction extends Action{
 								
 								
 							}
+							
 							if(mapping_type.equalsIgnoreCase("allelic")){
 								if(mType.equalsIgnoreCase("snp")){
-									rsPD=stmtPD.executeQuery("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value AS DATA,gdms_marker.marker_name FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id  AND gdms_char_values.gid IN ("+parents+") AND gdms_char_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_char_values.gid, gdms_marker.marker_name");
-									
+									rsPD=stCen.executeQuery("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value AS DATA,gdms_marker.marker_name FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id  AND gdms_char_values.gid IN ("+parents+") AND gdms_char_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_char_values.gid, gdms_marker.marker_name");
+									rsPDL=stLoc.executeQuery("SELECT DISTINCT gdms_char_values.gid,gdms_char_values.char_value AS DATA,gdms_marker.marker_name FROM gdms_char_values,gdms_marker WHERE gdms_char_values.marker_id=gdms_marker.marker_id  AND gdms_char_values.gid IN ("+parents+") AND gdms_char_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_char_values.gid, gdms_marker.marker_name");
 								}else if((mType.equalsIgnoreCase("ssr"))||(mType.equalsIgnoreCase("DArT"))){
-									rsPD=stmtPD.executeQuery("SELECT DISTINCT gdms_allele_values.gid,gdms_allele_values.allele_bin_value AS DATA,gdms_marker.marker_name FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.marker_id=gdms_marker.marker_id  AND gdms_allele_values.gid IN ("+parents+") AND gdms_allele_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_allele_values.gid, gdms_marker.marker_name");
-									
+									rsPD=stCen.executeQuery("SELECT DISTINCT gdms_allele_values.gid,gdms_allele_values.allele_bin_value AS DATA,gdms_marker.marker_name FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.marker_id=gdms_marker.marker_id  AND gdms_allele_values.gid IN ("+parents+") AND gdms_allele_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_allele_values.gid, gdms_marker.marker_name");
+									rsPDL=stLoc.executeQuery("SELECT DISTINCT gdms_allele_values.gid,gdms_allele_values.allele_bin_value AS DATA,gdms_marker.marker_name FROM gdms_allele_values,gdms_marker WHERE gdms_allele_values.marker_id=gdms_marker.marker_id  AND gdms_allele_values.gid IN ("+parents+") AND gdms_allele_values.marker_id IN (SELECT marker_id FROM gdms_marker WHERE marker_name IN ("+mlist1.substring(0,mlist1.length()-1)+")) ORDER BY gdms_allele_values.gid, gdms_marker.marker_name");
 								}
 								while(rsPD.next()){
-									data1=data1+rsPD.getInt(1)+"~!~"+rsPD.getString(2)+"~!~"+rsPD.getString(3)+"!~!";
-									
+									data1=data1+rsPD.getInt(1)+"~!~"+rsPD.getString(2)+"~!~"+rsPD.getString(3)+"!~!";									
+								}
+								while(rsPDL.next()){
+									data1=data1+rsPDL.getInt(1)+"~!~"+rsPDL.getString(2)+"~!~"+rsPDL.getString(3)+"!~!";									
 								}
 								String[] parentsData=data1.split("!~!");
 								for(int c=0;c<parentsData.length;c++){
@@ -1103,7 +1422,7 @@ public class RetrieveExportFormatAction extends Action{
 											if(!(glist.contains(parentAint)))
 											glist.add(parentAint);
 											
-											List markerKey = new ArrayList();
+											markerKey = new ArrayList();
 											markerKey.addAll(markerPAAlleles.keySet());
 											for(int g=0; g<glist.size(); g++){
 												for(int i=0; i<markerKey.size();i++){
@@ -1129,7 +1448,7 @@ public class RetrieveExportFormatAction extends Action{
 											if(!(glist.contains(parentBint)))
 											glist.add(parentBint);
 											
-											List markerKey = new ArrayList();
+											 markerKey = new ArrayList();
 											markerKey.addAll(markerPBAlleles.keySet());
 											for(int g=0; g<glist.size(); g++){
 												for(int i=0; i<markerKey.size();i++){
@@ -1185,6 +1504,7 @@ public class RetrieveExportFormatAction extends Action{
 							}else{
 								if(!(gListExp.contains(names.getGermplasmId())))
 									gListExp.add(names.getGermplasmId());
+								//gListExp1.put(names.getGermplasmId(), names.getNval());
 							}						
 							
 							mapN.put(names.getGermplasmId(), names.getNval());						
@@ -1232,46 +1552,98 @@ public class RetrieveExportFormatAction extends Action{
 					}catch(Exception e){
 						e.printStackTrace();
 					}
-					ArrayList markersInMap=new ArrayList();
+					//ArrayList markersInMap=new ArrayList();
 					//System.out.println(".....................List="+gListExp);
 					if(format.contains("Flapjack")){						
-						//System.out.println("select marker_name, linkage_group, start_position from mapping_data where marker_name in ("+ mlist1.substring(0,mlist1.length()-1) +") and linkagemap_name in ('"+map+"') order by marker_name");
-						//rs=stmt.executeQuery("select marker_name, linkage_group, start_position from mapping_data where marker_name in ("+ mlist1.substring(0,mlist1.length()-1) +") and map_name in ('"+map+"') order by marker_name");
-						//System.out.println("select marker_name, linkage_group, start_position from gdms_mapping_data where map_name in ('"+map+"') order by marker_name");
-						//rs=stmt.executeQuery("select marker_name, linkage_group, start_position from mapping_data where map_name in ('"+map+"') order by marker_name");
-						rs=stmt.executeQuery("SELECT marker_name, linkage_group, start_position FROM gdms_mapping_data WHERE map_name ='"+map+"' ORDER BY linkage_group, start_position , marker_name");
+						 rsMC=stCen.executeQuery("select gdms_markers_onmap.marker_id from gdms_markers_onmap, gdms_map where gdms_map.map_name='"+map+"'");
+						    while(rsMC.next()){
+						    	markerIDsList.add(rsMC.getInt(1));
+						    	markerIDs=markerIDs+rsMC.getInt(1)+",";
+						    }
+						    rsML=stLoc.executeQuery("select gdms_markers_onmap.marker_id from gdms_markers_onmap, gdms_map where gdms_map.map_name='"+map+"'");
+						    while(rsML.next()){
+						    	if(!markerIDsList.contains(rsML.getInt(1))){
+						    		markerIDsList.add(rsML.getInt(1));
+						    		markerIDs=markerIDs+rsML.getInt(1)+",";
+						    	}				    	
+						    }
+						   // markerIDsList
+						    rsM=stCen.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in("+markerIDs.substring(0, markerIDs.length()-1)+")");
+						    while(rsM.next()){
+						    	markerIdList.add(rsM.getString(2));
+						    	marNamesMap.put(rsM.getInt(1), rsM.getString(2));
+						    }
+						    rsM1=stLoc.executeQuery("select marker_id, marker_name from gdms_marker where marker_id in("+markerIDs.substring(0, markerIDs.length()-1)+")");
+						    while(rsM1.next()){
+						    	if(!markerIdList.contains(rsM1.getString(2))){
+						    		markerIdList.add(rsM.getString(2));
+						    		marNamesMap.put(rsM1.getInt(1), rsM1.getString(2));
+						    	}
+						    	
+						    }
+						
+						
+						rs=stCen.executeQuery("SELECT marker_id, linkage_group, start_position from gdms_markers_onmap, gdms_map where gdms_map.map_name  ='"+map+"' ORDER BY linkage_group, start_position , marker_id");
+						rsL=stLoc.executeQuery("SELECT marker_id, linkage_group, start_position FROM gdms_markers_onmap, gdms_map where gdms_map.map_name ='"+map+"' ORDER BY linkage_group, start_position , marker_id");
 						while(rs.next()){
 							//System.out.println(rs.getString(1)+"   "+rs.getString(2)+"   "+rs.getFloat(3));
-							mapData=mapData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getFloat(3)+"~~!!~~";
-							if(!markersInMap.contains(rs.getString(1)))
-								markersInMap.add(rs.getString(1));
+							mapData=mapData+marNamesMap.get(rs.getInt(1)).toString()+"!~!"+rs.getString(2)+"!~!"+rs.getFloat(3)+"~~!!~~";
+							if(!markersInMap.contains(marNamesMap.get(rs.getInt(1))))
+								markersInMap.add(marNamesMap.get(rs.getInt(1)));
+						}
+						while(rsL.next()){
+							//System.out.println(rs.getString(1)+"   "+rs.getString(2)+"   "+rs.getFloat(3));
+							mapData=mapData+marNamesMap.get(rsL.getInt(1)).toString()+"!~!"+rsL.getString(2)+"!~!"+rsL.getFloat(3)+"~~!!~~";
+							if(!markersInMap.contains(marNamesMap.get(rsL.getInt(1))))
+								markersInMap.add(marNamesMap.get(rsL.getInt(1)));
 						}
 						for(int m=0; m<mListExp.size();m++){
 							if(!markersInMap.contains(mListExp.get(m))){
 								mapData=mapData+mListExp.get(m)+"!~!"+"unmapped"+"!~!"+"0"+"~~!!~~";
 							}
 						}
-						
-						ResultSet rsMap=st.executeQuery("select qtl_id from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+map+"')");
+						rsMap=stCen.executeQuery("select qtl_id from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+map+"')");
+						rsMapL=stLoc.executeQuery("select qtl_id from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+map+"')");
 						//rsQ=stQ.executeQuery("");
 						while(rsMap.next()){
 							//System.out.println("..............:"+rsMap.getInt(1));
 							qtlCount++;
 							qtl_id=qtl_id+rsMap.getInt(1)+",";
 						}
+						while(rsMapL.next()){
+							//System.out.println("..............:"+rsMap.getInt(1));
+							qtlCount++;
+							qtl_id=qtl_id+rsMapL.getInt(1)+",";
+						}
 						if(qtlCount>0){
+							
+							rsC=stCen.executeQuery("select distinct trabbr, tid, traitgroup from tmstraits");
+							while(rsC.next()){							
+								tidsList.add(rsC.getInt(2));
+									traitsMap.put(rsC.getInt(2), rsC.getString(1));
+								
+							}
+							rsN=stLoc.executeQuery("select distinct trabbr, tid, traitgroup from tmstraits");
+							while(rsN.next()){							
+								if(!tidsList.contains(rsN.getInt(2)))
+									traitsMap.put(rsN.getInt(2), rsN.getString(1));
+							}
+							
+							
 							qtlExists=true;
 							//System.out.println("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
-							rsQ=stQ.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
+							rsQ=stCen.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
 							while(rsQ.next()){
-								/*String Fmarkers=rsQ.getString(13)+"/"+rsQ.getString(14);
-								//System.out.println(",,,,,,,,,,,,,,,,,,,,,,  :"+rsQ.getString(5));
-								//qtlData.add(rsQ.getString(15)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getString(15)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(12)+"/"+rsQ.getString(13)+"!~!"+rsQ.getString(7));
-								qtlData.add(rsQ.getString(16)+"!~!"+rsQ.getString(11)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getFloat(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getFloat(10)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(8));*/
 								String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);
-								qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+rsQ.getString(5)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7));
+								qtlData.add(rsQ.getString(22)+"!~!"+rsQ.getString(10)+"!~!"+rsQ.getFloat(14)+"!~!"+rsQ.getFloat(3)+"!~!"+rsQ.getFloat(4)+"!~!"+traitsMap.get(rsQ.getInt(5)).toString()+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getString(6)+"!~!"+rsQ.getFloat(8)+"!~!"+rsQ.getFloat(9)+"!~!"+rsQ.getString(6)+"!~!"+Fmarkers+"!~!"+rsQ.getString(7)+"!~!"+rsQ.getString(16)+"!~!"+rsQ.getString(17)+"!~!"+rsQ.getString(18)+"!~!"+rsQ.getString(19)+"!~!"+rsQ.getString(20));
+							}
+							ResultSet rsQL=stLoc.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id");
+							while(rsQL.next()){
+								String Fmarkers=rsQL.getString(12)+"/"+rsQL.getString(13);
+								qtlData.add(rsQL.getString(22)+"!~!"+rsQL.getString(10)+"!~!"+rsQL.getFloat(14)+"!~!"+rsQL.getFloat(3)+"!~!"+rsQL.getFloat(4)+"!~!"+traitsMap.get(rsQL.getInt(5)).toString()+"!~!"+rsQL.getString(6)+"!~!"+rsQL.getString(6)+"!~!"+rsQL.getFloat(8)+"!~!"+rsQL.getFloat(9)+"!~!"+rsQL.getString(6)+"!~!"+Fmarkers+"!~!"+rsQL.getString(7)+"!~!"+rsQL.getString(16)+"!~!"+rsQL.getString(17)+"!~!"+rsQL.getString(18)+"!~!"+rsQL.getString(19)+"!~!"+rsQL.getString(20));
 							
 							}
+							//System.out.println("qtlData="+qtlData);
 						}else
 							qtlExists=false;
 						session.setAttribute("qtlExistsSes", qtlExists);
@@ -1318,12 +1690,22 @@ public class RetrieveExportFormatAction extends Action{
 				
 				}	
 			}
+			/*if(rsPDL!=null) rsPDL.close();if(rsMTL!=null) rsMTL.close(); if(rsDetL!=null) rsDetL.close(); if(rscL!=null) rscL.close(); if(rsc!=null) rsc.close();if(rsaL!=null) rsaL.close();if(rsa!=null) rsa.close(); if(rs2L!=null) rs2L.close();
+			if(rs1L!=null) rs1L.close(); if(rs2C!=null) rs2C.close();		
+			if(rs!=null) rs.close(); if(rs1!=null) rs1.close(); if(rsG!=null) rsG.close(); if(rsM!=null) rsM.close(); if(rs2!=null) rs2.close(); if(rsD!=null) rsD.close(); if(rsN!=null) rsN.close();  if(rsL!=null) rsL.close();
+			if(rsMT!=null) rsMT.close(); if(rsPD!=null) rsPD.close(); if(rsP!=null) rsP.close(); if(rs3!=null) rs3.close(); if(rsQ!=null) rsQ.close(); if(rsP1!=null) rsP1.close(); if(rsP2!=null) rsP2.close();
+			if(rsMap!=null) rsMap.close(); if(rsMapL!=null) rsMapL.close();
+			if(stCen!=null) stCen.close(); if(stLoc!=null) stLoc.close(); if(stLC!=null) stLC.close(); if(stmt!=null) stmt.close(); if(stmt1!=null) stmt1.close(); if(stmt2!=null) stmt2.close(); if(stmtM!=null) stmtM.close();
+			if(st!=null) st.close(); if(stmtG!=null) stmtG.close(); 	if(stmtN!=null) stmtN.close(); 	if(stmtMT!=null) stmtMT.close(); if(stmtPD!=null) stmtPD.close(); if(stmtP!=null) stmtP.close();
+			if(stP!=null) stP.close(); if(stQ!=null) stQ.close(); if(stP1!=null) stP1.close(); if(stP2!=null) stP2.close();
 			
+			*/
+			con.close(); conn.close();
 	}catch(Exception e){
 		e.printStackTrace();
 	}finally{
 	      try{		      		
-	      		if(con!=null) con.close();
+	      		if(con!=null) con.close();conn.close();
 	      		factory.close(); 
 	         }catch(Exception e){System.out.println(e);}
 		}

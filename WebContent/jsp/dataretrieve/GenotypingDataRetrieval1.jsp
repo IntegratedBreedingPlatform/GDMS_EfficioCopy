@@ -7,7 +7,7 @@
 	<head>
 		<title>GDMS</title>
 		<link rel="stylesheet" type="text/css" href="<html:rewrite forward='GDMSStyleSheet'/>">
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 		<script>
 			function pageRefresh(){
 				var op='<%=request.getQueryString()%>';
@@ -81,7 +81,8 @@
 			<!--<table width='35%' border=0 align=right>
 				<tr><td align=left nowrap class="displayBoldText" width="20%">Species</td><td><b>:</b></td><td align=left nowrap class="displayBoldText"><%=session.getAttribute("crop") %></td></tr>		
 			</table>
-			--><br><br>
+			-->
+			<br><br>
 			<center>
 				<table width="40%" align="center" border=0>
 					<%--<tr style="font-size: medium;font-weight: bold;"><td colspan=3>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Retrieve</td></tr>
@@ -244,9 +245,14 @@
 								<td align="left" nowrap="nowrap" width="25%">Select the Dataset</td><td width="5%" align="left">:</td><td align="left">
 								<html:select property="dataset" onchange='retrieveSize(this.options[this.selectedIndex].value, this.name)'>
 									<html:option value=""/>
-									<logic:iterate name="dataSetList" id="dataset" type="java.lang.String">
-									<html:option value="<%=dataset %>" />
-									</logic:iterate>					
+									<%ArrayList dList=(ArrayList)session.getAttribute("dataSetList"); 
+									for(int d=0;d<dList.size();d++){
+										String[] data=dList.get(d).toString().split("!~!");								
+									%>
+										<%--<logic:iterate name="dataSetList" id="dataset" type="java.lang.String">--%>
+										<html:option value="<%=data[1] %>" ><%=data[0]%></html:option>
+										<%--</logic:iterate> --%>		
+									<%} %>			
 								</html:select>
 							</td></tr>
 					 	</table>
@@ -277,7 +283,8 @@
 							    	
 							    	 <span id="map" style="visibility: hidden;">
 							    	 <%int mcount=Integer.parseInt(session.getAttribute("mapsCount").toString()); 
-							    	 if(mcount>0){
+							    	 System.out.println("mcount in jsp=;"+mcount);
+							    	 //if(mcount>0){
 							    	 %>
 									 	<table width=100% align="left" border=0>
 											<tr>												
@@ -301,13 +308,13 @@
 								    	 		</td>
 								    	 	</tr>
 										 </table>									 	
-									<%} else{ %>
-									<table width=100% align="left" border=0>
+									<%//} else{ %>
+									<%--<table width=100% align="left" border=0>
 											<tr>
 									<th width="40%" colspan="3" align="center"><font color="red">NO Maps!!!</font> <font color="black">Please upload Map data to create Export formats for Flapjack...</font></th>
 									</tr>
 									</table>
-									<%} %>
+									<%} %>--%>
 									</span>
 							    	 </td>
 						    	 </tr>
@@ -517,7 +524,7 @@ function selOpt1(opt){
 		//document.getElementById('dataType').style.visibility='hidden';
 		textboxname="maps";
 		var selectedValue=document.forms[0].dataset.value;				
-		
+		//alert(selectedValue);
 		var url='retMaps.do?ChkDataSets='+selectedValue;		
 		document.getElementById("map").style.visibility="visible";
 		if (window.ActiveXObject){ 
@@ -684,7 +691,7 @@ function getCorrespondingLines(selectedValue,textboxname){
 		} 
 		httpRequest.open("GET", url , true); 
 		httpRequest.onreadystatechange = function() { processRequest(textboxname); } ;
-		httpRequest.send(null);
+		httpRequest.send();
 		
 	}
 }
@@ -695,15 +702,19 @@ function getCorrespondingLines(selectedValue,textboxname){
 	* update the profileSection DIV 
 */
 function processRequest(textboxname){
+	//alert(textboxname);	
+	
 	if (httpRequest.readyState == 4) {
 		if (httpRequest.status == 200) {
 			
 			msgDOM  = httpRequest.responseXML; 
 	    	var data=msgDOM.getElementsByTagName("data")[0];
-	    	details=data.getElementsByTagName("details");	    			    	
+	    	details=data.getElementsByTagName("details");	
+	    	
 	    	document.forms[0].elements[textboxname].options.length=0;
-	    	for(i=0;i<details.length;i++){				    		
-	    		document.forms[0].elements[textboxname].options[i]=new Option(details[i].childNodes[0].nodeValue,details[i].childNodes[0].nodeValue);
+	    	
+	    	for(i=0;i<details.length;i++){	
+		    	document.forms[0].elements[textboxname].options[i]=new Option(details[i].childNodes[0].nodeValue,details[i].childNodes[0].nodeValue);
 	    	}				    	
 	    }
 	}  

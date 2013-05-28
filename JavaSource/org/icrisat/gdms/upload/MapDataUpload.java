@@ -2,12 +2,17 @@ package org.icrisat.gdms.upload;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.math.BigDecimal;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -29,16 +34,48 @@ import com.mysql.jdbc.Connection;
 public class MapDataUpload {
 	private Session session;
 	static int map_count=0;
-		private Transaction tx;
-		//Connection con = null;
+	private Transaction tx;
+	java.sql.Connection conn;
+	java.sql.Connection con;	
 		
-		
-		public String setMapDetails(HttpServletRequest request, String mapfile) throws SQLException{
-			String result = "inserted";
-			try{
+	public String setMapDetails(HttpServletRequest request, String mapfile) throws SQLException{
+		String result = "inserted";
+		Properties prop=new Properties();
+		HttpSession hsession = request.getSession(true);
+		try{
+				Pattern p = Pattern.compile( "([0-9]*)\\.[0]" );
 				
-				HttpSession hsession = request.getSession(true);
-			    
+				 prop.load(new FileInputStream(hsession.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+				 String host=prop.getProperty("central.host");
+				 String port=prop.getProperty("central.port");
+				 String url = "jdbc:mysql://"+host+":"+port+"/";
+				 String dbName = prop.getProperty("central.dbname");
+				 String driver = "com.mysql.jdbc.Driver";
+				 String userName = prop.getProperty("central.username"); 
+				 String password = prop.getProperty("central.password");
+					
+				 Class.forName(driver).newInstance();
+				 conn = DriverManager.getConnection(url+dbName,userName,password);
+				 Statement stCen=conn.createStatement();
+					
+					
+				 String hostL=prop.getProperty("local.host");
+				 String portL=prop.getProperty("local.port");
+				 String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+				 String dbNameL = prop.getProperty("local.dbname");
+				 //String driver = "com.mysql.jdbc.Driver";
+				 String userNameL = prop.getProperty("local.username"); 
+				 String passwordL = prop.getProperty("local.password");
+				 
+				 Class.forName(driver).newInstance();
+				 con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+				 Statement stLoc=con.createStatement();
+				 ResultSet rsLoc=null;
+				 ResultSet rsCen=null;
+				 ResultSet rsMPC=null;
+				 ResultSet rsMPL=null;
+				 ResultSet rsML=null;
+				 ResultSet rsMC=null;
 				//upload the excel file
 				//String crop=request.getSession().getAttribute("crop").toString();
 				session = HibernateSessionFactory.currentSession();
@@ -47,6 +84,7 @@ public class MapDataUpload {
 				String MapUnit="";			
 				String selMap="";
 				int mpid=0;
+				ArrayList result1=new ArrayList();
 			    //markerType =UA stands for Un Assigned
 				String markerType="UA";
 				String mapType="";
@@ -63,10 +101,6 @@ public class MapDataUpload {
 				boolean	exists=false;
 
 				DecimalFormat df = new DecimalFormat("#.0");
-
-				// Workbook code   				
-				/*Workbook workbook=Workbook.getWorkbook(new File(mapfile));
-				Sheet sheetMarkerDetails = workbook.getSheet(0);*/
 				
 				InputStream in = new FileInputStream(mapfile);
 				Workbook workbook = WorkbookFactory.create(in);
@@ -90,7 +124,7 @@ public class MapDataUpload {
 				}
 				
 				int intSRC = sheetMarkerDetails.getPhysicalNumberOfRows();
-				System.out.println("........  "+intSRC);
+				//System.out.println("........  "+intSRC);
 				String strColName ="";
 				String strD="";
 				String str="";
@@ -99,7 +133,7 @@ public class MapDataUpload {
 				Row row = sheetMarkerDetails.getRow(0);
 	            int noOfColumns = row.getLastCellNum();	
 				
-	           
+	            
 				
 	            Cell cell;
 				String map_name="";String map_description="";
@@ -115,9 +149,20 @@ public class MapDataUpload {
 		           // System.out.println("..................:"+map_name.length());
 		            int mapNameLength=map_name.length();
 		            
-		            Query rsDatasetNames=session.createQuery("from MapBean where map_name ='"+map_name+"'");						
-					List result1= rsDatasetNames.list();
-					System.out.println(".............:"+result1.size());
+		            rsLoc=stLoc.executeQuery("select map_name from gdms_map where map_name='"+map_name+"'");
+					while(rsLoc.next()){
+						result1.add(rsLoc.getString(1));						
+					}
+					//System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+					rsCen=stCen.executeQuery("select map_name from gdms_map where map_name='"+map_name+"'");
+					while(rsCen.next()){
+						result1.add(rsCen.getString(1));	
+					}
+		            
+		            //System.out.println(".........................:"+result1);
+		            //Query rsDatasetNames=session.createQuery("from MapBean where map_name ='"+map_name+"'");	
+					//List result1= rsDatasetNames.list();
+					//System.out.println(".............:"+result1.size());
 					if(result1.size()>0){
 						String ErrMsg = "Map with a given name already exists.";
 						request.getSession().setAttribute("indErrMsg", ErrMsg);							
@@ -207,10 +252,22 @@ public class MapDataUpload {
 				/** Retrieving maximum marker id from database table 'marker'  **/
 				MaxIdValue uptMDsetId=new MaxIdValue();
 				int maxMarkerId=uptMDsetId.getMaxIdValue("marker_id","gdms_marker",session);
-				
+				ArrayList mpidL=new ArrayList();
 				if(option.equalsIgnoreCase("yes")){
 					selMap=request.getParameter("List1");
-					mpid=uptMDsetId.getUserId("dataset_id", "gdms_mapping_pop", "mapdata_desc", session,selMap);
+					//mpid=uptMDsetId.getUserId("dataset_id", "gdms_mapping_pop", "mapdata_desc", session,selMap);
+					rsMPC=stCen.executeQuery("select dataset_id from gdms_dataset where dataset_name='"+selMap+"'");
+					while(rsMPC.next()){
+						//mpid=rsMPC.getInt(1);
+						mpidL.add(rsMPC.getInt(1));
+					}
+					rsMPL=stLoc.executeQuery("select dataset_id from gdms_dataset where dataset_name='"+selMap+"'");
+					while(rsMPL.next()){
+						if(mpidL.size()==0){
+							mpidL.add(rsMPL.getInt(1));
+						}
+					}
+					mpid=Integer.parseInt(mpidL.get(0).toString());
 				}
 				/** Retrieving maximum linkagemap_id from database table 'linkagemap' **/
 				int maxLinkageMapId=uptMDsetId.getMaxIdValue("map_id","gdms_map",session);
@@ -224,7 +281,10 @@ public class MapDataUpload {
 				map.setMap_name(map_name);
 				map.setMap_type(mapType);
 				//linkagemap.setMcid(mcid);
+				map.setMap_desc(map_description);
+				map.setMap_unit(MapUnit);
 				map.setMp_id(mpid);
+			
 				session.save(map);
 				
 	            
@@ -244,18 +304,37 @@ public class MapDataUpload {
 	            }
 	            //System.out.println("******markers ********:"+markers);
 	            HashMap<String, Object> markersMap = new HashMap<String, Object>();
-	            ArrayList lstMarIdNames=uptMDsetId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, markers.substring(0, markers.length()-1));
-	          
+	            ArrayList lstMarIdNames=new ArrayList();
 	            List lstMarkers = new ArrayList();
-	            for(int w=0;w<lstMarIdNames.size();w++){
+	            
+	            //System.out.println("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markers.substring(0, markers.length()-1)+")");
+	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markers.substring(0, markers.length()-1)+")");
+	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markers.substring(0, markers.length()-1)+")");
+	            
+	            while(rsMC.next()){
+	            	//lstMarIdNames.add(rsMC.getString(2)+":"+rsMC.getString(1));
+	            	lstMarkers.add(rsMC.getString(2));
+	            	markersMap.put(rsMC.getString(2), rsMC.getInt(1));		
+	            }
+	            while(rsML.next()){
+	            		
+	            	if(!lstMarkers.contains(rsML.getString(2))){
+	            		lstMarkers.add(rsML.getString(2));
+	            		//lstMarIdNames.add(rsML.getString(2)+":"+rsML.getString(1));
+	            	}
+	            	markersMap.put(rsML.getString(2), rsML.getInt(1));	
+	            }
+	            //ArrayList lstMarIdNames=uptMDsetId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, markers.substring(0, markers.length()-1));
+	                  
+	            /*for(int w=0;w<lstMarIdNames.size();w++){
 	                 Object[] strMareO= (Object[])lstMarIdNames.get(w);
 	                 lstMarkers.add(strMareO[1]);
 	                 String strMa123 = (String)strMareO[1];
 	                 markersMap.put(strMa123, strMareO[0]);	                 
-	            }
+	            }*/
 	            
-	            /*System.out.println(markersMap);
-	            System.out.println("     >>>>>>>>>>>>>>>L:"+lstMarkers);
+	            //System.out.println(markersMap.size()+"   "+markersMap);
+	            /*System.out.println(lstMarIdNames.size()+"     >>>>>>>>>>>>>>>L:"+lstMarIdNames);
 	            System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<<<:"+intSRC);*/
 				for (int rows = 6; rows <= intSRC; rows++) {
                     row = sheetMarkerDetails.getRow(rows);
@@ -316,7 +395,7 @@ public class MapDataUpload {
                     	}
                     }
 				}
-				
+				boolean LGType=true;
 				for(int r=6;r<= intSRC;r++){	
 					MapMarkersBean marker_linkage = new MapMarkersBean();
 					MarkerInfoBean mb=new MarkerInfoBean();
@@ -331,9 +410,16 @@ public class MapDataUpload {
                     		int cellType = cell.getCellType(); 
 	                        if (cellType == Cell.CELL_TYPE_NUMERIC) {
 	                        	LinkageGroup = cell.getNumericCellValue()+"";
+	                        	Matcher m = p.matcher(LinkageGroup);
+	            				LGType=m.matches();
+	            				//System.out.println("*************   :"+m.matches());
+	            				//if(LGType==true){
 	                        } else {
 	                        	LinkageGroup = cell.getStringCellValue().trim();
+	                        	Matcher m = p.matcher(LinkageGroup);
+	            				LGType=m.matches();
 	                        }
+	                        
                     		//LinkageGroup = (String)cell.getStringCellValue(); 
                     	}else if(colnum==2){
                     		Position= cell.getNumericCellValue();
@@ -368,10 +454,13 @@ public class MapDataUpload {
 					//System.out.println("MarkerID =="+strMarkerName+"   "+intRMarkerId+"   "+LinkageGroup+"   "+Position);
 					marker_linkage.setMarkerId(intRMarkerId);				
 					marker_linkage.setMap_id(linkageMapID);
-					marker_linkage.setLinkage_group((String)LinkageGroup);
+					if(LGType==true)						
+						marker_linkage.setLinkage_group(Double.valueOf((String)LinkageGroup).intValue()+"");
+					else
+						marker_linkage.setLinkage_group((String)LinkageGroup);
 					marker_linkage.setStart_position(Position);
 					marker_linkage.setEnd_position(Position);
-					marker_linkage.setMap_unit(MapUnit);			
+								
 					//System.out.println("........................:"+MapUnit);
 					session.save(marker_linkage);	
 					//System.out.println("MarkerID =="+strMarkerName+" intRMarkerId=:"+intRMarkerId+"    "+LinkageGroup+"   "+Position);
@@ -383,6 +472,9 @@ public class MapDataUpload {
 				}	
 				
 				tx.commit();
+				/*if(rsLoc!=null) rsLoc.close(); if(rsCen!=null) rsCen.close(); if(rsMPC!=null) rsMPC.close(); if(rsMPL!=null) rsMPL.close(); if(rsML!= null) rsML.close(); if(rsMC!=null) rsMC.close();
+				if(stCen!=null) stCen.close(); if(stLoc!=null) stLoc.close();*/
+				if(con!=null) con.close(); if(conn!=null) conn.close();
 			}catch(Exception e){
 			session.clear();
 			//con.rollback();
@@ -390,7 +482,7 @@ public class MapDataUpload {
 			
 			e.printStackTrace();
 		}finally{
-		    //con.close();
+		    con.close(); conn.close();
 			session.clear();
 			session.disconnect();
 		      }

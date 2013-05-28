@@ -1,11 +1,14 @@
 package org.icrisat.gdms.retrieve;
 
 
+import java.io.FileInputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +41,11 @@ public class DataRetrieveDirectingAction extends Action{
 	Query query2=null;
 	String str="";
 	String crop="";
+	
+	java.sql.Connection conn;
+	java.sql.Connection con;
+	
+	
 	public ActionForward execute(ActionMapping am, ActionForm af,
 			HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
@@ -49,36 +57,57 @@ public class DataRetrieveDirectingAction extends Action{
 		
 		//System.out.println("**********************************"+req.getQueryString());
 		String op=req.getQueryString();
-		System.out.println("**********************************"+op);
+		//System.out.println("**********************************"+op);
 		/*hsession = HibernateSessionFactory.currentSession();
 		tx=hsession.beginTransaction();
 		*/
 		DynaActionForm df = (DynaActionForm) af;
-		Connection con=null;
+		//Connection con=null;
+		
+		//ResultSet rs1=null;
+		//ResultSet rs1L=null;
 		ResultSet rs=null;
-		ResultSet rs1=null;
 		ResultSet rs2=null;
-		ResultSet rsQTL=null;
-		ResultSet rsDS=null;
+		ResultSet rs2L=null;
+		ResultSet rsQTL=null;		
 		ResultSet rsMap=null;
+		//ResultSet rsDS=null;
 		ArrayList qtlList=new ArrayList();
 		ArrayList gids =new ArrayList();
 		int count=0;
 		ManagerFactory factory=null;
 		int mapCount=0;
+		Properties prop=new Properties();
 		try{
-			//crop=req.getSession().getAttribute("crop").toString();
-			/*Class.forName("com.mysql.jdbc.Driver");
-			con=DriverManager.getConnection("jdbc:mysql://localhost:3306/icis","root","root");*/
 			
-			ServletContext context = servlet.getServletContext();
-			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
-			con=dataSource.getConnection();	
+			prop.load(new FileInputStream(session.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+			String host=prop.getProperty("central.host");
+			String port=prop.getProperty("central.port");
+			String url = "jdbc:mysql://"+host+":"+port+"/";
+			String dbName = prop.getProperty("central.dbname");
+			String driver = "com.mysql.jdbc.Driver";
+			String userName = prop.getProperty("central.username"); 
+			String password = prop.getProperty("central.password");
+			
+			Class.forName(driver).newInstance();
+			conn = DriverManager.getConnection(url+dbName,userName,password);
+			Statement stCen=conn.createStatement();
+			
+			
+			String hostL=prop.getProperty("local.host");
+			String portL=prop.getProperty("local.port");
+			String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+			String dbNameL = prop.getProperty("local.dbname");
+			//String driver = "com.mysql.jdbc.Driver";
+			String userNameL = prop.getProperty("local.username"); 
+			String passwordL = prop.getProperty("local.password");
+			
+			Class.forName(driver).newInstance();
+			con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+			Statement stLoc=con.createStatement();
+			
+			
 			session.setAttribute("mapsCount", mapCount);
-			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
-			DatabaseConnectionParameters central = new DatabaseConnectionParameters("localhost", "3306", "ibdb_ivis", "root", "root");*/
-			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
-			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");*/
 			
 			//factory = new ManagerFactory(local, central);
 			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
@@ -86,29 +115,20 @@ public class DataRetrieveDirectingAction extends Action{
 			GenotypicDataManager manager1 = factory.getGenotypicDataManager();
 			
 			String datasetId="";
-			Statement stmt=con.createStatement();
-			Statement stmt1=con.createStatement();
-			Statement stmtR=con.createStatement();
+			
+			
 			Statement st=con.createStatement();
-			if(op.equalsIgnoreCase("first")){
-				/** retieving crops from the database 
-				 * this is executed when the genotyping data option is selected		
-				 * under retrievals  
-				 *  **/
-				String option=req.getParameter("reportType");
-				/*if (option.equalsIgnoreCase("genotyping"))
-					query=hsession.createQuery("select distinct species from DatasetBean ORDER BY species asc");
-				else
-					query=hsession.createQuery("select distinct species from MarkerInfoBean ORDER BY species asc");
-				listValues=query.list();
-				//itList=listValues.iterator();
-				session.setAttribute("listValues", listValues);
-				System.out.println(".................... "+listValues);
-				*/str="retSpecies";
-			}else if(op.equalsIgnoreCase("second")){
+			Statement stmt2=con.createStatement();
+			
+			Statement stCenM=conn.createStatement();
+			Statement stLocM=conn.createStatement();
+			Statement stmtM=con.createStatement();
+			Statement stmtMap=con.createStatement();
+			
+			if(op.equalsIgnoreCase("second")){
 				//crop=(String)df.get("crop");
 				String option=req.getParameter("reportType");
-				System.out.println("option ="+option);
+				//System.out.println("option ="+option);
 				//session.setAttribute("crop", crop);
 				if (option.equalsIgnoreCase("genotyping"))
 					str="directing";
@@ -118,8 +138,9 @@ public class DataRetrieveDirectingAction extends Action{
 				str="directingPoly";
 			}else if(op.equalsIgnoreCase("poly")){
 				ResultSet rsD=null;
+				ResultSet rsC=null;
 				/** retrieving germplasm names based on crop **/
-				System.out.println("...............:"+req.getParameter("op"));
+				//System.out.println("...............:"+req.getParameter("op"));
 				String polyType=req.getParameter("op");
 				session.setAttribute("polyType", polyType);
 				String germplasmName="";
@@ -129,21 +150,44 @@ public class DataRetrieveDirectingAction extends Action{
 				String pGids="";
 				String finalGids="";
 				String nids="";
+				rsC=null;
 				//String crop=req.getSession().getAttribute("crop").toString();
 				if(polyType.equalsIgnoreCase("fingerprinting")){
-					System.out.println("SELECT dataset_id FROM gdms_dataset WHERE dataset_type!='mapping' AND dataset_type !='QTL'");
-					rsD=stmt.executeQuery("SELECT dataset_id FROM gdms_dataset WHERE dataset_type!='mapping' AND dataset_type !='QTL'");
+					//System.out.println("SELECT dataset_id FROM gdms_dataset WHERE dataset_type!='mapping' AND dataset_type !='QTL'");
+					rsC=stCen.executeQuery("SELECT dataset_id FROM gdms_dataset WHERE dataset_type!='mapping' AND dataset_type !='QTL'");					
+					rsD=stLoc.executeQuery("SELECT dataset_id FROM gdms_dataset WHERE dataset_type!='mapping' AND dataset_type !='QTL'");
+					while(rsC.next()){
+						datasetId=datasetId+rsC.getInt(1)+",";
+					}
+					while(rsD.next()){
+						datasetId=datasetId+rsD.getInt(1)+",";
+					}
 				}else if(polyType.equalsIgnoreCase("mapping")){
-					System.out.println("SELECT dataset_id FROM gdms_dataset WHERE dataset_type ='mapping' AND dataset_type !='QTL'");
-					rsD=stmt.executeQuery("SELECT dataset_id FROM gdms_dataset WHERE dataset_type ='mapping' AND dataset_type !='QTL'");
-					rs2=stmt1.executeQuery("select parent_a_gid, parent_b_gid from gdms_mapping_pop");
+					//System.out.println("SELECT dataset_id FROM gdms_dataset WHERE dataset_type ='mapping' AND dataset_type !='QTL'");
+					ResultSet rsMC=stCenM.executeQuery("SELECT dataset_id FROM gdms_dataset WHERE dataset_type ='mapping' AND dataset_type !='QTL'");
+					rsD=stLocM.executeQuery("SELECT dataset_id FROM gdms_dataset WHERE dataset_type ='mapping' AND dataset_type !='QTL'");
+					rs2=stCen.executeQuery("select parent_a_nid, parent_b_nid from gdms_mapping_pop");
+					rs2L=stLoc.executeQuery("select parent_a_nid, parent_b_nid from gdms_mapping_pop");
 					while(rs2.next()){
 						pGids=pGids+rs2.getInt(1)+","+rs2.getInt(2)+",";
 					}
+					while(rs2L.next()){
+						pGids=pGids+rs2L.getInt(1)+","+rs2L.getInt(2)+",";
+					}
+					while(rsMC.next()){
+						datasetId=datasetId+rsMC.getInt(1)+",";
+					}
+					while(rsD.next()){
+						datasetId=datasetId+rsD.getInt(1)+",";
+					}
+				}
+				
+				/*while(rsC.next()){
+					datasetId=datasetId+rsC.getInt(1)+",";
 				}
 				while(rsD.next()){
 					datasetId=datasetId+rsD.getInt(1)+",";
-				}
+				}*/
 				String[] pGids1=pGids.split(",");
 				for(int p=0;p<pGids1.length;p++){
 					if(!(pGidsA.contains(pGids1[p])))
@@ -156,22 +200,31 @@ public class DataRetrieveDirectingAction extends Action{
 				if(datasetId !=""){					
 					if(polyType.equalsIgnoreCase("fingerprinting")){
 						//System.out.println("SELECT distinct nval FROM names WHERE nid IN (SELECT DISTINCT(nid) FROM acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+")) ORDER BY nval");
-						//System.out.println("SELECT DISTINCT(nid) FROM acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+")");
-						rs2=st.executeQuery("SELECT DISTINCT(nid) FROM gdms_acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+")");
+						//System.out.println("SELECT DISTINCT(nid) FROM gdms_acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+")");
+						rs2=stCen.executeQuery("SELECT DISTINCT(nid) FROM gdms_acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+")");
 						while(rs2.next()){
 							nids =nids+rs2.getInt(1)+",";
 							nidsList.add(rs2.getInt(1));
 						}
-						
-						
+						rs2L=stLoc.executeQuery("SELECT DISTINCT(nid) FROM gdms_acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+")");
+						while(rs2L.next()){
+							nids =nids+rs2L.getInt(1)+",";
+							nidsList.add(rs2L.getInt(1));
+						}
 					}else if(polyType.equalsIgnoreCase("mapping")){
 						//System.out.println("SELECT distinct nval FROM names WHERE nid IN (SELECT DISTINCT(nid) FROM acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+") and gid not in("+finalGids.substring(0, finalGids.length()-1)+")) ORDER BY nval");
 						//rs1=stmtR.executeQuery("SELECT distinct nval FROM names WHERE nid IN (SELECT DISTINCT(nid) FROM acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+") and gid not in("+finalGids.substring(0, finalGids.length()-1)+")) ORDER BY nval");
-						rs2=st.executeQuery("SELECT DISTINCT(nid) FROM gdms_acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+") and gid not in("+finalGids.substring(0, finalGids.length()-1)+")");
+						rs2=stCen.executeQuery("SELECT DISTINCT(nid) FROM gdms_acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+") and gid not in("+finalGids.substring(0, finalGids.length()-1)+")");
 						while(rs2.next()){
 							nids =nids+rs2.getInt(1)+",";
 							nidsList.add(rs2.getInt(1));
 						}
+						rs2L=stLoc.executeQuery("SELECT DISTINCT(nid) FROM gdms_acc_metadataset where dataset_id in("+datasetId.substring(0,datasetId.length()-1)+") and gid not in("+finalGids.substring(0, finalGids.length()-1)+")");
+						while(rs2L.next()){
+							nids =nids+rs2L.getInt(1)+",";
+							nidsList.add(rs2L.getInt(1));
+						}
+						
 					}
 					//System.out.println(".......... nidsList=:"+nidsList);
 					//GermplasmDataManager manager = factory.getGermplasmDataManager();
@@ -191,7 +244,7 @@ public class DataRetrieveDirectingAction extends Action{
 						if(!(germName.contains(names.getNval())))
 							germName.add(names.getNval());
 					}
-					
+					//System.out.println("germName=:"+germName);
 					
 					/*rs1=stmtR.executeQuery("SELECT distinct nval FROM names WHERE nid IN ("+nids.substring(0, nids.length()-1)+") order by nval");
 					while(rs1.next()){
@@ -222,9 +275,7 @@ public class DataRetrieveDirectingAction extends Action{
 				/** retrieving datasets based on crop **/
 				
 				ArrayList dataSetList=new ArrayList();
-				Statement stmtDS=con.createStatement();
-				Statement stmtM=con.createStatement();
-				Statement stmtMap=con.createStatement();
+				
 				String markers="";
 				//crop=session.getAttribute("crop").toString();
 				//System.out.println("select dataset_desc from dataset where dataset_type !='QTL'");
@@ -233,10 +284,25 @@ public class DataRetrieveDirectingAction extends Action{
 				int retRows=12;
 				//GenotypicDataManager m=factory.getGenotypicDataManager();
 				//m.getDatasetNames(sta, retRows, );
-				rsDS=stmtDS.executeQuery("select dataset_name from gdms_dataset where dataset_type !='QTL'");
+				ArrayList datasets=new ArrayList();
+				ResultSet rsC=stCen.executeQuery("select dataset_name, dataset_id from gdms_dataset where dataset_type !='QTL' and dataset_type !='MTA' order by dataset_name");
+				ResultSet rsL=stLoc.executeQuery("select dataset_name, dataset_id from gdms_dataset where dataset_type !='QTL' and dataset_type !='MTA' order by dataset_name");
+				while(rsC.next()){
+					datasets.add(rsC.getString(1));
+					dataSetList.add(rsC.getString(1)+"!~!"+rsC.getInt(2));					
+				}
+				while(rsL.next()){
+					if(!datasets.contains(rsL.getString(1))){
+						datasets.add(rsL.getString(1));
+						dataSetList.add(rsL.getString(1)+"!~!"+rsL.getInt(2));						
+					}					
+				}
+				
+				
+				/*rsDS=stmtDS.executeQuery("select dataset_name from gdms_dataset where dataset_type !='QTL'");
 				while(rsDS.next()){
 					dataSetList.add(rsDS.getString(1));
-				}
+				}*/
 				int initialmapCount=0;
 				rs=st.executeQuery("select map_name from gdms_map");
 				while(rs.next()){
@@ -251,8 +317,7 @@ public class DataRetrieveDirectingAction extends Action{
 			
 			}else if(op.equalsIgnoreCase("mapsRet")){
 				ArrayList mapList=new ArrayList();
-				Statement stmtM=con.createStatement();
-				Statement stmtMap=con.createStatement();
+				
 				String markers="";
 				String datasetDesc=req.getParameter("op");
 				ResultSet rsM=stmtM.executeQuery("select marker_id from gdms_marker_metadataset where dataset_id=(select dataset_id from gdms_dataset where dataset_name='"+datasetDesc+"')");
@@ -273,12 +338,8 @@ public class DataRetrieveDirectingAction extends Action{
 			}else{
 				if(session!=null){
 					session.removeAttribute("indErrMsg");		
-				}
-				
-				String dType="";
-				
-				Statement stmt2=con.createStatement();
-				
+				}				
+				String dType="";		
 				
 				rsQTL=stmt2.executeQuery("select qtl_name from gdms_qtl");
 				while(rsQTL.next()){
@@ -300,8 +361,12 @@ public class DataRetrieveDirectingAction extends Action{
 				//System.out.println(".................... "+listValues);
 				
 				str="retLines";
-				//System.out.println("*****************END*******************");
+				
 			}
+			/*if(rs!=null) rs.close(); if(rs2!=null) rs2.close(); if(rs2L!=null) rs2L.close(); if(rsQTL!=null) rsQTL.close(); if(rsMap!=null) rsMap.close();			
+			if(st!=null) st.close(); if(stmt2!=null) stmt2.close(); if(stLoc!=null) stLoc.close(); if(stCenM!=null) stCenM.close(); if(stLocM!=null) stLocM.close(); if(stmtM!=null) stmtM.close(); if(stmtMap!=null) stmtMap.close();
+			*/
+			if(con!=null) con.close(); if(conn!=null) conn.close();
 		}catch(Exception e){
 			e.printStackTrace();
 			
@@ -309,7 +374,7 @@ public class DataRetrieveDirectingAction extends Action{
 		}finally{
 			
 			try{		      		
-	      		if(con!=null) con.close();
+	      		if(con!=null) con.close();conn.close();
 	      		factory.close();
 	         }catch(Exception e){System.out.println(e);}
 		}

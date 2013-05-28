@@ -2,103 +2,98 @@
 <!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.1//EN"
                                "http://jakarta.apache.org/struts/dtds/struts-config_1_1.dtd">
 <struts-config>
- <data-sources>
-  <data-source>
-   <set-property property="driverClass" value="com.mysql.jdbc.Driver"/>
-   <set-property property="url" value="jdbc:mysql://localhost:3306/"/>
-   <set-property property="user" value="root"/>
-   <set-property property="password" value=""/>
-   <set-property property="minCount" value="1"/>
-   <set-property property="maxCount" value="20"/>
-  </data-source>
- </data-sources>
+ <data-sources/>
  <form-beans>
   <form-bean name="LoginForm" type="org.apache.struts.action.DynaActionForm">
-   <form-property name="password" type="java.lang.String"/>
-   <form-property name="uname" type="java.lang.String"/>
-   <form-property name="crop" type="java.lang.String"/>
    <form-property name="menuOp" type="java.lang.String"/>
+   <form-property name="uname" type="java.lang.String"/>
+   <form-property name="password" type="java.lang.String"/>
+   <form-property name="crop" type="java.lang.String"/>
   </form-bean>
   <form-bean name="dataupload" type="org.apache.struts.action.DynaActionForm">
+   <form-property name="opMap" type="java.lang.String"/>
    <form-property name="option" type="java.lang.String"/>
+   <form-property name="fileuploads" type="org.apache.struts.upload.FormFile"/>
+   <form-property name="radios" type="java.lang.String"/>
    <form-property name="upType" type="java.lang.String"/>
+   <form-property name="KBfileuploads" type="org.apache.struts.upload.FormFile"/>
    <form-property name="uploadType" type="java.lang.String"/>
    <form-property name="uploadDataType" type="java.lang.String"/>
-   <form-property name="opMap" type="java.lang.String"/>
    <form-property name="op" type="java.lang.String"/>
-   <form-property name="fileuploads" type="org.apache.struts.upload.FormFile"/>
    <form-property name="uploadFormatType" type="java.lang.String"/>
-   <form-property name="radios" type="java.lang.String"/>
   </form-bean>
   <form-bean name="dataretrieve" type="org.apache.struts.action.DynaActionForm">
-   <form-property name="qtl" type="java.lang.String"/>
-   <form-property name="opTypeGids" type="java.lang.String"/>
-   <form-property name="selMaps" type="java.lang.String"/>
-   <form-property name="crop" type="java.lang.String"/>
-   <form-property name="txtNameL" type="org.apache.struts.upload.FormFile"/>
-   <form-property name="exportTypeH" type="java.lang.String"/>
-   <form-property name="traits" type="java.lang.String"/>
-   <form-property name="EndRange" type="java.lang.String"/>
-   <form-property name="exportType" type="java.lang.String"/>
-   <form-property name="polyTypeH" type="java.lang.String"/>
-   <form-property name="MarkNm" type="java.lang.String"/>
-   <form-property name="List1" type="java.lang.String"/>
-   <form-property name="gidsText" type="java.lang.String"/>
-   <form-property name="SearchMark" type="java.lang.String"/>
-   <form-property name="markersSel" type="java.lang.String"/>
-   <form-property name="retrieveOP" type="java.lang.String"/>
-   <form-property name="op" type="java.lang.String"/>
-   <form-property name="mapsH" type="java.lang.String"/>
-   <form-property name="maps" type="java.lang.String"/>
-   <form-property name="txtNameGN" type="org.apache.struts.upload.FormFile"/>
-   <form-property name="trait" type="java.lang.String"/>
-   <form-property name="dataType" type="java.lang.String"/>
-   <form-property name="StartRange" type="java.lang.String"/>
-   <form-property name="polyType" type="java.lang.String"/>
-   <form-property name="opTypeGN" type="java.lang.String"/>
-   <form-property name="markersText" type="java.lang.String"/>
-   <form-property name="chk" type="java.lang.String"/>
-   <form-property name="traitValues" type="java.lang.String"/>
+   <form-property name="kbioMarkers" type="java.lang.String"/>
+   <form-property name="FieldsList" type="java.lang.String"/>
    <form-property name="reportType" type="java.lang.String"/>
+   <form-property name="crop" type="java.lang.String"/>
    <form-property name="qtlData" type="java.lang.String"/>
-   <form-property name="germplasmSel" type="java.lang.String"/>
-   <form-property name="binSize" type="java.lang.String"/>
-   <form-property name="markers" type="java.lang.String"/>
-   <form-property name="dataset" type="java.lang.String"/>
-   <form-property name="linesO" type="java.lang.String"/>
-   <form-property name="MarkerOption" type="java.lang.String"/>
+   <form-property name="gidsText" type="java.lang.String"/>
+   <form-property name="traitM" type="java.lang.String"/>
+   <form-property name="mapsH" type="java.lang.String"/>
+   <form-property name="opTypeGN" type="java.lang.String"/>
    <form-property name="choiceBox" type="java.lang.String"/>
+   <form-property name="polyType" type="java.lang.String"/>
+   <form-property name="flapjackOp" type="java.lang.String"/>
+   <form-property name="List1" type="java.lang.String"/>
+   <form-property name="op" type="java.lang.String"/>
+   <form-property name="maps" type="java.lang.String"/>
+   <form-property name="Amp" type="java.lang.String"/>
+   <form-property name="germplasmSel" type="java.lang.String"/>
+   <form-property name="MarkNm" type="java.lang.String"/>
+   <form-property name="selMaps" type="java.lang.String"/>
+   <form-property name="opType" type="java.lang.String"/>
+   <form-property name="traitValues" type="java.lang.String"/>
+   <form-property name="qtl" type="java.lang.String"/>
+   <form-property name="StartRange" type="java.lang.String"/>
+   <form-property name="markersText" type="java.lang.String"/>
+   <form-property name="main" type="java.lang.String"/>
+   <form-property name="traits" type="java.lang.String"/>
+   <form-property name="getOp" type="java.lang.String"/>
+   <form-property name="hMarkers" type="java.lang.String"/>
+   <form-property name="opTypeGids" type="java.lang.String"/>
+   <form-property name="linesO" type="java.lang.String"/>
    <form-property name="expType" type="java.lang.String"/>
-   <form-property name="FormatcheckGroup" type="java.lang.String"/>
+   <form-property name="txtNameL" type="org.apache.struts.upload.FormFile"/>
+   <form-property name="retrieveOP" type="java.lang.String"/>
+   <form-property name="hPolyMarkers" type="java.lang.String"/>
+   <form-property name="QuickSearch" type="java.lang.String"/>
+   <form-property name="AmplificationOption" type="java.lang.String"/>
    <form-property name="selection" type="java.lang.String"/>
-   <form-property name="opTypeMarkers" type="java.lang.String"/>
+   <form-property name="MarkerOption" type="java.lang.String"/>
    <form-property name="linesT" type="java.lang.String"/>
+   <form-property name="markersSel" type="java.lang.String"/>
+   <form-property name="exportType" type="java.lang.String"/>
    <!-- <form-property name="excelName" type="org.apache.struts.upload.FormFile"/>-->
    <form-property name="txtNameM" type="org.apache.struts.upload.FormFile"/>
-   <form-property name="opType" type="java.lang.String"/>
-   <form-property name="McheckGroup" type="java.lang.String"/>
+   <form-property name="chk" type="java.lang.String"/>
+   <form-property name="polyTypeH" type="java.lang.String"/>
+   <form-property name="txtNameGN" type="org.apache.struts.upload.FormFile"/>
+   <form-property name="markers" type="java.lang.String"/>
+   <form-property name="opTypeMarkers" type="java.lang.String"/>
+   <form-property name="List2" type="java.lang.String"/>
    <form-property name="retrievalType" type="java.lang.String"/>
    <form-property name="type" type="java.lang.String"/>
-   <form-property name="getOp" type="java.lang.String"/>
-   <form-property name="List2" type="java.lang.String"/>
-   <form-property name="FieldsList" type="java.lang.String"/>
-   <form-property name="main" type="java.lang.String"/>
-   <form-property name="QuickSearch" type="java.lang.String"/>
-   <form-property name="traitM" type="java.lang.String"/>
-   <form-property name="hMarkers" type="java.lang.String"/>
+   <form-property name="dataset" type="java.lang.String"/>
+   <form-property name="trait" type="java.lang.String"/>
+   <form-property name="EndRange" type="java.lang.String"/>
+   <form-property name="FormatcheckGroup" type="java.lang.String"/>
+   <form-property name="binSize" type="java.lang.String"/>
+   <form-property name="McheckGroup" type="java.lang.String"/>
+   <form-property name="dataType" type="java.lang.String"/>
+   <form-property name="exportTypeH" type="java.lang.String"/>
    <form-property name="GNamesText" type="java.lang.String"/>
-   <form-property name="Amp" type="java.lang.String"/>
-   <form-property name="AmplificationOption" type="java.lang.String"/>
-   <form-property name="flapjackOp" type="java.lang.String"/>
+   <form-property name="SearchMark" type="java.lang.String"/>
   </form-bean>
   <form-bean name="datadeletion" type="org.apache.struts.action.DynaActionForm">
-   <form-property name="maps" type="java.lang.String"/>
-   <form-property name="dataSet" type="java.lang.String"/>
-   <form-property name="delOpM" type="java.lang.String"/>
    <form-property name="delOpQ" type="java.lang.String"/>
    <form-property name="qtl" type="java.lang.String"/>
-   <form-property name="getOp" type="java.lang.String"/>
    <form-property name="delOpG" type="java.lang.String"/>
+   <form-property name="delOpM" type="java.lang.String"/>
+   <form-property name="delOpMTA" type="java.lang.String"/>
+   <form-property name="maps" type="java.lang.String"/>
+   <form-property name="dataSet" type="java.lang.String"/>
+   <form-property name="getOp" type="java.lang.String"/>
   </form-bean>
  </form-beans>
  <global-exceptions/>
@@ -164,7 +159,7 @@
    type="org.icrisat.gdms.retrieve.DataRetrieveAction" validate="true">
    <forward name="qtlPage" path="/jsp/dataretrieve/GenotypingDataRetrieval1.jsp?QTL"/>
    <forward name="retMarkers" path="/jsp/dataretrieve/DataRetrieveGenotyping3.jsp?first"/>
-   <forward name="poly" path="/jsp/dataretrieve/DataRetrieveGenotyping2.jsp"/>
+   <forward name="poly" path="/jsp/dataretrieve/DataRetrieveGenotyping2.jsp?first"/>
    <forward name="retQTL" path="/jsp/dataretrieve/DataRetrieveGenotyping4.jsp"/>
    <forward name="retTrait" path="/jsp/dataretrieve/DataRetrieveGenotyping4.jsp"/>
    <forward name="retData" path="/jsp/dataretrieve/DataRetrieveGenotypingDataset.jsp?"/>
@@ -207,22 +202,28 @@
    <forward name="ret" path="/jsp/common/Login.jsp"/>
   </action>
   <action name="dataretrieve" path="/retrieveMap" type="org.icrisat.gdms.retrieve.RetrieveMapsAction">
-   <forward name="ret" path="/jsp/dataretrieve/DisplayMap.jsp?first"/>
+   <forward name="ret" path="/jsp/dataretrieve/DisplayMap.jsp"/>
   </action>
   <action name="datadeletion" path="/deletedataretrieval" type="org.icrisat.gdms.delete.DataDeletionRetrievalAction">
    <forward name="det" path="/jsp/datadeletion/DataDeletion1.jsp?sec"/>
   </action>
   <action name="datadeletion" path="/confirmdeletion" type="org.icrisat.gdms.delete.DataDeletionAction">
    <forward name="delete" path="/jsp/datadeletion/DataDeletion2.jsp"/>
+   <forward name="ErrMsgM" path="/jsp/datadeletion/DataDeletion1.jsp?ErrMsg"/>
   </action>
   <action name="datadeletion" path="/delete" type="org.icrisat.gdms.delete.DataDeletionRetrievalAction">
-   <forward name="det" path="/jsp/datadeletion/DataDeletion1.jsp"/>
+   <forward name="det" path="/jsp/datadeletion/DataDeletion1.jsp?first"/>
   </action>
   <action name="dataretrieve" path="/exportabh" type="org.icrisat.gdms.retrieve.RetrieveExportABHAction">
    <forward name="exp" path="/jsp/dataretrieve/DataRetrieveGenotyping3.jsp?second"/>
   </action>
   <action name="dataretrieve" path="/exportToFile" type="org.icrisat.gdms.retrieve.ExportMarkerTraitsToFileAction">
    <forward name="exp" path="/jsp/dataretrieve/DisplayMap2.jsp"/>
+  </action>
+  <action name="dataretrieve" path="/exportKBIOFile" type="org.icrisat.gdms.retrieve.ExportToKBIOFileAction">
+   <forward name="exp" path="/jsp/dataretrieve/DisplayMap2.jsp"/>
+   <forward name="ErrMsgMap" path="/jsp/dataretrieve/DisplayMap.jsp"/>
+   <forward name="ErrMsgP" path="/jsp/dataretrieve/DataRetrieveGenotyping2.jsp"/>
   </action>
  </action-mappings>
  <controller/>

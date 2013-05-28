@@ -28,11 +28,12 @@ public class ExportMarkerTraitsToFileAction extends Action{
 			HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
 		// TODO Auto-generated method stub
-		
+		String frompage=req.getSession().getAttribute("fromPage").toString();
+		req.getSession().setAttribute("exop", "MT");
 		HttpSession session = req.getSession(true);
 		Calendar now = Calendar.getInstance();
-		System.out.println(req.getParameter("dataToExp"));
-		System.out.println("............  :"+req.getParameter("binSize"));
+		//System.out.println(req.getParameter("dataToExp"));
+		//System.out.println("............  :"+req.getParameter("binSize"));
 		String mSec=now.getTimeInMillis()+"";
 		req.getSession().setAttribute("msec", mSec);
 		String[] strData=req.getParameter("dataToExp").split("~~!!~~");

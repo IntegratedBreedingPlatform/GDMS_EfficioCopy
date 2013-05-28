@@ -1,10 +1,15 @@
 package org.icrisat.gdms.upload;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -36,7 +41,10 @@ public class SSRMarkerInfoUpload {
 			tx=session.beginTransaction();
 		
 		}*/
+		java.sql.Connection conn;
+		java.sql.Connection con;
 		
+		Properties prop=new Properties();
 		public String setMarkerDetails(HttpServletRequest request, String ssrfile) throws SQLException{
 			String strResult = "inserted";
 			//String crop=request.getSession().getAttribute("crop").toString();
@@ -46,6 +54,34 @@ public class SSRMarkerInfoUpload {
 				tx=session.beginTransaction();
 				Workbook workbook=Workbook.getWorkbook(new File(ssrfile));
 				String[] strSheetNames=workbook.getSheetNames();
+				
+				prop.load(new FileInputStream(hsession.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+				String host=prop.getProperty("central.host");
+				String port=prop.getProperty("central.port");
+				String url = "jdbc:mysql://"+host+":"+port+"/";
+				String dbName = prop.getProperty("central.dbname");
+				String driver = "com.mysql.jdbc.Driver";
+				String userName = prop.getProperty("central.username"); 
+				String password = prop.getProperty("central.password");
+				
+				Class.forName(driver).newInstance();
+				conn = DriverManager.getConnection(url+dbName,userName,password);
+				Statement stCen=conn.createStatement();
+				
+				
+				String hostL=prop.getProperty("local.host");
+				String portL=prop.getProperty("local.port");
+				String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+				String dbNameL = prop.getProperty("local.dbname");
+				//String driver = "com.mysql.jdbc.Driver";
+				String userNameL = prop.getProperty("local.username"); 
+				String passwordL = prop.getProperty("local.password");
+				
+				Class.forName(driver).newInstance();
+				con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+				Statement stLoc=con.createStatement();
+				ResultSet rsCen=null;
+				ResultSet rsLoc=null;
 				
 				///Sheet Names display
 				String[] strArrSheetNames=null;
@@ -155,7 +191,25 @@ public class SSRMarkerInfoUpload {
 					//}
 				}
 				
-				///Retrieving the marker names from the database					
+				List<String> listDBMarkerNames = new ArrayList<String>();	
+				List<String> listDBM_Names = new ArrayList<String>();	
+				//Retrieving the marker names from the database		
+				rsCen=stCen.executeQuery("select marker_name, species, marker_type from gdms_marker where Lower(species) in("+strCropNames.substring(0, strCropNames.length()-1).toLowerCase()+")and marker_type='SSR'");
+				rsLoc=stLoc.executeQuery("select marker_name, species, marker_type from gdms_marker where Lower(species) in("+strCropNames.substring(0, strCropNames.length()-1).toLowerCase()+")and marker_type='SSR'");
+				while(rsCen.next()){
+					String strMC=rsCen.getString(1)+"!`!"+rsCen.getString(2)+"!`!"+rsCen.getString(3);
+					listDBM_Names.add(rsCen.getString(1));
+					listDBMarkerNames.add(strMC.toLowerCase());	
+				}
+				while(rsLoc.next()){
+					if(!listDBM_Names.contains(rsLoc.getString(1))){
+						listDBM_Names.add(rsLoc.getString(1));
+						String strMC=rsLoc.getString(1)+"!`!"+rsLoc.getString(2)+"!`!"+rsLoc.getString(3);
+						listDBMarkerNames.add(strMC.toLowerCase());	
+					}
+				}
+				
+				/*///Retrieving the marker names from the database					
 				Query rsMarkerNames=session.createQuery("from MarkerInfoBean where Lower(species) in("+strCropNames.substring(0, strCropNames.length()-1).toLowerCase()+") and marker_type='SSR'");				
 				List result= rsMarkerNames.list();				
 				Iterator it=result.iterator();
@@ -166,7 +220,7 @@ public class SSRMarkerInfoUpload {
 					//String strMC=uMarkerInfo.getMarker_name()+"!`!"+uMarkerInfo.getCrop()+"!`!"+uMarkerInfo.getMarker_type();					
 					String strMC=uMarkerInfo.getMarker_name()+"!`!"+uMarkerInfo.getSpecies()+"!`!"+uMarkerInfo.getMarker_type();
 					listDBMarkerNames.add(strMC.toLowerCase());					
-				}								
+				}	*/							
 				///Database and Template Marker names comparision
 				Object objCom=null;
 				Iterator itCom;				
@@ -399,6 +453,9 @@ public class SSRMarkerInfoUpload {
 					hsession.setAttribute("indErrMsg", ErrMsg);					
 					return strResult = "ErrMsg";
 				}	
+				/*if(rsCen!=null) rsCen.close(); if(rsLoc!=null) rsLoc.close();
+				if(stCen!=null) stCen.close(); if(stLoc!=null) stLoc.close();*/
+				if(con!=null) con.close(); if(conn!=null) conn.close();
 			}catch(Exception e){
 				session.clear();
 				//con.rollback();

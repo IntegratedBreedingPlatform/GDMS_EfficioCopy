@@ -15,7 +15,7 @@ public class UploadDirectingAction extends Action{
 			HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
 		String op=req.getQueryString();
-		System.out.println("######################   "+op);
+		//System.out.println("######################   "+op);
 		if(op.equalsIgnoreCase("markers")){
 			str="markers";
 		}else if(op.equalsIgnoreCase("geno")){

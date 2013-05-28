@@ -15,7 +15,12 @@
   		<property name="remarks"/>
   		<property name="dataset_desc"/>
   		<property name="missing_data"/>
-  		
+  		<property name="method"/>
+  		<property name="score"/>
+  		<property name="institute"/>
+  		<property name="principal_investigator"/>
+  		<property name="email"/>
+  		<property name="purpose_of_study"/>
   		
 	</class> 
   
@@ -89,7 +94,7 @@
 	  <property name="linkage_group"></property>
 	  <property name="start_position"></property>
 	  <property name="end_position"></property>
-	  <property name="map_unit"></property>
+	 
   </class>
   
     <class name="MapBean" table="gdms_map">    
@@ -97,6 +102,8 @@
 	  <property name="map_name"></property>
 	  <property name="map_type"></property>	 
 	  <property name="mp_id"></property>	
+	   <property name="map_desc"></property>
+	   <property name="map_unit"></property>
   </class>
 
 	<class name="MarkerUserInfoBean" table="gdms_marker_user_info">
@@ -163,7 +170,7 @@
 		<property name="position"></property>	
 		<property name="min_position"></property>
 		<property name="max_position"></property>
-		<property name="trait"></property>
+		<property name="tid"></property>
 		<property name="experiment"></property>
 		<property name="left_flanking_marker"></property>
 		<property name="right_flanking_marker"></property>
@@ -173,6 +180,11 @@
 		<property name="score_value"></property>
 		<property name="r_square"></property>
 		<property name="interactions"></property>
+		<property name="se_additive"></property>
+  		<property name="hv_parent"></property>
+  		<property name="hv_allele"></property>
+  		<property name="lv_parent"></property>
+  		<property name="lv_allele"></property>
 	</class>
 	<class name="QTLBean" table="gdms_qtl">
 		<id name="dataset_id"></id>
@@ -216,8 +228,8 @@
 		
 		<id name="dataset_id"/>
 		<property name="mapping_type"></property>
-		<property name="parent_a_gid"></property>		
-		<property name="parent_b_gid"></property>
+		<property name="parent_a_nid"></property>		
+		<property name="parent_b_nid"></property>
 		<property name="population_size"></property>
 		<property name="population_type"></property>		
 		<property name="mapdata_desc"></property>
@@ -225,5 +237,19 @@
 		<property name="map_id"></property>
 		
 	</class>
+	<class name="MTABean" table="gdms_mta">
+		<id name="mta_id"/>
+		<property name="marker_id"/>
+		<property name="dataset_id"/>
+		<property name="map_id"/>
+		<property name="linkage_group"/>
+		<property name="position"/>
+		<property name="tid"/>
+		<property name="effect"/>
+		<property name="hv_allele"/>
+		<property name="experiment"/>
+		<property name="score_value"/>
+		<property name="r_square"/>
 	
+	</class> 
 </hibernate-mapping>

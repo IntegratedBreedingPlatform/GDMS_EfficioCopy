@@ -26,7 +26,7 @@
 	  				String[] str=maps[m].split("!~!");
 	  		%>
 	  			<tr class="displayText">
-	  				<td width="45%"><input type="checkbox" name="maps" value='<%=str[1]%>'>&nbsp;<%=str[1]%></td>
+	  				<td width="45%"><input type="checkbox" name="maps" value='<%=str[1]+"!~!"+str[4]%>'>&nbsp;<%=str[1]%></td>
 	  				<td> Markers : <%=str[0] %></td>
 	  				<td>Map Length : <%=str[2] %>&nbsp;<%=str[3]%></td>
 	  				
@@ -91,7 +91,10 @@ function sub(a){
 	
 
 }
-
+/*function testing(a){
+alert(a)
+	
+}*/
 </script>
 
 

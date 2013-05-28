@@ -1,9 +1,14 @@
 package org.icrisat.gdms.upload;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -14,7 +19,6 @@ import jxl.Workbook;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.icrisat.gdms.upload.ExcelSheetColumnName;
 import org.icrisat.gdms.common.HibernateSessionFactory;
 import org.icrisat.gdms.common.MaxIdValue;
 
@@ -30,7 +34,10 @@ private Session session;
 		tx=session.beginTransaction();	
 	}*/
 
+	java.sql.Connection conn;
+	java.sql.Connection con;
 	
+	Properties prop=new Properties();
 //setMarkerDetails method is used to insert the Marker details information from Marker Template to database.	
 	public String setMarkerDetails(HttpServletRequest request, String snpfile){
 		String strResult = "inserted";
@@ -41,6 +48,34 @@ private Session session;
 			tx=session.beginTransaction();
 			Workbook workbook=Workbook.getWorkbook(new File(snpfile));
 			String[] strSheetNames=workbook.getSheetNames();
+			
+			prop.load(new FileInputStream(hsession.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+			String host=prop.getProperty("central.host");
+			String port=prop.getProperty("central.port");
+			String url = "jdbc:mysql://"+host+":"+port+"/";
+			String dbName = prop.getProperty("central.dbname");
+			String driver = "com.mysql.jdbc.Driver";
+			String userName = prop.getProperty("central.username"); 
+			String password = prop.getProperty("central.password");
+			
+			Class.forName(driver).newInstance();
+			conn = DriverManager.getConnection(url+dbName,userName,password);
+			Statement stCen=conn.createStatement();
+			
+			
+			String hostL=prop.getProperty("local.host");
+			String portL=prop.getProperty("local.port");
+			String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+			String dbNameL = prop.getProperty("local.dbname");
+			//String driver = "com.mysql.jdbc.Driver";
+			String userNameL = prop.getProperty("local.username"); 
+			String passwordL = prop.getProperty("local.password");
+			
+			Class.forName(driver).newInstance();
+			con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+			Statement stLoc=con.createStatement();
+			ResultSet rsCen=null;
+			ResultSet rsLoc=null;
 			
 			///Sheet Names display
 			String[] strArrSheetNames=null;
@@ -133,19 +168,34 @@ private Session session;
 										
 				}
 			}
-			
-			//Retrieving the marker names from the database					
-			Query rsMarkerNames=session.createQuery("from MarkerInfoBean where Lower(species) in("+strCropNames.substring(0, strCropNames.length()-1).toLowerCase()+")and marker_type='SNP'");				
+			List<String> listDBMarkerNames = new ArrayList<String>();	
+			List<String> listDBM_Names = new ArrayList<String>();	
+			//Retrieving the marker names from the database		
+			rsCen=stCen.executeQuery("select marker_name, species, marker_type from gdms_marker where Lower(species) in("+strCropNames.substring(0, strCropNames.length()-1).toLowerCase()+")and marker_type='SNP'");
+			rsLoc=stLoc.executeQuery("select marker_name, species, marker_type from gdms_marker where Lower(species) in("+strCropNames.substring(0, strCropNames.length()-1).toLowerCase()+")and marker_type='SNP'");
+			while(rsCen.next()){
+				String strMC=rsCen.getString(1)+"!`!"+rsCen.getString(2)+"!`!"+rsCen.getString(3);
+				listDBM_Names.add(rsCen.getString(1));
+				listDBMarkerNames.add(strMC.toLowerCase());	
+			}
+			while(rsLoc.next()){
+				if(!listDBM_Names.contains(rsLoc.getString(1))){
+					listDBM_Names.add(rsLoc.getString(1));
+					String strMC=rsLoc.getString(1)+"!`!"+rsLoc.getString(2)+"!`!"+rsLoc.getString(3);
+					listDBMarkerNames.add(strMC.toLowerCase());	
+				}
+			}
+			/*Query rsMarkerNames=session.createQuery("from MarkerInfoBean where Lower(species) in("+strCropNames.substring(0, strCropNames.length()-1).toLowerCase()+")and marker_type='SNP'");				
 			List result= rsMarkerNames.list();				
 			Iterator it=result.iterator();
-			List<String> listDBMarkerNames = new ArrayList<String>();				
+						
 			///concatenate Marker name with crop name and adding to List object.
 			while(it.hasNext()){
 				MarkerInfoBean uMarkerInfo= (MarkerInfoBean)it.next();					
 				//String strMC=uMarkerInfo.getMarker_name()+"!`!"+uMarkerInfo.getCrop()+"!`!"+uMarkerInfo.getMarker_type();					
 				String strMC=uMarkerInfo.getMarker_name()+"!`!"+uMarkerInfo.getSpecies()+"!`!"+uMarkerInfo.getMarker_type();
 				listDBMarkerNames.add(strMC.toLowerCase());					
-			}		
+			}*/		
 			//System.out.println("listDBMarkerNames:"+listDBMarkerNames);
 			///Database and Template Marker names comparision
 			Object objCom=null;
@@ -311,7 +361,9 @@ private Session session;
 				hsession.setAttribute("indErrMsg", ErrMsg);					
 				return strResult = "ErrMsg";
 			}
-			
+			/*if(rsCen!=null) rsCen.close(); if(rsLoc!=null) rsLoc.close();
+			if(stCen!=null) stCen.close(); if(stLoc!=null) stLoc.close();*/
+			if(con!=null) con.close(); if(conn!=null) conn.close();
 		}catch(Exception e){
 			System.out.println("Error "+ e.toString());
 			//tx.rollback();

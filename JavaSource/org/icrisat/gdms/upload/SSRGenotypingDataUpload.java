@@ -1,13 +1,18 @@
 package org.icrisat.gdms.upload;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -31,23 +36,56 @@ import org.icrisat.gdms.common.MaxIdValue;
 
 
 public class SSRGenotypingDataUpload {
-	String str="";
-	private Session session;
 	
+	String str="";
+	private Session session;	
 	private Transaction tx;	
+	
+	java.sql.Connection conn;
+	java.sql.Connection con;
+	
 	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();  
+	Properties prop=new Properties();
 	
 	public String getUpload(HttpServletRequest request, String fname) throws SQLException{
 		
 		ManagerFactory factory =null;
-		
+		ArrayList result1=new ArrayList();
 		try{
 			//String crop=request.getSession().getAttribute("crop").toString();
 			session = HibernateSessionFactory.currentSession();
 			tx=session.beginTransaction();
 			
-			
-			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
+			prop.load(new FileInputStream(request.getSession().getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+		    String host=prop.getProperty("central.host");
+		    String port=prop.getProperty("central.port");
+		    String url = "jdbc:mysql://"+host+":"+port+"/";
+		    String dbName = prop.getProperty("central.dbname");
+		    String driver = "com.mysql.jdbc.Driver";
+		    String userName = prop.getProperty("central.username"); 
+		    String password = prop.getProperty("central.password");
+		    
+		    Class.forName(driver).newInstance();
+		    conn = DriverManager.getConnection(url+dbName,userName,password);
+		    Statement stCen=conn.createStatement();
+		    
+		    
+		    String hostL=prop.getProperty("local.host");
+		    String portL=prop.getProperty("local.port");
+		    String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+		    String dbNameL = prop.getProperty("local.dbname");
+		    //String driver = "com.mysql.jdbc.Driver";
+		    String userNameL = prop.getProperty("local.username"); 
+		    String passwordL = prop.getProperty("local.password");
+		    
+		    Class.forName(driver).newInstance();
+		    con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+		    Statement stLoc=con.createStatement();
+		    ResultSet rsML=null;
+		    ResultSet rsMC=null;
+		    ResultSet rsLoc=null;
+		    ResultSet rsCen=null;
+		    /*DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
 			DatabaseConnectionParameters central = new DatabaseConnectionParameters("localhost", "3306", "ibdb_ivis", "root", "root");*/
 			/*DatabaseConnectionParameters local = new DatabaseConnectionParameters("DatabaseConfig.properties", "local");
 			DatabaseConnectionParameters central = new DatabaseConnectionParameters("DatabaseConfig.properties", "central");
@@ -337,7 +375,33 @@ public class SSRGenotypingDataUpload {
 	           SortedMap map = new TreeMap();
 	           SortedMap finalMarkersMap = new TreeMap();
 	           HashMap<String, Object> markerMap = new HashMap<String, Object>();
-	            ArrayList lstMarIdNames=uptMId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, markersForQuery);
+	           
+	           HashMap<String, Object> markersMap = new HashMap<String, Object>();
+	            
+	            
+	            List lstMarkers = new ArrayList();
+	            //System.out.println("markersForQuery=:"+markersForQuery);
+	            //System.out.println("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
+	            
+	            
+	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
+	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
+	            
+	            while(rsMC.next()){
+	            	//lstMarIdNames.add(rsMC.getString(2)+":"+rsMC.getString(1));
+	            	lstMarkers.add(rsMC.getString(2));
+	            	markersMap.put(rsMC.getString(2), rsMC.getInt(1));		
+	            }
+	            while(rsML.next()){	            		
+	            	if(!lstMarkers.contains(rsML.getString(2))){
+	            		lstMarkers.add(rsML.getString(2));
+	            		//lstMarIdNames.add(rsML.getString(2)+":"+rsML.getString(1));
+	            	}
+	            	markersMap.put(rsML.getString(2), rsML.getInt(1));	
+	            }
+	           
+	           //System.out.println("markersMap=:"+markersMap);
+	           /*ArrayList lstMarIdNames=uptMId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, markersForQuery);
 	          
 	            List lstMarkers = new ArrayList();
 	            for(int w=0;w<lstMarIdNames.size();w++){
@@ -346,7 +410,7 @@ public class SSRGenotypingDataUpload {
 	                 String strMa123 = (String)strMareO[1];
 	                 map.put(strMa123, strMareO[0]);
 	                 
-	            }
+	            }*/
 	            int markerId=0;
 	            String marker="";
 	            int maxMarkerId=uptMId.getMaxIdValue("marker_id","gdms_marker",session);
@@ -359,8 +423,20 @@ public class SSRGenotypingDataUpload {
 			int dataset_id=intDatasetId-1;
 			String dname=sheetSource.getCell(1,2).getContents().trim();
 			
-			Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dname+"'");			
-			List result1= rsDatasetNames.list();
+			/*Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dname+"'");			
+			List result1= rsDatasetNames.list();*/
+			
+			rsLoc=stLoc.executeQuery("select dataset_name from gdms_dataset where dataset_name='"+dname+"'");
+			while(rsLoc.next()){
+				result1.add(rsLoc.getString(1));						
+			}
+			//System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+			rsCen=stCen.executeQuery("select dataset_name from gdms_dataset where dataset_name='"+dname+"'");
+			while(rsCen.next()){
+				result1.add(rsCen.getString(1));	
+			}
+			
+			
 			//System.out.println(".............:"+result1.size());
 			if(result1.size()>0){
 				ErrMsg = "Dataset Name already exists.";
@@ -385,6 +461,11 @@ public class SSRGenotypingDataUpload {
 			ub.setUpload_template_date(curDate);					
 			ub.setDatatype(datatype);
 			ub.setMissing_data(sheetSource.getCell(1,6).getContents().trim());
+			
+			ub.setInstitute(sheetSource.getCell(1,0).getContents().trim());
+			ub.setPrincipal_investigator(sheetSource.getCell(1,1).getContents().trim());
+			
+			
 			//System.out.println("dataset id = ");
 			session.save(ub);
 			
@@ -407,7 +488,7 @@ public class SSRGenotypingDataUpload {
 	 			session.save(gb);
 	 		}*/
 			SortedMap mapN = new TreeMap();
-			System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
+			//System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
 			ArrayList finalList =new ArrayList();
 			ArrayList gidL=new ArrayList();
 			
@@ -437,7 +518,7 @@ public class SSRGenotypingDataUpload {
 	        		finalList.add(gid1+"~!~"+mapN.get(gid1));	
 	        	}
 	        }
-            System.out.println("******************  "+finalList);
+            //System.out.println("******************  "+finalList);
 			
 			int intDataOrderIndex =uptMId.getMaxIdValue("an_id","gdms_allele_values",session);
 			//int user_id=uptMId.getUserId("userid", "users", "uname", session,sheetSource.getCell(1,1).getContents().trim());
@@ -474,7 +555,7 @@ public class SSRGenotypingDataUpload {
 			for(int m=0;m<markerList.size();m++){				
 				MarkerInfoBean mib=new MarkerInfoBean();
 				if(lstMarkers.contains(markerList.get(m))){
-					intRMarkerId=(Integer)(map.get(markerList.get(m)));	
+					intRMarkerId=(Integer)(markersMap.get(markerList.get(m)));	
 					mids.put(markerList.get(m).toString(), intRMarkerId);
 					midsList.add(intRMarkerId);					
 				}else{
@@ -503,7 +584,7 @@ public class SSRGenotypingDataUpload {
 			if (sheetDataList==null){
 				System.out.println("Empty Sheet");		
 			}else{
-				System.out.println("NOT Empty Sheet");		
+				//System.out.println("NOT Empty Sheet");		
 				int intNR=sheetDataList.getRows();			
 				int intColRowEmpty=0;			
 				for(int i=0;i<intNR;i++){
@@ -689,8 +770,9 @@ public class SSRGenotypingDataUpload {
 			
 		}
 		str="inserted";
-			
-		
+		/*if(rsML != null) rsML.close(); if(rsMC != null) rsMC.close(); if(rsLoc != null) rsLoc.close(); if(rsCen != null) rsCen.close();
+		if(stCen != null) stCen.close(); if(stLoc != null) stLoc.close();*/
+		if(conn!=null) conn.close(); if(con!=null) con.close();
 		}catch(Exception e){
 			session.clear();			
 			tx.rollback();			
@@ -699,6 +781,7 @@ public class SSRGenotypingDataUpload {
 			// Actual contact insertion will happen at this step
 		    //session.flush();
 		    //session.close();
+			conn.close(); con.close();
 			session.clear();
 			session.disconnect();
 			factory.close();

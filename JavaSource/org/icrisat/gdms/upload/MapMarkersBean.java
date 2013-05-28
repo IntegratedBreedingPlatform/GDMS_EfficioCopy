@@ -11,7 +11,7 @@ public class MapMarkersBean {
 	private float end_position;*/
 	
 	
-	private String map_unit;
+	//private String map_unit;
 	
 	
 	public int getMarkerId() {
@@ -48,12 +48,12 @@ public class MapMarkersBean {
 	}
 		
 	
-	public String getMap_unit() {
+	/*public String getMap_unit() {
 		return map_unit;
 	}
 	public void setMap_unit(String map_unit) {
 		this.map_unit = map_unit;
-	}
+	}*/
 	public int getMarker_id() {
 		return marker_id;
 	}

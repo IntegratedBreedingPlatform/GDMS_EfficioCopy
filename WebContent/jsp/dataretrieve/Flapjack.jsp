@@ -3,8 +3,9 @@
  
 <html>
 <head>
-	<title>GDMS- Running Batch file</title>
-	<link rel="stylesheet" href="<%=request.getContextPath() %>/jsp/common/GDMSStyleSheet.css" type="text/css">	
+<title>GDMS- Running Batch file</title>
+
+<link rel="stylesheet" href="<%=request.getContextPath() %>/jsp/common/GDMSStyleSheet.css" type="text/css">	
 </head>
 <%
 	try{
@@ -14,6 +15,7 @@
 		String realPath=request.getSession().getServletContext().getRealPath("//");
 		String batchFileName="";
 		String flapjakStatus="";
+		
 		//System.out.println("realPath in flapjack.jsp:"+realPath);
 		if(batchType.equals("View in CMTV")){
 			batchFileName=realPath+"jsp\\dataretrieve\\cmtvrun.bat";
@@ -24,6 +26,7 @@
 			rt.exec(cmd);
 			
 		}else if(batchType.equals("Visualize In Flapjack")){
+			
 			batchFileName=realPath+"\\jsp\\dataretrieve\\flapjackrun.bat";
 			//System.out.println("batch file path/...."+batchFileName);
 			//System.out.println("realPath=:"+realPath);
@@ -76,26 +79,28 @@
 	
 %>
 <body>
-	<script>
-		function PreviousPage(){
-			document.forms[0].action="../../genotypingpage.do?out";	
-			document.forms[0].submit();	
-		}
-	</script>
+<script>
+function PreviousPage(){
+	document.forms[0].action="../../genotypingpage.do?out";	
+	//alert(document.forms[0].action);
+	document.forms[0].submit();	
+}
+</script>
+	
 	<form method="post"> 
-		<br>
-		<center>
-			<%
+	<br>
+	<center>
+	<%
 
-			if(batchType.equals("View in CMTV")){ %>
-				<input type="button" name="Back" value=" Back " onclick="javascript:history.back()"/>
-			<%}else if(batchType.equals("Visualize In Flapjack")){%>			
-	 			<div class="displayText"><b><a href="FViewFiles.jsp">Download</a>&nbsp; the project file</b></div>	 	
-			<%} else {%>		
-	 			<div class="displayText"><b><a href="FViewFiles.jsp">Download</a>&nbsp; the Similarity Matrix file</b></div>	 	
-			<%} %>
-			<br><br><br>
-	 		<input type="button" name="Back" value=" Back " onclick="PreviousPage()"/>
+	if(batchType.equals("View in CMTV")){ %>
+		<input type="button" name="Back" value=" Back " onclick="javascript:history.back()"/>
+	<%}else if(batchType.equals("Visualize In Flapjack")){%>			
+	 	<div class="displayText"><b><a href="FViewFiles.jsp">Download</a>&nbsp; the project file</b></div>	 	
+	<%} else {%>		
+	 	<div class="displayText"><b><a href="FViewFiles.jsp">Download</a>&nbsp; the Similarity Matrix file</b></div>	 	
+	<%} %>
+		<br><br><br>
+	 	<input type="button" name="Back" value=" Back " onclick="PreviousPage()"/>
 	</center>
 	
 	<br><br><br>

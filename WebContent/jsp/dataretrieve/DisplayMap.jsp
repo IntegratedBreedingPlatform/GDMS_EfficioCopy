@@ -2,12 +2,25 @@
 <%@ taglib uri="/WEB-INF/struts-html.tld" prefix="html"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="http://jsptags.com/tags/navigation/pager" prefix="pg" %>
-<%@ page import="java.util.ArrayList;" %>
+<%@ page import="java.util.*;" %>
 <html:html>
 	<head>
 
 		<title>GDMS</title>
 		<script>
+			<%
+			int mtaCount=Integer.parseInt(request.getSession().getAttribute("mtaCount").toString());
+			String mtaDetails="";
+			HashMap<Object, String> mtaTraits = new HashMap<Object, String>();
+			ArrayList mtaList=new ArrayList();
+			if(mtaCount>0){				
+				mtaList=(ArrayList)request.getSession().getAttribute("mtaMIDsList");
+				System.out.println("...mtaList=:"+mtaList);
+				mtaTraits=(HashMap)request.getSession().getAttribute("mtaTraits");
+				System.out.println("...mtaTraits..... JSP=:"+mtaTraits);
+				mtaDetails=request.getSession().getAttribute("mtaMarkers").toString();
+			}
+			%>
 			function stopRKey(evt) { 
 			  var evt = (evt) ? evt : ((event) ? event : null); 
 			  var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null); 
@@ -15,26 +28,57 @@
 			} 
 
 			document.onkeypress = stopRKey; 
+
+			function msg(){	
+				<%
+				String strValue = "";				
+				String strResult = (String)request.getSession().getAttribute("indErrMsg");
+				String strResult1 = request.getQueryString();
+				
+				if(strResult == null)
+					strResult = "";
+				
+					
+				if(strResult.equals("ErrMsg")){
+					strValue = (String)	session.getAttribute("indErrMsg");
+					strResult = "Error : "+strValue +".";
+				}
+				%>
+				if(document.forms[0].elements['hResult'].value != ""){
+					alert(document.forms[0].elements['hResult'].value);					
+					document.forms[0].qtl.focus();
+					document.forms[0].qtl.value="";
+				}
+				<%
+				
+				session.removeAttribute("indErrMsg");
+				%>
+			}
+			
 		</script>
 		<link rel="stylesheet" type="text/css" href="<html:rewrite forward='GDMSStyleSheet'/>">		
 	</head>
-	<body onload="refreshPage()">
+	<body onload="refreshPage(); msg(); mtaMarkers();">
 		<html:form action="/exportToFile.do">
 			<!--<table width='35%' border=0 align=right>
 				<tr><td align=left nowrap class="displayBoldText" width="20%">Species</td><td><b>:</b></td><td align=left nowrap class="displayBoldText"><%=session.getAttribute("crop") %></td></tr>		
 			</table>
 			-->
 			
-			<%
+			<%			
 				String showTraits=session.getAttribute("showTraits").toString();
 				ArrayList mdata=new ArrayList();
 				mdata=(ArrayList)request.getSession().getAttribute("map_data");
 				String testing=request.getSession().getAttribute("finalData").toString();
 				String fromPage=session.getAttribute("fromPage").toString();
+				//mtaList=(ArrayList)request.getSession().getAttribute("mtaMIDsList");
+				//System.out.println("...mtaList=:"+mtaList);
+				//mtaTraits=(HashMap)request.getSession().getAttribute("mtaTraits");
 			%>
 			<html:hidden property="fromPage" value='<%=fromPage%>'/>
 			<logic:notEmpty name="map_data">
 				<html:hidden property="traitValues" value='<%=testing%>'/>
+				<html:hidden property="mtaValues" value='<%=mtaDetails%>'/>
 				<br>
 				<br>
 				<%
@@ -83,32 +127,72 @@
 						<td nowrap align="center" class="displaysmallwhiteboldText">Position</td>									
 						<%if(showTraits.equalsIgnoreCase("yes")){ %>									
 						<td nowrap align="center" class="displaysmallwhiteboldText">Trait</td>	
-						<%} %>
+						<%} else{
+							if(mtaList.size()>0){
+						%>
+						<td nowrap align="center" class="displaysmallwhiteboldText">Trait</td>	
+							<%}} %>
 					</tr>								
 					<%					
 					for(int m=0; m<mdata.size();m++){
 						String[] strMdata=mdata.get(m).toString().split("!~!");
-					%>
+						//System.out.println("jsp=:"+strMdata[0]);
+						//System.out.println(mtaTraits.get(strMdata[0])+"   "+strMdata[0]);
 						
-						<tr>
-							<td width="5%">&nbsp;<input type="checkbox" name='markers<%=m%>' value='<%=strMdata[0]%>' onclick="startChecking(this)"/><input type="hidden" name='hmarkers<%=m%>'></td>											
-							<td nowrap class="displaysmallText" ><%=strMdata[0]%></td>				
-							<td nowrap class="displaysmallText" ><%=strMdata[1]%></td>
-							<td nowrap class="displaysmallText" ><%=strMdata[3]%></td>	
-							<td nowrap class="displaysmallText" ><%=strMdata[2]%></td>	
-							<%if(showTraits.equalsIgnoreCase("yes")){ %>
-							<td nowrap class="displaysmallText" >&nbsp;<%=strMdata[4]%></td>	
-							<%} %>
-						</tr>
-					<%} %>
+						if((mtaList.size()>0)&&(mtaList.contains(strMdata[0]))){%>			
+							<tr>
+								<td  class="displaysmallText" width="5%">&nbsp;<input type="checkbox" name='markers<%=m%>' value='<%=strMdata[0]%>' onclick="startChecking(this)"/><input type="hidden" name='hmarkers<%=m%>'></td>											
+								<td nowrap class="displaysmallText"><b><%=strMdata[0]%></b></td>				
+								<td nowrap class="displaysmallText"><b><%=strMdata[1]%></b></td>
+								<td nowrap class="displaysmallText"><b><%=strMdata[3]%></b></td>	
+								<td nowrap class="displaysmallText"><b><%=strMdata[2]%></b></td>	
+								<%if(showTraits.equalsIgnoreCase("yes")){ 
+									if(mtaList.size()>0){%>
+										<td nowrap><font class="displaysmallText">&nbsp;<b><%=mtaTraits.get(strMdata[0])%>,</b></font>&nbsp;<font class="displaysmallText"><%=strMdata[4]%></font></td>
+									<%}else{ %>
+										<td nowrap class="displaysmallText" >&nbsp;<%=strMdata[4]%></td>	
+									<%} 
+								}else{
+									//if(mtaList.size()>0){
+									
+									%>
+										<td nowrap class="displaysmallText" >&nbsp;<b><%=mtaTraits.get(strMdata[0])%></b></td>	
+									<%//}
+								}%>
+							</tr>
+						<%}else{%>
+							<tr>
+								<td width="5%">&nbsp;<input type="checkbox" name='markers<%=m%>' value='<%=strMdata[0]%>' onclick="startChecking(this)"/><input type="hidden" name='hmarkers<%=m%>'></td>											
+								<td nowrap class="displaysmallText" ><%=strMdata[0]%></td>				
+								<td nowrap class="displaysmallText" ><%=strMdata[1]%></td>
+								<td nowrap class="displaysmallText" ><%=strMdata[3]%></td>	
+								<td nowrap class="displaysmallText" ><%=strMdata[2]%></td>	
+								<%if(showTraits.equalsIgnoreCase("yes")){ %>
+									<td nowrap class="displaysmallText" >&nbsp;<%=strMdata[4]%></td>	
+								<%} %>
+							</tr>
+						<%}
+					}%>
 				</table>
 				<center>
-				<br>
-				<br>
-				<input type="hidden" name="dataToExp"/>
-				<input type="hidden" name="op" value='<%=session.getAttribute("polyType") %>'/>
-				<html:button property="back" value="Back" onclick="javascript:history.back()"/>
-				<html:button property="export" value="Export" onclick="submitPage()"/>
+				
+					<br>
+					<br><table border=0 align=center width=77%><tr><td class="displayBoldText" align=left>Choose Data Export Format You Would Like</td></tr></table>
+					<table align="center" width=77% border=0>
+				    	 <tr>
+					    	 <td width=1%><html:radio  property="FormatcheckGroup" value="excel" /></td>
+					    	 <td class="QrytextColor" align=left>Excel sheet</td>
+				    	 </tr>
+				    	  <tr>
+					    	 <td width=1%><html:radio property="FormatcheckGroup" value="kbio" /></td>
+					    	 <td class="QrytextColor" align="left">KBio order form</td>
+					     </tr> 
+					</table> 
+					<br><br>
+					<input type="hidden" name="dataToExp"/>
+					<input type="hidden" name="op" value='<%=session.getAttribute("polyType") %>'/>
+					<html:button property="back" value="Back" onclick="javascript:history.back()"/>
+					<html:button property="export" value="Export" onclick="submitPage()"/>
  				</center>
 			</logic:notEmpty>
 			<logic:empty name="map_data">
@@ -124,7 +208,8 @@
 	 			</center>
 			</logic:empty>		
 			<input type="hidden" name="option" value='<%=session.getAttribute("showTraits") %>'>
-			<input type="hidden" name="hTraits">			
+			<input type="hidden" name="hTraits">	
+			<input type=hidden name="hResult" value='<%=strResult %>'>		
 		</html:form>
 	</body>
 	</html:html>
@@ -268,11 +353,29 @@ var mapUnit=document.forms[0].mapUnit.value;
 		//alert(mapUnit);	
 		var count=0;
 		var strData="";
+		var c1=0;
+		var temp1="";
+		var len1=document.forms[0].FormatcheckGroup.length;
+		for(k=0;k<len1;k++){
+			if(document.forms[0].FormatcheckGroup[k].checked==true){
+				c1++;
+				temp1=document.forms[0].FormatcheckGroup[k].value;			
+			}
+		}
+		//alert(temp1);
+		if(c1==0){
+			alert("Please Select Export Format");
+			return false;
+		}
+
+		
 		for(var i=0; i<document.forms[0].elements.length; i++){
 			obj = document.forms[0].elements[i];
 			if(obj.type == "checkbox" && obj.checked && obj.name != "traitM"){
 				var  nameM=obj.name;
-				strData=strData+document.forms[0].elements['h'+nameM].value+"~~!!~~";
+				
+					strData=strData+document.forms[0].elements['h'+nameM].value+"~~!!~~";
+				
 				count=count+1;
 			}			    		          
 		}
@@ -283,9 +386,27 @@ var mapUnit=document.forms[0].mapUnit.value;
 		}else{
 			document.forms[0].elements['dataToExp'].value=strData;
 			//alert(document.forms[0].elements['dataToExp'].value);	
+			if(temp1=="kbio"){
+				//alert("...........................");
+				document.forms[0].action="exportKBIOFile.do?map";
+			}else{
+				//alert("***************************");
+				document.forms[0].action="exportToFile.do";
+			}
 			document.forms[0].submit();
 		}
 		
+	}
+	function mtaMarkers(){		
+		var chData=document.forms[0].mtaValues.value.split("!~!");		
+		//alert(chData);
+		for(var i=0; i<document.forms[0].elements.length; i++){
+			obj = document.forms[0].elements[i];
+			//mylist.indexOf(1) == 0
+			if(obj.type == "checkbox" && chData.indexOf(obj.value)==0){
+				obj.checked=true;
+			}			    		          
+		}		
 	}
 	
 </script>

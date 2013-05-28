@@ -16,8 +16,13 @@ public class DatasetBean {
 	private String datatype;
 	private String remarks;
 	private String missing_data;
+	private String method;
+	private String score;
 	
-	
+	private String institute;
+	private String principal_investigator;
+	private String email;
+	private String purpose_of_study; 
 	
 	public int getDataset_id() {
 		return dataset_id;
@@ -89,6 +94,43 @@ public class DatasetBean {
 	public void setRemarks(String remarks) {
 		this.remarks = remarks;
 	}
+	public String getMethod() {
+		return method;
+	}
+	public void setMethod(String method) {
+		this.method = method;
+	}
+	public String getScore() {
+		return score;
+	}
+	public void setScore(String score) {
+		this.score = score;
+	}
+	public String getInstitute() {
+		return institute;
+	}
+	public void setInstitute(String institute) {
+		this.institute = institute;
+	}
+	public String getPrincipal_investigator() {
+		return principal_investigator;
+	}
+	public void setPrincipal_investigator(String principal_investigator) {
+		this.principal_investigator = principal_investigator;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getPurpose_of_study() {
+		return purpose_of_study;
+	}
+	public void setPurpose_of_study(String purpose_of_study) {
+		this.purpose_of_study = purpose_of_study;
+	}
+	
 	
 	
 	

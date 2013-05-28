@@ -10,7 +10,13 @@
 	</head>
 	<body>
 		<%
-		String path="MarkerTraitFiles/MarkerTrait"+session.getAttribute("msec")+".xls";
+			String path="";
+			//System.out.println("...............:"+request.getSession().getAttribute("exop"));
+			String option=request.getSession().getAttribute("exop").toString();
+			if(option.equalsIgnoreCase("MT"))
+				path="MarkerTraitFiles/MarkerTrait"+session.getAttribute("msec")+".xls";
+			else
+				path="InputFormats/KBio"+session.getAttribute("msec")+".xls";
 		%>
 		<table border=0 cellpadding=0 cellspacing=0 width="75%" align="center">
 			<tr><td colspan="2">&nbsp;</td></tr>

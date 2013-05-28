@@ -1,7 +1,11 @@
 package org.icrisat.gdms.upload;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -9,6 +13,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -42,13 +47,44 @@ public class DArTGenotypingDataUpload {
 		tx=session.beginTransaction();
 	
 	}*/
+	
+	java.sql.Connection conn;
+	java.sql.Connection con;
+	
 	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();
+	Properties prop=new Properties();
 	public String setDArTData(HttpServletRequest request, String fname) throws SQLException{
 		ManagerFactory factory =null;
 		try{
 			//String crop=request.getSession().getAttribute("crop").toString();
 			session = HibernateSessionFactory.currentSession();
 			tx=session.beginTransaction();
+			
+			prop.load(new FileInputStream(request.getSession().getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
+		    String host=prop.getProperty("central.host");
+		    String port=prop.getProperty("central.port");
+		    String url = "jdbc:mysql://"+host+":"+port+"/";
+		    String dbName = prop.getProperty("central.dbname");
+		    String driver = "com.mysql.jdbc.Driver";
+		    String userName = prop.getProperty("central.username"); 
+		    String password = prop.getProperty("central.password");
+		    
+		    Class.forName(driver).newInstance();
+		    conn = DriverManager.getConnection(url+dbName,userName,password);
+		    Statement stCen=conn.createStatement();
+		    
+		    
+		    String hostL=prop.getProperty("local.host");
+		    String portL=prop.getProperty("local.port");
+		    String urlL = "jdbc:mysql://"+hostL+":"+portL+"/";
+		    String dbNameL = prop.getProperty("local.dbname");
+		    //String driver = "com.mysql.jdbc.Driver";
+		    String userNameL = prop.getProperty("local.username"); 
+		    String passwordL = prop.getProperty("local.password");
+		    
+		    Class.forName(driver).newInstance();
+		    con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
+		    Statement stLoc=con.createStatement();
 			
 
 			//DatabaseConnectionParameters local = new DatabaseConnectionParameters("localhost", "3306", "ivis", "root", "root");
@@ -79,6 +115,7 @@ public class DArTGenotypingDataUpload {
 	        String notMatchingGIDS="";
 	        String notMatchingDataExists="";
 	        int MarkerId=0;
+	        ArrayList result1=new ArrayList();
 	        
 			DatasetBean ub=new DatasetBean();
 			GenotypeUsersBean usb=new GenotypeUsersBean();	
@@ -164,7 +201,7 @@ public class DArTGenotypingDataUpload {
 				if(!gidsDataSheet.contains(sheetData.getCell(g1,0).getContents().trim())){
 					gidsDataSheet.add(sheetData.getCell(g1,0).getContents().trim());
 					//strCount=strCount+1;	
-				}
+				}			
 			}
 			
 			/** reading gids & germplasm name from gids sheet of template and inserting to 'germplasm_temp' table **/
@@ -177,9 +214,6 @@ public class DArTGenotypingDataUpload {
 					//gidsCount=gidsCount+1;
 				}
 			}
-			//System.out.println(".................:"+gidsSheet.size()+"!="+gidsDataSheet.size());
-			//System.out.println("gids1=:"+gids1);
-			//if(gidsCount!=strCount){
 			if(gidsSheet.size()!=gidsDataSheet.size()){
 				//System.out.println("NOT Matching");
 				ErrMsg = "Germplasms in DArT_GIDs sheet doesnot match with the Germplasm in DArT_Data sheet.";
@@ -197,7 +231,7 @@ public class DArTGenotypingDataUpload {
 			HashMap<Integer, String> GIDsMap = new HashMap<Integer, String>();
 			ArrayList gidNamesList=new ArrayList();
 			/** arranging gid's with respect to germplasm name in order to insert into allele_values table */
-			if(gidsSheet.size()==gidsDataSheet.size()){			
+			if(gidsSheet.size()==gidsDataSheet.size()){					
 				String[] arg1=gids1.split(",");
 				String[] str2=str1.split("!~!");
 				for(int a=0;a<arg1.length;a++){
@@ -205,7 +239,7 @@ public class DArTGenotypingDataUpload {
 					if(str2[s].equals(arg2[1])){
 						//gidsRet=gidsRet+arg2[0]+",";
 						//if(!gidsRet.contains(Integer.parseInt(arg2[0])))
-						gidsRet.add(Integer.parseInt(arg2[0]));
+							gidsRet.add(Integer.parseInt(arg2[0]));
 						gNames=gNames+"'"+arg2[1]+"',";
 						if(!fGids.contains(arg2[0]))
 							fGids.add(arg2[0]);
@@ -222,6 +256,8 @@ public class DArTGenotypingDataUpload {
 				}
 			}
 			
+			//System.out.println("GIDsMap="+GIDsMap);
+			//System.out.println("*******************"+gidsRet);
 			Map<Object, String> sortedMap = new TreeMap<Object, String>(GIDsMap);
 			SortedMap mapG = new TreeMap();
             List lstgermpName = new ArrayList();
@@ -230,7 +266,7 @@ public class DArTGenotypingDataUpload {
 			
 			List<Name> names = null;
 			for(int n=0;n<fGids.size();n++){
-				names = manager.getNamesByGID(Integer.parseInt(fGids.get(n).toString()), null, null);
+				names = manager.getNamesByGID(Integer.parseInt(gidsRet.get(n).toString()), null, null);
 				for (Name name : names) {					
 					 lstgermpName.add(name.getGermplasmId());
 					 mapG.put(name.getGermplasmId(), name.getNval());	
@@ -319,9 +355,19 @@ public class DArTGenotypingDataUpload {
 			//System.out.println("fGids="+fGids);
 			String dname=sheetSource.getCell(1,2).getContents().trim();
 			
-			Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dname+"'");				
+			//Query rsDatasetNames=session.createQuery("from DatasetBean where dataset_name ='"+dname+"'");				
+			//List result1= rsDatasetNames.list();
 			
-			List result1= rsDatasetNames.list();
+			ResultSet rsLoc=stLoc.executeQuery("select dataset_name from gdms_dataset where dataset_name='"+dname+"'");
+			while(rsLoc.next()){
+				result1.add(rsLoc.getString(1));						
+			}
+			//System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+			ResultSet rsCen=stCen.executeQuery("select dataset_name from gdms_dataset where dataset_name='"+dname+"'");
+			while(rsCen.next()){
+				result1.add(rsCen.getString(1));	
+			}
+			
 			//System.out.println(".............:"+result1.size());
 			if(result1.size()>0){
 				ErrMsg = "Dataset Name already exists.";
@@ -344,6 +390,11 @@ public class DArTGenotypingDataUpload {
 			ub.setSpecies(sheetSource.getCell(1,5).getContents().trim());
 			ub.setUpload_template_date(curDate);					
 			ub.setDatatype(datatype);
+			
+			ub.setInstitute(sheetSource.getCell(1,0).getContents().trim());
+			ub.setPrincipal_investigator(sheetSource.getCell(1,1).getContents().trim());
+			
+			
 			//ub.setMissing_data(missing_data);
 			session.save(ub);
 			
@@ -373,11 +424,8 @@ public class DArTGenotypingDataUpload {
 			 * getting nids with gid and nval for inserting into gdms_acc_metadataset table			
 			*/
 			Name name = null;
-			
-			//System.out.println("...fGids.size()........:"+fGids.size());
 			for(int n=0;n<fGids.size();n++){
 				name = manager.getNameByGIDAndNval(Integer.parseInt(fGids.get(n).toString()), fGNames.get(n).toString());
-				//System.out.println(n+":  "+name.getGermplasmId()+"    "+name.getNval()+"     "+name.getNid());
 				if(!gidL.contains(name.getGermplasmId()))
 	            	gidL.add(name.getGermplasmId());
 	            mapN.put(name.getGermplasmId(), name.getNid());
@@ -391,7 +439,7 @@ public class DArTGenotypingDataUpload {
 	        		finalList.add(gid1+"~!~"+mapN.get(gid1));	
 	        	}
 	        }
-           // System.out.println("******************  "+finalList);
+            //System.out.println("******************  "+finalList);
 	        
 	        /** writing to acc_metadataset table  **/
 			/*for(int r=1;r<rows;r++){					
@@ -427,14 +475,36 @@ public class DArTGenotypingDataUpload {
             
             }
             
-			
+            String markersForQuery="";
+            HashMap<String, Object> markersMap = new HashMap<String, Object>();
+            
+            
+            List lstMarkers = new ArrayList();
 			//** checking whether marker exists in the database if exists using the marker id other wise inserting to the 'marker' table **//*
 			String markersList="";
-			HashMap<String, Object> map = new HashMap<String, Object>();
+			//HashMap<String, Object> map = new HashMap<String, Object>();
 			for (int r=1;r<rowCount;r++){
 				markersList = markersList +"'"+ sheetData.getCell(1,r).getContents().trim().toString()+"',";
 			}
-			 ArrayList lstMarIdNames=uptMId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, markersList.substring(0, markersList.length()-1));
+			markersForQuery=markersList.substring(0, markersList.length()-1);
+			ResultSet rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
+            ResultSet rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
+            
+            while(rsMC.next()){
+            	//lstMarIdNames.add(rsMC.getString(2)+":"+rsMC.getString(1));
+            	lstMarkers.add(rsMC.getString(2));
+            	markersMap.put(rsMC.getString(2), rsMC.getInt(1));		
+            }
+            while(rsML.next()){	            		
+            	if(!lstMarkers.contains(rsML.getString(2))){
+            		lstMarkers.add(rsML.getString(2));
+            		//lstMarIdNames.add(rsML.getString(2)+":"+rsML.getString(1));
+            	}
+            	markersMap.put(rsML.getString(2), rsML.getInt(1));	
+            }
+			
+			
+			/* ArrayList lstMarIdNames=uptMId.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, markersList.substring(0, markersList.length()-1));
 	          
 	            List lstMarkers = new ArrayList();
 	            for(int w=0;w<lstMarIdNames.size();w++){
@@ -443,9 +513,9 @@ public class DArTGenotypingDataUpload {
 	                 String strMa123 = (String)strMareO[1];
 	                 map.put(strMa123, strMareO[0]);
 	                 
-	            }
+	            }*/
 			ArrayList mids=new ArrayList();
-			//System.out.println("map"+map);
+			//System.out.println("map"+markersMap);
 			//System.out.println("lstMarkers="+lstMarkers);
 			//**  inserting data from data sheet of template to database  **//*		
 			//maxad_Id=maxad_Id+1;
@@ -455,7 +525,7 @@ public class DArTGenotypingDataUpload {
 				MarkerInfoBean mib=new MarkerInfoBean();
 				String marker=sheetData.getCell(1,im).getContents().trim().toString();
 				if(lstMarkers.contains(marker)){
-					MarkerId=Integer.parseInt(map.get(marker).toString());
+					MarkerId=Integer.parseInt(markersMap.get(marker).toString());
 					if(!(mids.contains(MarkerId)))
 						mids.add(MarkerId);
 				}else{
@@ -511,7 +581,6 @@ public class DArTGenotypingDataUpload {
 			int kk=0;
 			//intDataOrderIndex=intDataOrderIndex+1;
 			intDataOrderIndex=intDataOrderIndex-1;
-			//System.out.println("colCount=:"+colCount+"   gidsRet="+gidsRet.size());
 			//** inserting data into 'allele_values' table **//*
 			for(int i=1;i<rowCount;i++){	
 				//String[] insGids=fGids.split(",");
@@ -554,16 +623,22 @@ public class DArTGenotypingDataUpload {
 				if (m1 % 1 == 0){
                     session.flush();
                     session.clear();
-				}
-			
+				}			
 			}	
 			tx.commit();
 			str="inserted";
+			/*if(rsCen!=null)rsCen.close();
+			if(rsLoc!=null) rsLoc.close();
+			if(rsML!=null) rsML.close(); if(rsMC!=null)rsMC.close();
+			if(stCen!=null) stCen.close(); if(stLoc!=null ) stLoc.close();*/
+			con.close();conn.close();
+			
 		}catch(Exception e){
 			tx.rollback();
 			session.clear();
 			e.printStackTrace();
 		}finally{	
+			con.close(); conn.close();
 			factory.close();
 			session.clear();	
 			session.disconnect();

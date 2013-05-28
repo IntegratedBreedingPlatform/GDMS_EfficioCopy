@@ -7,7 +7,7 @@ public class QTLDetailsBean {
 	private float position;
 	private float min_position;
 	private float max_position;
-	private String trait;
+	private int tid;
 	private String experiment;
 	private String left_flanking_marker;
 	private String right_flanking_marker;
@@ -17,6 +17,14 @@ public class QTLDetailsBean {
 	private float clen;
 	private float r_square;
 	private String interactions;
+	
+	private String se_additive;
+	private String hv_parent;
+	
+	
+	private String hv_allele;
+	private String lv_parent;
+	private String lv_allele;
 	
 	public int getQtl_id() {
 		return qtl_id;
@@ -51,12 +59,12 @@ public class QTLDetailsBean {
 	public void setMax_position(float max_position) {
 		this.max_position = max_position;
 	}
-	public String getTrait() {
+	/*public String getTrait() {
 		return trait;
 	}
 	public void setTrait(String trait) {
 		this.trait = trait;
-	}
+	}*/
 	public String getExperiment() {
 		return experiment;
 	}
@@ -118,6 +126,42 @@ public class QTLDetailsBean {
 	}
 	public void setClen(float clen) {
 		this.clen = clen;
+	}
+	public int getTid() {
+		return tid;
+	}
+	public void setTid(int tid) {
+		this.tid = tid;
+	}
+	public String getSe_additive() {
+		return se_additive;
+	}
+	public void setSe_additive(String se_additive) {
+		this.se_additive = se_additive;
+	}
+	public String getHv_parent() {
+		return hv_parent;
+	}
+	public void setHv_parent(String hv_parent) {
+		this.hv_parent = hv_parent;
+	}
+	public String getHv_allele() {
+		return hv_allele;
+	}
+	public void setHv_allele(String hv_allele) {
+		this.hv_allele = hv_allele;
+	}
+	public String getLv_parent() {
+		return lv_parent;
+	}
+	public void setLv_parent(String lv_parent) {
+		this.lv_parent = lv_parent;
+	}
+	public String getLv_allele() {
+		return lv_allele;
+	}
+	public void setLv_allele(String lv_allele) {
+		this.lv_allele = lv_allele;
 	}
 	
 	

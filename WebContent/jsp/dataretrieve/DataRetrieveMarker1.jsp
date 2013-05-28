@@ -186,6 +186,8 @@
 			var val1;
 			var Query;
 			function CheckPage(a){
+				document.forms[0].all.checked=false;
+				
 				//alert(a.name+"="+a.value);
 				document.forms[0].elements['SelectedOption'].value=a.name;
 				document.forms[0].elements['optionType'].value=a.value;
@@ -331,7 +333,8 @@
 					va=SelectedValue;
 					nm=document.forms[0].elements['List2'].value+"!~!"+document.forms[0].elements['List1'].value;
 					getDeta(tp,va,nm);
-					document.getElementById("third").style.visibility="visible";					
+					document.getElementById("third").style.visibility="visible";	
+								
 				}
 			}
 			function validatePage(){
@@ -488,20 +491,21 @@
 				}
 			}
 			
-			function loop_select() {
-				
+			function loop_select() {				
 				 for(var i=0;i<=document.forms[0].elements['List3'].length-1;i++) {
 					  document.forms[0].elements['List3'].options[i+1].selected = true; 					  
-				} 
-				
+				} 				
 			}
 
 			function refreshPage(){
-				var chklen=document.forms[0].all;
-			  	for(j=0;j<chklen.length;j++){
-					if(chklen[j].checked=true){	
-						chklen[j].checked=false;										
-					}
+				document.forms[0].all.checked=false;
+				var radList = document.getElementsByName('type');
+				for (var i = 0; i < radList.length; i++) {
+					if(radList[i].checked) radList[i].checked = false;
 				}
+				var radList1 = document.getElementsByName('QuickSearch');
+				for (var i = 0; i < radList1.length; i++) {
+					if(radList1[i].checked) radList1[i].checked = false;
+				}				
 			}
 		</script>

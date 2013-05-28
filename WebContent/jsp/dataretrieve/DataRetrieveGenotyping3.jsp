@@ -18,7 +18,7 @@
 				int totalItemcount=0;
 				if(request.getQueryString().equalsIgnoreCase("first")){ 
 					String opType=session.getAttribute("type").toString();
-					System.out.println("opType="+opType);
+					//System.out.println("opType="+opType);
 					if(opType.equals("markers")){				
 						dataList=(ArrayList)session.getAttribute("markerList");
 						totalItemcount=Integer.parseInt(session.getAttribute("MarkerCount").toString());
@@ -220,7 +220,7 @@
 										<%} %>
 										<tr><td colspan="2"> &nbsp;</td></tr>
 										<tr>
-											<td colspan="2" align="center"> 				
+											<td colspan="2" align="center"> 
 												<table width="100%" border=0>
 													<tr><td align="right">
 														<html:submit value="Visualize In Flapjack" property="flapjack" onclick="funcFlapjack(this.value)"/>

@@ -192,7 +192,7 @@ public class ExportFormats {
 			}
 			
 			int al=0;
-			String finalData="";
+			String finalData="";	
 			for (int j=0;j<accList.size();j++){ 
 				String arrList6[]=new String[3];
 				fjackdat.write("\n"+accList.get(j));
@@ -201,8 +201,7 @@ public class ExportFormats {
 			    	//System.out.println("**************************  :"+dataMap.get(Integer.parseInt((gList.get(accList.get(j).toString())).toString())));
 			    	if(!(expOp.equalsIgnoreCase("gid"))){
 				    	markerAlleles=(HashMap)dataMap.get(Integer.parseInt((gList.get(accList.get(j).toString())).toString()));
-				    		if(markerAlleles.containsKey(gList.get(accList.get(j).toString()).toString()+"!~!"+markList.get(k).toString())){
-							//fjackdat.write("\t"+markerAlleles.get(gList.get(accList.get(j).toString()).toString()+"!~!"+markList.get(k).toString()));
+				    	if(markerAlleles.containsKey(gList.get(accList.get(j).toString()).toString()+"!~!"+markList.get(k).toString())){
 							String alleleValue=markerAlleles.get(gList.get(accList.get(j).toString()).toString()+"!~!"+markList.get(k).toString()).toString();
 							//System.out.println("k=:"+k +"   "+alleleValue);
 							if(alleleValue.contains("/")){
@@ -221,7 +220,7 @@ public class ExportFormats {
 				    		fjackdat.write("\t");	
 				    	}	
 					
-			    	}else{
+					}else{
 			    		markerAlleles=(HashMap)dataMap.get(Integer.parseInt(accList.get(j).toString()));
 				    	if(markerAlleles.containsKey(accList.get(j).toString()+"!~!"+markList.get(k).toString())){
 							//fjackdat.write("\t"+markerAlleles.get(gList.get(accList.get(j).toString()).toString()+"!~!"+markList.get(k).toString()));
@@ -279,7 +278,8 @@ public class ExportFormats {
 				FileWriter flapjackQTLstream = new FileWriter(filePath+("//")+"/Flapjack.txt");
 				BufferedWriter fjackQTL = new BufferedWriter(flapjackQTLstream);
 				//String[] qtlData=qtlData.split("~~!!~~");
-				fjackQTL.write("QTL\tChromosome\tPosition\tMinimum\tMaximum\tTrait\tExperiment\tTrait Group\tLOD\tR2\tfavallele\tFlanking markers in original publication\teffect");
+				//fjackQTL.write("QTL\tChromosome\tPosition\tMinimum\tMaximum\tTrait\tExperiment\tTrait Group\tLOD\tR2\tfavallele\tFlanking markers in original publication\teffect\tSE additive\tHV Parent\tHV Allele\tLV Parent\tLV Allele");
+				fjackQTL.write("QTL\tChromosome\tPosition\tMinimum\tMaximum\tTrait\tExperiment\tTrait Group\tLOD\tR2\tFlanking markers in original publication\tSE additive\tHV Parent\tLV Parent");
 				fjackQTL.write("\n");
 				for(int q=0;q<qtlData.size();q++){					
 					String[] strMData=qtlData.get(q).toString().split("!~!");
@@ -303,12 +303,15 @@ public class ExportFormats {
 					fjackQTL.write("\t");
 					fjackQTL.write(strMData[9]);
 					fjackQTL.write("\t");
-					fjackQTL.write(strMData[10]);
-					fjackQTL.write("\t");
 					fjackQTL.write(strMData[11]);
 					fjackQTL.write("\t");
-					fjackQTL.write(strMData[12]);
-					fjackQTL.write("\n");		
+					fjackQTL.write(strMData[13]);
+					fjackQTL.write("\t");					
+					fjackQTL.write(strMData[14]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[15]);					
+					fjackQTL.write("\n");
+					
 				}
 				fjackQTL.close();
 			}
@@ -687,7 +690,7 @@ public class ExportFormats {
 					   //if((arrList6[0].equals(accList.get(j))) && arrList6[1].equals(markList.get(k))){
 					   //if((Integer.parseInt(arrList6[0])==Integer.parseInt(accList.get(j).toString())) && arrList6[1].equals(markList.get(k))){
 			    		if(condition){
-						   if(arrList6[2].contains("/")){								
+			    			if(arrList6[2].contains("/")){								
 								String[] ChVal1=arrList6[2].split("/");
 								if(ChVal1[0].equalsIgnoreCase(ChVal1[1])){
 									chVal=ChVal1[0];
@@ -749,10 +752,13 @@ public class ExportFormats {
 				FileWriter flapjackQTLstream = new FileWriter(filePath+("//")+"/Flapjack.txt");
 				BufferedWriter fjackQTL = new BufferedWriter(flapjackQTLstream);
 				//String[] qtlData=qtlData.split("~~!!~~");
-				fjackQTL.write("QTL\tChromosome\tPosition\tMinimum\tMaximum\tTrait\tExperiment\tTrait Group\tLOD\tR2\tfavallele\tFlanking markers in original publication\teffect");
+				//fjackQTL.write("QTL\tChromosome\tPosition\tMinimum\tMaximum\tTrait\tExperiment\tTrait Group\tLOD\tR2\tfavallele\tFlanking markers in original publication\teffect\tSE additive\tHV Parent\tHV Allele\tLV Parent\tLV Allele");
+				fjackQTL.write("QTL\tChromosome\tPosition\tMinimum\tMaximum\tTrait\tExperiment\tTrait Group\tLOD\tR2\tFlanking markers in original publication\tSE additive\tHV Parent\tLV Parent");
 				fjackQTL.write("\n");
+				
 				for(int q=0;q<qtlData.size();q++){					
 					String[] strMData=qtlData.get(q).toString().split("!~!");
+					//System.out.println("strMData.size=:"+strMData.length);
 					fjackQTL.write(strMData[0]);
 					fjackQTL.write("\t");
 					fjackQTL.write(strMData[1]);
@@ -773,12 +779,14 @@ public class ExportFormats {
 					fjackQTL.write("\t");
 					fjackQTL.write(strMData[9]);
 					fjackQTL.write("\t");
-					fjackQTL.write(strMData[10]);
-					fjackQTL.write("\t");
 					fjackQTL.write(strMData[11]);
 					fjackQTL.write("\t");
-					fjackQTL.write(strMData[12]);
-					fjackQTL.write("\n");		
+					fjackQTL.write(strMData[13]);
+					fjackQTL.write("\t");					
+					fjackQTL.write(strMData[14]);
+					fjackQTL.write("\t");
+					fjackQTL.write(strMData[15]);					
+					fjackQTL.write("\n");					
 				}
 				fjackQTL.close();
 			}

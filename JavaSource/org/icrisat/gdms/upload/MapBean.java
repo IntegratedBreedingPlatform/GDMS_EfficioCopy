@@ -5,7 +5,8 @@ public class MapBean {
 	private String map_name;
 	private String map_type;
 	private int mp_id;
-	
+	private String map_desc;
+	private String map_unit;
 	
 	
 	public int getMap_id() {
@@ -31,6 +32,18 @@ public class MapBean {
 	}
 	public void setMp_id(int mp_id) {
 		this.mp_id = mp_id;
+	}
+	public String getMap_desc() {
+		return map_desc;
+	}
+	public void setMap_desc(String map_desc) {
+		this.map_desc = map_desc;
+	}
+	public String getMap_unit() {
+		return map_unit;
+	}
+	public void setMap_unit(String map_unit) {
+		this.map_unit = map_unit;
 	}
 	
 	

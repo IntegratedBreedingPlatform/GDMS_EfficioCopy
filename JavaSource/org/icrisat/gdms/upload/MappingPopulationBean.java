@@ -5,8 +5,8 @@ public class MappingPopulationBean {
 	private int dataset_id;
 	//private long mp_id;
 	private String mapping_type;
-	private int parent_a_gid;
-	private int parent_b_gid;
+	private int parent_a_nid;
+	private int parent_b_nid;
 	private int population_size;
 	private String population_type;
 	private String mapdata_desc;
@@ -19,24 +19,7 @@ public class MappingPopulationBean {
 	public void setDataset_id(int dataset_id) {
 		this.dataset_id = dataset_id;
 	}
-	/*public long getMcid() {
-		return mcid;
-	}
-	public void setMcid(long mcid) {
-		this.mcid = mcid;
-	}
-	public String getParent_a() {
-		return parent_a;
-	}
-	public void setParent_a(String parent_a) {
-		this.parent_a = parent_a;
-	}
-	public String getParent_b() {
-		return parent_b;
-	}
-	public void setParent_b(String parent_b) {
-		this.parent_b = parent_b;
-	}*/
+	
 	public int getPopulation_size() {
 		return population_size;
 	}
@@ -62,24 +45,6 @@ public class MappingPopulationBean {
 		this.scoring_scheme = scoring_scheme;
 	}
 	
-	/*public long getMp_id() {
-		return mp_id;
-	}
-	public void setMp_id(long mp_id) {
-		this.mp_id = mp_id;
-	}*/
-	public int getParent_a_gid() {
-		return parent_a_gid;
-	}
-	public void setParent_a_gid(int parent_a_gid) {
-		this.parent_a_gid = parent_a_gid;
-	}
-	public int getParent_b_gid() {
-		return parent_b_gid;
-	}
-	public void setParent_b_gid(int parent_b_gid) {
-		this.parent_b_gid = parent_b_gid;
-	}
 	public int getMap_id() {
 		return map_id;
 	}
@@ -91,6 +56,18 @@ public class MappingPopulationBean {
 	}
 	public void setMapping_type(String mapping_type) {
 		this.mapping_type = mapping_type;
+	}
+	public int getParent_a_nid() {
+		return parent_a_nid;
+	}
+	public void setParent_a_nid(int parent_a_nid) {
+		this.parent_a_nid = parent_a_nid;
+	}
+	public int getParent_b_nid() {
+		return parent_b_nid;
+	}
+	public void setParent_b_nid(int parent_b_nid) {
+		this.parent_b_nid = parent_b_nid;
 	}
 	
 	

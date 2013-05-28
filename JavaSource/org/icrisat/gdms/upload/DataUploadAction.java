@@ -25,6 +25,7 @@ public class DataUploadAction extends Action{
 	FileUploadToServer fus = null;
 	String fileName="";String saveFtoServer="";String saveF="";
 	InputStream stream=null;
+	String fileNameKB="";
 	public ActionForward execute(ActionMapping am, ActionForm af,
 			HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
@@ -33,6 +34,8 @@ public class DataUploadAction extends Action{
 		DynaActionForm df = (DynaActionForm) af;
 		String uploadType=(String)df.get("radios");	
 		FormFile file=(FormFile)df.get("fileuploads");
+		
+		
 		//String fname1=file.getFileName();
 		stream=file.getInputStream();
 	    saveFtoServer="UploadFiles";
@@ -49,7 +52,25 @@ public class DataUploadAction extends Action{
 			//System.out.println("result="+result);			
 		}else if(uploadType.equalsIgnoreCase("SNPGenotype")){
 			SNPGenotypingDataUpload snpupl=new SNPGenotypingDataUpload();
-			result=snpupl.getUpload(req, fileName);				
+			String option=req.getParameter("opMap");
+			System.out.println("DatauploadingAction .java    option =:"+option);
+			if(option.equalsIgnoreCase("yes")){
+				FormFile fileKB=(FormFile)df.get("KBfileuploads");
+				
+				
+				//String fname1=file.getFileName();
+				stream=fileKB.getInputStream();
+			            
+				fileNameKB=saveF+"/"+fileKB.getFileName();
+				fus=new FileUploadToServer();
+				fus.createFile(stream,fileNameKB);
+				result=snpupl.getKBioUpload(req, fileName,fileNameKB);	
+			}else{
+				result=snpupl.getUpload(req, fileName);	
+			}
+			
+			
+						
 			if(result.equals("notInserted")){
 				ae.add("myerro",new ActionError("count.not.matching"));
 				saveErrors(req, ae);
@@ -93,6 +114,10 @@ public class DataUploadAction extends Action{
 		}else if(uploadType.equalsIgnoreCase("CAPMarker")){
 			CAPMarkerInfoUpload mapupl=new CAPMarkerInfoUpload();
 			result=mapupl.setMarkerDetails(req, fileName);	
+			
+		}else if(uploadType.equalsIgnoreCase("MTA")){
+			MTADataUpload mtaupl=new MTADataUpload();
+			result=mtaupl.setMTADetails(req, fileName);
 			
 		}
 		System.out.println("result="+result);	

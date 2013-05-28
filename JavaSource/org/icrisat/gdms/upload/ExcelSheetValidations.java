@@ -400,7 +400,8 @@ public class ExcelSheetValidations {
 				 if(strSName.equalsIgnoreCase("QTL_Source")){
 					 Sheet sName = workbook.getSheet(strSName);
 					 //String strTempColumnNames[] = {"Institute","Principle investigator","Email contact","Dataset description","Genus","Species","Version","Creation Date","Remark"};
-					 String strTempColumnNames[] = {"Institute","Principle investigator","Dataset Name","Dataset description","Genus","Species","Remark"};
+					 //String strTempColumnNames[] = {"Institute","Principle investigator","Dataset Name","Dataset description","Genus","Species","Remark"};
+					 String strTempColumnNames[] = {"Institute","Principle investigator","Dataset Name","Dataset description","Genus","Method","Score","Species","Remark"};
 									
 					 for(int j=0;j<strTempColumnNames.length;j++){
 						 String strMFieldNames = (String)sName.getCell(0, j).getContents().trim();
@@ -428,7 +429,8 @@ public class ExcelSheetValidations {
 					 Sheet sName = workbook.getSheet(strSName);
 					 //int ColCount = sName.getColumns();					
 					 //String strTempColumnNames[] = {"Name","Chromosome","Marker","Gel/Run","Dye","Called Allele","Raw Data","Quality","Height","Volume","Amount"};
-					 String strTempColumnNames[] = {"Name","Chromosome","Map-Name","Position","Pos-Min","Pos-Max","Trait","Experiment","CLEN","LFM","RFM","Effect","LOD","R2","Interactions"};
+					 //String strTempColumnNames[] = {"Name","Chromosome","Map-Name","Position","Pos-Min","Pos-Max","Trait","Experiment","CLEN","LFM","RFM","Effect","LOD","R2","Interactions"};
+					 String strTempColumnNames[] = {"Name","Chromosome","Map-Name","Position","Pos-Min","Pos-Max","Trait","Experiment","CLEN","LFM","RFM","Effect","SE additive","High value parent","High value allele","Low value parent","Low value allele","Score (e.g., LOD/-log10 (p))","R2","Interactions"};
 
 					 for(int j=0;j<strTempColumnNames.length;j++){
 						 String strMFieldNames = (String)sName.getCell(j, 0).getContents().trim();
