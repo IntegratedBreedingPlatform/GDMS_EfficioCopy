@@ -12,29 +12,26 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.SortedMap;
-import java.util.StringTokenizer;
 import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.generationcp.middleware.manager.DatabaseConnectionParameters;
+import org.generationcp.middleware.manager.GetGermplasmByNameModes;
 import org.generationcp.middleware.manager.ManagerFactory;
+import org.generationcp.middleware.manager.Operation;
 import org.generationcp.middleware.manager.api.GenotypicDataManager;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
+import org.generationcp.middleware.pojos.Germplasm;
 import org.generationcp.middleware.pojos.Name;
 import org.generationcp.middleware.pojos.gdms.AccMetadataSet;
-import org.generationcp.middleware.pojos.gdms.CharValues;
-import org.generationcp.middleware.pojos.gdms.Dataset;
-import org.generationcp.middleware.pojos.gdms.DatasetUsers;
 import org.generationcp.middleware.pojos.gdms.MarkerMetadataSet;
-import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
@@ -44,7 +41,7 @@ public class SNPGenotypingDataUpload {
 	String strupl="";
 	
 	//getUpload method is used to insert the SNP Genotyping data from SNPGenotyping Template to database.	
-	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();  
+	static Map<String, ArrayList<Integer>> hashMap = new HashMap<String,  ArrayList<Integer>>();  
 	int gidCount=0;
 	int gCount=0;int dataCount=0;
 	int genotypeCount=0;
@@ -56,6 +53,8 @@ public class SNPGenotypingDataUpload {
     String alertGID="no";
     String notMatchingData="";
     String notMatchingGIDS="";
+    String notMatchingDataDB="";
+    String notMatchingGIDSDB="";
     String notMatchingDataExists="";
 	int maxMid=0;
 	String ErrMsg="";
@@ -431,7 +430,7 @@ public class SNPGenotypingDataUpload {
 					strupl="notInserted";
 				}else if(gids.length==genotype.length){
 					String gidsForQuery = "";
-					HashMap<Integer, String> GIDsMap = new HashMap<Integer, String>();
+					HashMap<String, Integer> GIDsMap = new HashMap<String, Integer>();
 					
 					ArrayList gidNamesList=new ArrayList();
 					
@@ -440,7 +439,7 @@ public class SNPGenotypingDataUpload {
 		            	gidsForQuery = gidsForQuery + gids[d]+",";
 		            	if(!gidNamesList.contains(Integer.parseInt(gids[d])))
 							gidNamesList.add(Integer.parseInt(gids[d])+","+genotype[d]);
-		            	//GIDsMap.put(Integer.parseInt(gids[d]), genotype[d]);
+		            	GIDsMap.put(genotype[d], Integer.parseInt(gids[d]));
 		            	if(!gidsAList.contains(Integer.parseInt(gids[d])))
 							gidsAList.add(gids[d]);
 		            	
@@ -462,21 +461,23 @@ public class SNPGenotypingDataUpload {
 		            //ArrayList lstGIDs=uptMethod.getGIds("gid, germplasm_name", "germplasm_temp", "gid", session, gidsForQuery);
 		            //ArrayList lstGIDs=uptMethod.getGIds("gid, nval", "names", "gid", session, gidsForQuery);
 		            
-		            SortedMap map = new TreeMap();
-		            List lstgermpName = new ArrayList();
-		           
-					List<Name> names = null;
-					for(int n=0;n<gidsAList.size();n++){
-						names = manager.getNamesByGID(Integer.parseInt(gidsAList.get(n).toString()), null, null);
-						for (Name name : names) {
-							//System.out.println("........:"+name.getGermplasmId()+"  ,"+name.getNval()+" :  "+name.getNid());
-							lstgermpName.add(name.getGermplasmId());
-							map.put(name.getGermplasmId(), name.getNval());
-							addValues(name.getGermplasmId(), name.getNval().toLowerCase());	
-						}
+		            ArrayList gidsDBList = new ArrayList();
+					ArrayList gNamesDBList = new ArrayList();
+					hashMap.clear();
+					for(int n=0;n<NamesList.size();n++){
+						List<Germplasm> germplasmList = manager.getGermplasmByName(NamesList.get(n).toString(), 0, new Long(manager.countGermplasmByName(NamesList.get(n).toString(), Operation.EQUAL)).intValue(), Operation.EQUAL);
+						for (Germplasm g : germplasmList) {
+				        	if(!(gidsDBList.contains(g.getGid()))){
+				        		gidsDBList.add(g.getGid());
+				        		gNamesDBList.add(NamesList.get(n).toString());
+				        		addValues(NamesList.get(n).toString(), g.getGid());					        		
+				        	}				        	
+				           //System.out.println("  " + g.getGid());
+				        }
+				        System.out.println(n+":"+NamesList.get(n).toString()+"   "+hashMap.get(NamesList.get(n).toString()));
 					}
 		           
-		           if(map.size()==0){
+		           if(gidsDBList.size()==0){
 		        	   alertGID="yes";
 		        	   size=0;
 		           }
@@ -484,46 +485,34 @@ public class SNPGenotypingDataUpload {
 		           String gNameToCompare="";
 		           //String gNameFromMap="";
 		           ArrayList gNameFromMap=new ArrayList();
-		           if(map.size()>0){
-			           for(int gi=0;gi<gidNamesList.size();gi++){
-			        	   String arrP[]=new String[3];
-							 StringTokenizer stzP = new StringTokenizer(gidNamesList.get(gi).toString(), ",");
-							 int iP=0;
-							 while(stzP.hasMoreTokens()){
-								 arrP[iP] = stzP.nextToken();
-								 iP++;
-							 }	
-			        	   gidToCompare=Integer.parseInt(arrP[0].toString());
-			        	   gNameToCompare=arrP[1].toString();
-			        	  
-			        	   //System.out.println("...."+gidToCompare+"   "+lstgermpName.contains(gidToCompare));
-			        	   if(lstgermpName.contains(gidToCompare)){
-			        		   //gNameFromMap=map.get(gidToCompare).toString();
-			        		   gNameFromMap=hashMap.get(gidToCompare);
-			        		   //System.out.println("...."+gNameToCompare+"   "+map.get(gidToCompare).equals(gNameToCompare)+"  from map: "+map.get(gidToCompare));
-			        		   //if(!(gNameFromMap.toLowerCase().equals(gNameToCompare.toLowerCase()))){
-			        		   if(!(gNameFromMap.contains(gNameToCompare.toLowerCase()))){
-			        			   notMatchingData=notMatchingData+gidToCompare+"   "+hashMap.get(gidToCompare)+"\n\t";
-				        		   alertGN="yes"; 
-			        		   }			        			   
-			        	   }else{
-			        		   alertGID="yes";
-			        		   size=map.size();
-			        		   notMatchingGIDS=notMatchingGIDS+gidToCompare+", ";
-			        	   }
-			           }
+		           if(gidsDBList.size()>0){			           
+		        	   for(int n=0;n<NamesList.size();n++){
+		        		   if(gNamesDBList.contains(NamesList.get(n))){
+		        			   if(!(hashMap.get(NamesList.get(n).toString()).contains(GIDsMap.get(NamesList.get(n).toString())))){
+		        				   notMatchingData=notMatchingData+NamesList.get(n)+"   "+GIDsMap.get(NamesList.get(n).toString())+"\n\t";
+		        				   
+		        				   notMatchingDataDB=notMatchingDataDB+NamesList.get(n)+"="+hashMap.get(NamesList.get(n))+"\t";
+				        		   alertGN="yes";
+		        			   }
+		        		   }else{
+		        			   //int gid=GIDsMap.get(NamesList.get(n).toString());
+		        			   alertGID="yes";
+			        		   size=hashMap.size();
+			        		   notMatchingGIDS=notMatchingGIDS+NamesList.get(n).toString()+", ";
+		        		   }
+		        	   }		        	   
 		           }
 		           if((alertGN.equals("yes"))&&(alertGID.equals("no"))){
 		        	   //String ErrMsg = "GID(s) ["+notMatchingGIDS.substring(0,notMatchingGIDS.length()-1)+"] of Germplasm(s) ["+notMatchingData.substring(0,notMatchingData.length()-1)+"] being assigned to ["+notMatchingDataExists.substring(0,notMatchingDataExists.length()-1)+"] \n Please verify the template ";
-		        	   ErrMsg = "Please verify the name(s) provided with the following GID(s) which do not match the name(s) present in the database: \n\t "+notMatchingData;
+		        	   ErrMsg = "Please verify the name(s) provided \t "+notMatchingData+" which do not match the GID(s) present in the database"+notMatchingDataDB;
 		        	   request.getSession().setAttribute("indErrMsg", ErrMsg);
 		        	   return "ErrMsg";	 
 		           }
 		           if((alertGID.equals("yes"))&&(alertGN.equals("no"))){	        	   
 		        	   if(size==0){
-		        		   ErrMsg = "The GIDs provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS ";
+		        		   ErrMsg = "The Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook ";
 		        	   }else{
-		        		   ErrMsg = "The following GID(s) provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS \n \t"+notMatchingGIDS;
+		        		   ErrMsg = "The following Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook \n \t"+notMatchingGIDS;
 		        		   //ErrMsg = "Please verify the GID/Germplasm(s) provided as some of them do not exist in the database. \n Please upload germplasm information into GMS ";
 		        	   }	        	   
 		        	   //ErrMsg = "Please verify the following GID/Germplasm(s) doesnot exists. \n Upload germplasm Information into GMS \n\t"+notMatchingGIDS;
@@ -532,12 +521,10 @@ public class SNPGenotypingDataUpload {
 		           }
 				
 		           if((alertGID.equals("yes"))&&(alertGN.equals("yes"))){
-		        	   ErrMsg = "The following GID(s) provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS \n \t"+notMatchingGIDS+" \n Please verify the name(s) provided with the following GID(s) which do not match the name(s) present in the database: \n\t "+notMatchingData;
+		        	   ErrMsg = "The following Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook \n \t"+notMatchingGIDS+" \n Please verify the name(s) provided "+notMatchingData+" which do not match the GIDS(s) present in the database "+notMatchingDataDB;
 		        	   request.getSession().setAttribute("indErrMsg", ErrMsg);
 		        	   return "ErrMsg";	 
-		           } 
-		          
-		           
+		           }		           
 		           
 				}
 				/*System.out.println("gids= "+gids.length);
@@ -575,29 +562,23 @@ public class SNPGenotypingDataUpload {
 				//System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
 				ArrayList finalList =new ArrayList();
 				ArrayList gidL=new ArrayList();
-				/*ArrayList lstNids=uptMethod.getNids("gid, nid", "names", "nval", session, gNames);
-				for(int w=0;w<lstNids.size();w++){
-		        	Object[] strMareO= (Object[])lstNids.get(w);
-		           // System.out.println("W=....."+w+"    "+strMareO[0]+"   "+strMareO[1]);
-		            if(!gidL.contains(Integer.parseInt(strMareO[0].toString())))
-		            	gidL.add(Integer.parseInt(strMareO[0].toString()));
-		            mapN.put(Integer.parseInt(strMareO[0].toString()), strMareO[1]);
-		          
-		 		}*/
-				
 				/*
 				 * getting nids with gid and nval for inserting into gdms_acc_metadataset table			
 				*/
 				Name names = null;
 				for(int n=0;n<gidsAList.size();n++){
-					names = manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString());
+					/*names = manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString(), GetGermplasmByNameModes.STANDARDIZED);
+					if(names.getNid().equals("")){
+						System.out.println("............ returned null");
+					}*/
+					names = manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString(), GetGermplasmByNameModes.STANDARDIZED);
+					if(names==null){
+						names=manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString(), GetGermplasmByNameModes.NORMAL);
+					}				
 					if(!gidL.contains(names.getGermplasmId()))
 		            	gidL.add(names.getGermplasmId());
 		            mapN.put(names.getGermplasmId(), names.getNid());
-					//for (Name name : names) {					
-						// lstgermpName.add(name.getGermplasmId());
-						// map.put(name.getGermplasmId(), name.getNval());	            
-			       // }
+					//System.out.println(gidsAList.get(n).toString()+","+NamesList.get(n).toString()+"   nid=:"+names.getNid());//for (Name name : names) {					
 				}
 				
 				
@@ -630,9 +611,9 @@ public class SNPGenotypingDataUpload {
 	            
 	            List lstMarkers = new ArrayList();
 	            //ArrayList lstMarIdNames=uptMethod.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, marForQuery);
-	           // System.out.println("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+marForQuery+")");
-	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+marForQuery+")");
-	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+marForQuery+")");
+	            //System.out.println("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+marForQuery.toLowerCase()+")");
+	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+marForQuery.toLowerCase()+")");
+	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+marForQuery.toLowerCase()+")");
 	            
 	            while(rsMC.next()){
 	            	//lstMarIdNames.add(rsMC.getString(2)+":"+rsMC.getString(1));
@@ -1196,7 +1177,7 @@ public class SNPGenotypingDataUpload {
 					
 				}
 				int gCount=genotypes.size()-1;
-				System.out.println(genotypes.size()+"    "+genotypeCount+" genotypes:"+genotypes);
+				//System.out.println(genotypes.size()+"    "+genotypeCount+" genotypes:"+genotypes);
 				if(gCount==genotypeCount){
 					for(int g=1;g<genotype.length;g++){
 						System.out.println(g+"   genotype[g]=:"+genotype[g]);
@@ -1238,10 +1219,25 @@ public class SNPGenotypingDataUpload {
 	            }
 	            gNames=gNames.substring(0, gNames.length()-1);
 	             
-	            SortedMap germplasmsMap = new TreeMap();
-	            List lstgermpName = new ArrayList();
+	            /*SortedMap germplasmsMap = new TreeMap();
+	            List lstgermpName = new ArrayList();*/
 	           
-				List<Name> names = null;
+				ArrayList gidsDBList = new ArrayList();
+				ArrayList gNamesDBList = new ArrayList();
+				hashMap.clear();
+				for(int n=0;n<NamesList.size();n++){
+					List<Germplasm> germplasmList = manager.getGermplasmByName(NamesList.get(n).toString(), 0, new Long(manager.countGermplasmByName(NamesList.get(n).toString(), Operation.EQUAL)).intValue(), Operation.EQUAL);
+					for (Germplasm g : germplasmList) {
+			        	if(!(gidsDBList.contains(g.getGid()))){
+			        		gidsDBList.add(g.getGid());
+			        		gNamesDBList.add(NamesList.get(n).toString());
+			        		addValues(NamesList.get(n).toString(), g.getGid());					        		
+			        	}				        	
+			           //System.out.println("  " + g.getGid());
+			        }
+			        System.out.println(n+":"+NamesList.get(n).toString()+"   "+hashMap.get(NamesList.get(n).toString()));
+				}
+				/*List<Name> names = null;
 				for(int n=0;n<gidsAList.size();n++){
 					names = manager.getNamesByGID(Integer.parseInt(gidsAList.get(n).toString()), null, null);
 					for (Name name : names) {
@@ -1250,9 +1246,9 @@ public class SNPGenotypingDataUpload {
 						germplasmsMap.put(name.getGermplasmId(), name.getNval());
 						addValues(name.getGermplasmId(), name.getNval().toLowerCase());	
 					}
-				}
+				}*/
 	           
-	           if(germplasmsMap.size()==0){
+	           if(gidsDBList.size()==0){
 	        	   alertGID="yes";
 	        	   size=0;
 	           }
@@ -1260,8 +1256,8 @@ public class SNPGenotypingDataUpload {
 	           String gNameToCompare="";
 	           //String gNameFromMap="";
 	           ArrayList gNameFromMap=new ArrayList();
-	           if(germplasmsMap.size()>0){
-		           for(int gi=0;gi<gidNamesList.size();gi++){
+	           if(gidsDBList.size()>0){
+		          /*for(int gi=0;gi<gidNamesList.size();gi++){
 		        	   String arrP[]=new String[3];
 						 StringTokenizer stzP = new StringTokenizer(gidNamesList.get(gi).toString(), ",");
 						 int iP=0;
@@ -1287,19 +1283,33 @@ public class SNPGenotypingDataUpload {
 		        		   size=germplasmsMap.size();
 		        		   notMatchingGIDS=notMatchingGIDS+gidToCompare+", ";
 		        	   }
-		           }
+		           }*/
+		           for(int n=0;n<NamesList.size();n++){
+	        		   if(gNamesDBList.contains(NamesList.get(n))){
+	        			   if(!(hashMap.get(NamesList.get(n).toString()).contains(GIDsMapK.get(NamesList.get(n).toString())))){
+	        				   notMatchingData=notMatchingData+NamesList.get(n)+"   "+GIDsMapK.get(NamesList.get(n).toString())+"\n\t";
+	        				   notMatchingDataDB=notMatchingDataDB+hashMap.get(NamesList.get(n))+"\t";
+			        		   alertGN="yes";
+	        			   }
+	        		   }else{
+	        			   alertGID="yes";
+		        		   size=hashMap.size();
+		        		   notMatchingGIDS=notMatchingGIDS+NamesList.get(n).toString()+", ";
+	        		   }
+	        	   }
 	           }
 	           if((alertGN.equals("yes"))&&(alertGID.equals("no"))){
 	        	   //String ErrMsg = "GID(s) ["+notMatchingGIDS.substring(0,notMatchingGIDS.length()-1)+"] of Germplasm(s) ["+notMatchingData.substring(0,notMatchingData.length()-1)+"] being assigned to ["+notMatchingDataExists.substring(0,notMatchingDataExists.length()-1)+"] \n Please verify the template ";
-	        	   ErrMsg = "Please verify the name(s) provided with the following GID(s) which do not match the name(s) present in the database: \n\t "+notMatchingData;
+	        	   ErrMsg = "Please verify the name(s) provided with the following GID(s) \t "+notMatchingData+" which do not match the name(s) present in the database \t"+notMatchingDataDB;
 	        	   request.getSession().setAttribute("indErrMsg", ErrMsg);
 	        	   return "ErrMsg";	 
 	           }
 	           if((alertGID.equals("yes"))&&(alertGN.equals("no"))){	        	   
 	        	   if(size==0){
-	        		   ErrMsg = "The GIDs provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS ";
+	        		   //ErrMsg = "The GIDs provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS ";
+	        		   ErrMsg = "The Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook ";
 	        	   }else{
-	        		   ErrMsg = "The following GID(s) provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS \n \t"+notMatchingGIDS;
+	        		   ErrMsg = "The following Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook \n \t"+notMatchingGIDS;
 	        		   //ErrMsg = "Please verify the GID/Germplasm(s) provided as some of them do not exist in the database. \n Please upload germplasm information into GMS ";
 	        	   }	        	   
 	        	   //ErrMsg = "Please verify the following GID/Germplasm(s) doesnot exists. \n Upload germplasm Information into GMS \n\t"+notMatchingGIDS;
@@ -1308,37 +1318,16 @@ public class SNPGenotypingDataUpload {
 	           }
 			
 	           if((alertGID.equals("yes"))&&(alertGN.equals("yes"))){
-	        	   ErrMsg = "The following GID(s) provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS \n \t"+notMatchingGIDS+" \n Please verify the name(s) provided with the following GID(s) which do not match the name(s) present in the database: \n\t "+notMatchingData;
+	        	   ErrMsg = "The following Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook \n \t"+notMatchingGIDS+" \n Please verify the name(s) provided with the following GID(s) \t "+notMatchingData+" which do not match the name(s) present in the database \t"+notMatchingDataDB;
 	        	   request.getSession().setAttribute("indErrMsg", ErrMsg);
 	        	   return "ErrMsg";	 
-	           } 
+	           }
 	       
-				//System.out.println("genotypes=:"+genotypes);
-				//System.out.println("genoData=:"+genoData);
-		       /*//read comma separated file line by line
-		       while ((line = br.readLine()) != null) {
-		         lineNumber++;
-
-		         //use comma as token separator
-		         st = new StringTokenizer(line, ",");
-
-		         while (st.hasMoreTokens()) {
-		           tokenNumber++;
-
-		           //display csv values
-		           System.out.print(st.nextToken() + "  ");
-		         }
-
-		         System.out.println();
-
-		         //reset token number
-		         tokenNumber = 0;
-		       }*/
 				/** writing to 'dataset' table **/
 				String remarks="";
 				String method="";
 				String score="";
-				Date uploadTemplateDate = new Date(System.currentTimeMillis());
+				//Date uploadTemplateDate = new Date(System.currentTimeMillis());
 				//System.out.println("uploadTemplateDate="+uploadTemplateDate);
 				/*Dataset dataset = new Dataset(dataset_id, strDatasetName, strDesc, dataset_type, strGenus, strSpecies, uploadTemplateDate, remarks,
 						datatype, strMissData, method, score);        
@@ -1373,22 +1362,19 @@ public class SNPGenotypingDataUpload {
 				//System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
 				ArrayList finalList =new ArrayList();
 				ArrayList gidL=new ArrayList();
-				/*ArrayList lstNids=uptMethod.getNids("gid, nid", "names", "nval", session, gNames);
-				for(int w=0;w<lstNids.size();w++){
-		        	Object[] strMareO= (Object[])lstNids.get(w);
-		           // System.out.println("W=....."+w+"    "+strMareO[0]+"   "+strMareO[1]);
-		            if(!gidL.contains(Integer.parseInt(strMareO[0].toString())))
-		            	gidL.add(Integer.parseInt(strMareO[0].toString()));
-		            mapN.put(Integer.parseInt(strMareO[0].toString()), strMareO[1]);
-		          
-		 		}*/
+				
 				
 				/*
 				 * getting nids with gid and nval for inserting into gdms_acc_metadataset table			
 				*/
 				Name names1 = null;
-				for(int n=0;n<gidsAList.size();n++){
-					names1 = manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString());
+				for(int n=0;n<gidsAList.size();n++){										
+					//names1 = manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString());
+			        //names1 = manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString(), GetGermplasmByNameModes.STANDARDIZED);
+			        names1 = manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString(), GetGermplasmByNameModes.STANDARDIZED);
+					if(names1==null){
+						names1=manager.getNameByGIDAndNval(Integer.parseInt(gidsAList.get(n).toString()), NamesList.get(n).toString(), GetGermplasmByNameModes.NORMAL);
+					}
 					if(!gidL.contains(names1.getGermplasmId()))
 		            	gidL.add(names1.getGermplasmId());
 		            mapN.put(names1.getGermplasmId(), names1.getNid());
@@ -1414,8 +1400,8 @@ public class SNPGenotypingDataUpload {
 	            HashMap<String, Object> markersMap = new HashMap<String, Object>();
 	            List lstMarkers = new ArrayList();
 	            //ArrayList lstMarIdNames=uptMethod.getMarkerIds("marker_id, marker_name", "gdms_marker", "marker_name", session, marForQuery);
-	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+marForQuery+")");
-	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+marForQuery+")");
+	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+marForQuery.toLowerCase()+")");
+	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+marForQuery.toLowerCase()+")");
 	            
 	            while(rsMC.next()){
 	            	//lstMarIdNames.add(rsMC.getString(2)+":"+rsMC.getString(1));
@@ -1616,12 +1602,12 @@ public class SNPGenotypingDataUpload {
 		
 		return strupl;
 	}
-	private static void addValues(int key, String value){
-		ArrayList<String> tempList = null;
+	private static void addValues(String key, Integer value){
+		ArrayList<Integer> tempList = null;
 		if(hashMap.containsKey(key)){
 			tempList=hashMap.get(key);
 			if(tempList == null)
-				tempList = new ArrayList<String>();
+				tempList = new ArrayList<Integer>();
 			tempList.add(value);
 		}else{
 			tempList = new ArrayList();

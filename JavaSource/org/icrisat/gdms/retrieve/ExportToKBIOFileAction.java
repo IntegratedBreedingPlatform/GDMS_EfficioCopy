@@ -11,34 +11,50 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.generationcp.middleware.hibernate.HibernateSessionPerThreadProvider;
+import org.generationcp.middleware.hibernate.HibernateSessionProvider;
+import org.generationcp.middleware.manager.DatabaseConnectionParameters;
+import org.generationcp.middleware.manager.WorkbenchDataManagerImpl;
+import org.generationcp.middleware.manager.api.WorkbenchDataManager;
+import org.generationcp.middleware.pojos.workbench.Project;
+import org.generationcp.middleware.util.HibernateUtil;
 
 public class ExportToKBIOFileAction extends Action{
 
 	java.sql.Connection conn;
 	java.sql.Connection con;
+	private static WorkbenchDataManager wdm;
+	private static HibernateUtil hibernateUtil;
 	public ActionForward execute(ActionMapping am, ActionForm af,
 			HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
 		Properties prop=new Properties();
 		try{
+			String foldername="InputFormats";
 			 String op="kbio";
-			/*ServletContext context = servlet.getServletContext();
-			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
-			con=dataSource.getConnection();	*/
-			 
+			 String pathWB="";
+			 String filePathWB="";
+			 //String bPath="C:\\IBWorkflowSystem\\infrastructure\\tomcat\\webapps\\GDMS";
+			 String bPath=req.getSession().getServletContext().getRealPath("//");
+			 String opPath=bPath.substring(0, bPath.indexOf("IBWorkflowSystem")-1);
+			       
+			    //System.out.println(",,,,,,,,,,,,,  :"+bPath.substring(0, bPath.indexOf("IBWorkflowSystem")-1));
+			   
 			 prop.load(new FileInputStream(req.getSession().getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
 				String host=prop.getProperty("central.host");
 				String port=prop.getProperty("central.port");
@@ -64,7 +80,30 @@ public class ExportToKBIOFileAction extends Action{
 				Class.forName(driver).newInstance();
 				con = DriverManager.getConnection(urlL+dbNameL,userNameL,passwordL);
 				Statement stLoc=con.createStatement();
-			 
+				
+				
+				DatabaseConnectionParameters workbenchDb = new DatabaseConnectionParameters("DatabaseConfig.properties", "workbench");
+		        hibernateUtil = new HibernateUtil(workbenchDb.getHost(), workbenchDb.getPort(), workbenchDb.getDbName(), 
+		                                workbenchDb.getUsername(), workbenchDb.getPassword());
+		        HibernateSessionProvider sessionProvider = new HibernateSessionPerThreadProvider(hibernateUtil.getSessionFactory());
+		        wdm = new WorkbenchDataManagerImpl(sessionProvider);	
+		        
+		        HashMap<Object, String> IBWFProjects= new HashMap<Object, String>();
+		        List<Project> projects = wdm.getProjects();
+		        Long projectId = Long.valueOf(0);
+		        //System.out.println("testGetProjects(): ");
+		        for (Project project : projects) {
+		            //System.out.println("  " + project.getLocalDbName());
+		            projectId = project.getProjectId();
+		            IBWFProjects.put(project.getLocalDbName(),project.getProjectId()+"-"+project.getProjectName());
+		        }
+		        //System.out.println(".........:"+IBWFProjects.get(dbNameL));
+		        
+		        pathWB=opPath+"/IBWorkflowSystem/workspace/"+IBWFProjects.get(dbNameL)+"/gdms/output";
+		        //pathWB="C:/IBWorkflowSystem/workspace/1-TL1_Groundnut/gdms/output";
+		        if(!new File(pathWB+"/K-bioOrderForms").exists())
+			   		new File(pathWB+"/K-bioOrderForms").mkdir();
+		        
 			//Statement st=con.createStatement();
 			ResultSet rsC=null;
 			ResultSet rsL=null;
@@ -95,8 +134,9 @@ public class ExportToKBIOFileAction extends Action{
 				for(int d=0;d<dataL.size();d++){
 					markers=markers+"'"+dataL.get(d)+"',";
 				}
-				
+				req.getSession().setAttribute("resultM", dataL);
 			}
+			
 			//destFile="InputFormats/KBio"+session.getAttribute("msec")+".xls";
 			 req.getSession().setAttribute("exop", op);
 			if(option.equalsIgnoreCase("markers")){
@@ -133,18 +173,21 @@ public class ExportToKBIOFileAction extends Action{
 				}
 			}
 			//System.out.println("markersList=:"+markersList);
-			String foldername="InputFormats";
-			String fname1=req.getSession().getServletContext().getRealPath("//")+"/"+foldername;
+			
+			String fname1=req.getSession().getServletContext().getRealPath("//")+"/K-bioOrderForms";
 			if(!new File(fname1).exists())
 		       	new File(fname1).mkdir();
 			//System.out.println("fname1="+fname1);
 			String destFile=fname1+"/KBio"+mSec+".xls";
+			String destFileWF=pathWB+"/K-bioOrderForms/KBio"+mSec+".xls";
 			String srcFile=req.getSession().getServletContext().getRealPath("//")+"/"+"jsp"+"/"+"common"+"/"+"snp_template.xls";
 			//String srcFile="d:\\snp_template.xls";
 			//String destFile="d:\\sri\\kbio_snp_template.xls";
 			InputStream oInStream = new FileInputStream(srcFile);
 	        OutputStream oOutStream = new FileOutputStream(destFile);
 	
+	        OutputStream oOutStreamWF = new FileOutputStream(destFileWF);
+	        
 	        // Transfer bytes from in to out
 	        byte[] oBytes = new byte[1024];
 	        int nLength;
@@ -161,19 +204,19 @@ public class ExportToKBIOFileAction extends Action{
 	        
 	        HSSFWorkbook workbook = new HSSFWorkbook(file);
 	        HSSFSheet sheet = workbook.getSheetAt(1);
-	       
-	    
+	        Row row = null;
 	        int rowNum=2;
 	        Cell cell = null;
 	       
-	     
-		     for(int m1=0;m1<markersList.size();m1++){
-		    	//System.out.println(m1+":"+markersList.get(m1));
-		    	 cell = sheet.getRow(rowNum).getCell((short)0);
-		    	 if (cell == null)
-		    		 cell = sheet.getRow(rowNum).createCell((short)0);
-		    	 cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-		    	 cell.setCellValue(markersList.get(m1).toString());		    	
+            for(int m1=0;m1<markersList.size();m1++){
+		    	 int colnum = 0;
+		    	 row = sheet.getRow(rowNum);	        
+		    	 if(row == null){row = sheet.createRow(rowNum);}
+                 cell = row.getCell(0);
+                 if (cell == null)
+		    		 cell = row.createCell(0);
+                 cell.setCellValue(cell.getStringCellValue()+markersList.get(m1).toString());
+    	
 		    	 rowNum++;
 		     }
 	      
@@ -182,6 +225,48 @@ public class ExportToKBIOFileAction extends Action{
 	        FileOutputStream outFile =new FileOutputStream(destFile);
 	        workbook.write(outFile);
 	        outFile.close();
+	        
+	        
+	     // Transfer bytes from in to out
+	       /* byte[] oBytesWF = new byte[1024];
+	        int nLengthWF;
+	        BufferedInputStream oBuffInputStreamWF = 
+	                        new BufferedInputStream( oInStream );
+	        while ((nLengthWF = oBuffInputStreamWF.read(oBytesWF)) > 0) 
+	        {
+	            oOutStreamWF.write(oBytesWF, 0, nLength);
+	        }
+	        oInStream.close();
+	        oOutStreamWF.close();*/
+	        
+	        FileInputStream fileWF = new FileInputStream(destFile);
+	        
+	        HSSFWorkbook workbookWF = new HSSFWorkbook(fileWF);
+	        HSSFSheet sheetWF = workbook.getSheetAt(1);
+	        Row rowWF = null;
+	        int rowNumWF=2;
+	        Cell cellWF = null;
+	       
+            for(int m1=0;m1<markersList.size();m1++){
+		    	 int colnum = 0;
+		    	 rowWF = sheet.getRow(rowNumWF);	        
+		    	 if(rowWF == null){rowWF = sheetWF.createRow(rowNumWF);}
+                 cellWF = rowWF.getCell(0);
+                 if (cellWF == null)
+		    		 cellWF = rowWF.createCell(0);
+                 cellWF.setCellValue(cellWF.getStringCellValue()+markersList.get(m1).toString());
+    	
+		    	 rowNumWF++;
+		     }
+	      
+	        fileWF.close();
+	         
+	        FileOutputStream outFileWF =new FileOutputStream(destFileWF);
+	        workbookWF.write(outFileWF);
+	        outFileWF.close();
+	        
+	        
+	        
 	        //System.out.println("op=:"+op);
 	       
 	       // System.out.println("done");

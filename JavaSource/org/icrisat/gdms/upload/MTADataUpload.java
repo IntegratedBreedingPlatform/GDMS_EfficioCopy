@@ -1,5 +1,7 @@
 package org.icrisat.gdms.upload;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.sql.DriverManager;
@@ -11,6 +13,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -21,6 +24,10 @@ import javax.servlet.http.HttpSession;
 import jxl.Sheet;
 import jxl.Workbook;
 
+import org.generationcp.middleware.manager.ManagerFactory;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
+import org.generationcp.middleware.v2.domain.StandardVariable;
+import org.generationcp.middleware.v2.manager.api.OntologyDataManager;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -37,7 +44,7 @@ public class MTADataUpload {
 		
 		String dataset_type="MTA";
 		String datatype="char";
-		
+		ManagerFactory factory = null;
 		Properties p=new Properties();
 		HttpSession ses = request.getSession(true);
 		ArrayList traitsComList=new ArrayList();
@@ -80,7 +87,8 @@ public class MTADataUpload {
 			tx=session.beginTransaction();
 			String ErrMsg="";
 			MaxIdValue uptMId=new MaxIdValue();
-			
+			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(request);
+			OntologyDataManager om=factory.getNewOntologyDataManager();
 			DatasetBean ub=new DatasetBean();
 			GenotypeUsersBean usb=new GenotypeUsersBean();	
 			//UsersBean u=new UsersBean();
@@ -148,7 +156,19 @@ public class MTADataUpload {
 			 traits=traits.substring(0, traits.length()-1);
 			 SortedMap map = new TreeMap();
 	         List retTraits = new ArrayList();
-			rsLoc=stLoc.executeQuery("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+	         for(int t=0;t<traitList.size();t++){
+	        	 Set<StandardVariable> standardVariables = om.findStandardVariablesByNameOrSynonym(traitList.get(t).toString());
+				assertTrue(standardVariables.size() == 1);
+				for (StandardVariable stdVar : standardVariables) {
+					System.out.println(stdVar.getId()+"   "+stdVar.getNameSynonyms()+"   "+stdVar.getName());
+					traitsComList.add(stdVar.getId());
+					retTraits.add(stdVar.getName());
+					map.put(stdVar.getName(), stdVar.getId());
+					/*tids=tids+stdVar.getId()+",";
+					tidsCount++;*/
+				}
+	         }
+			/*rsLoc=stLoc.executeQuery("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
 			while(rsLoc.next()){
 				traitsComList.add(rsLoc.getString(1));
 				//+"!~!"+rsN.getString(2)+"!~!"+rsN.getString(3));
@@ -162,7 +182,7 @@ public class MTADataUpload {
 				//+"!~!"+rsN.getString(2)+"!~!"+rsN.getString(3));
 				retTraits.add(rsCen.getString(2));
 				map.put(rsCen.getString(2), rsCen.getString(1));
-			}
+			}*/
 			if(map.size()==0){
             	alertT="yes";
 	        	size=0;
@@ -204,7 +224,7 @@ public class MTADataUpload {
 			while(rsLoc.next()){
 				result1.add(rsLoc.getString(1));						
 			}
-			//System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+			
 			rsCen=stCen.executeQuery("select dataset_name from gdms_dataset where dataset_name='"+dname+"'");
 			while(rsCen.next()){
 				result1.add(rsCen.getString(1));	
@@ -270,11 +290,14 @@ public class MTADataUpload {
 			//System.out.println("mapIdL ="+mapIdL);
 			//System.out.println("linkageMaps:"+linkageMaps);
 			for (int i=1;i<rowCount;i++){
-				if(!(mapIdL.contains(linkageMaps.get(sheetData.getCell(2,i).getContents().trim())))){
-					ErrMsg = "Map does not exists.\nPlease Upload the corresponding Map\n"+sheetData.getCell(2,i).getContents().trim();
-					request.getSession().setAttribute("indErrMsg", ErrMsg);
-					return "ErrMsg";
-					
+				if(sheetData.getCell(1,i).getContents().trim()!=""){
+					//System.out.println(mapIdL.contains(linkageMaps.get(sheetData.getCell(2,i).getContents().trim()))+"   "+linkageMaps.get(sheetData.getCell(2,i).getContents().trim())+"  "+sheetData.getCell(2,i).getContents().trim());
+					if(!(mapIdL.contains(linkageMaps.get(sheetData.getCell(2,i).getContents().trim())))){
+						ErrMsg = "Map does not exists.\nPlease Upload the corresponding Map\n"+sheetData.getCell(2,i).getContents().trim();
+						request.getSession().setAttribute("indErrMsg", ErrMsg);
+						return "ErrMsg";
+						
+					}
 				}
 			}
 			
@@ -316,21 +339,23 @@ public class MTADataUpload {
 			String[] linkageMapID=linkMapId.split(",");
 			String[] strMarkerIds=markerIds.split(",");
 			for(int c=1;c<rowCount;c++){
+				if(sheetData.getCell(2, c).getContents().trim()!=""){
 				//System.out.println("select * from gdms_markers_onmap where map_id="+linkageMaps.get(sheetData.getCell(2, c).getContents().trim().toString())+" and linkage_group='"+sheetData.getCell(1, c).getContents().trim().toString()+"' and marker_id="+strMarkerIds[cl]+" and start_position like "+sheetData.getCell(3, c).getContents().trim().toString()+"");
-				rs=stCen.executeQuery("select * from gdms_markers_onmap where map_id="+linkageMaps.get(sheetData.getCell(2, c).getContents().trim().toString())+" and linkage_group='"+sheetData.getCell(1, c).getContents().trim().toString()+"' and marker_id="+strMarkerIds[cl]+" and start_position like "+sheetData.getCell(3, c).getContents().trim().toString());
-				while(rs.next()){
-					markerExist=true;
+					rs=stCen.executeQuery("select * from gdms_markers_onmap where map_id="+linkageMaps.get(sheetData.getCell(2, c).getContents().trim().toString())+" and linkage_group='"+sheetData.getCell(1, c).getContents().trim().toString()+"' and marker_id="+strMarkerIds[cl]+" and start_position like "+sheetData.getCell(3, c).getContents().trim().toString());
+					while(rs.next()){
+						markerExist=true;
+					}
+					rsLE=stLoc.executeQuery("select * from gdms_markers_onmap where map_id="+linkageMaps.get(sheetData.getCell(2, c).getContents().trim().toString())+" and linkage_group='"+sheetData.getCell(1, c).getContents().trim().toString()+"' and marker_id="+strMarkerIds[cl]+" and start_position like "+sheetData.getCell(3, c).getContents().trim().toString());
+					while(rsLE.next()){
+						markerExist=true;
+					}
+					if(!markerExist){
+						ErrMsg = "Marker does not exists on the map.";
+						request.getSession().setAttribute("indErrMsg", ErrMsg);
+						return "ErrMsg";
+					}
+					cl++;
 				}
-				rsLE=stLoc.executeQuery("select * from gdms_markers_onmap where map_id="+linkageMaps.get(sheetData.getCell(2, c).getContents().trim().toString())+" and linkage_group='"+sheetData.getCell(1, c).getContents().trim().toString()+"' and marker_id="+strMarkerIds[cl]+" and start_position like "+sheetData.getCell(3, c).getContents().trim().toString());
-				while(rsLE.next()){
-					markerExist=true;
-				}
-				if(!markerExist){
-					ErrMsg = "Marker does not exists on the map.";
-					request.getSession().setAttribute("indErrMsg", ErrMsg);
-					return "ErrMsg";
-				}
-				cl++;
 			}
 			for(int i=1;i<rowCount;i++){				
 				/** reading from datasheet of template & writing to 'qtl' table  **/

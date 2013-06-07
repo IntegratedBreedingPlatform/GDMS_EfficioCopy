@@ -31,6 +31,8 @@ import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.pojos.Name;
 import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
+import org.generationcp.middleware.v2.domain.Term;
+import org.generationcp.middleware.v2.manager.api.OntologyDataManager;
 import org.icrisat.gdms.common.ExportFormats;
 
 public class RetrieveExportABHAction extends Action{
@@ -104,6 +106,7 @@ public class RetrieveExportABHAction extends Action{
 			//factory = new ManagerFactory(local, central);
 			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
 			GermplasmDataManager manager = factory.getGermplasmDataManager();
+			OntologyDataManager om=factory.getNewOntologyDataManager();
 			
 			Statement st=null;
 			Statement stmt=null;
@@ -141,7 +144,7 @@ public class RetrieveExportABHAction extends Action{
 			SortedMap mapB = new TreeMap();
 			SortedMap mapGNames = new TreeMap();
 			String markerIds="";			
-			
+			ArrayList<Integer> tid=new ArrayList();
 			String mapData="";
 			
 			String exportOpType="";
@@ -464,20 +467,25 @@ public class RetrieveExportABHAction extends Action{
 						}
 						//System.out.println("mapData=:"+mapData);
 						
-						rsMap=stCen.executeQuery("select qtl_id from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+mapName+"')");
+						rsMap=stCen.executeQuery("select qtl_id, tid from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+mapName+"')");
 						//rsQ=stQ.executeQuery("");
 						while(rsMap.next()){
 							qtlCount++;
 							qtl_id=qtl_id+rsMap.getInt(1)+",";
+							if(!tid.contains(rsMap.getInt(2)))
+								tid.add(rsMap.getInt(2));
 						}
-						rsMapL=stLoc.executeQuery("select qtl_id from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+mapName+"')");
+						rsMapL=stLoc.executeQuery("select qtl_id,tid from gdms_qtl_details where map_id =(select map_id from gdms_map where map_name ='"+mapName+"')");
 						while(rsMapL.next()){
 							qtlCount++;
 							qtl_id=qtl_id+rsMapL.getInt(1)+",";
+							if(!tid.contains(rsMapL.getInt(2)))
+								tid.add(rsMapL.getInt(2));
 						}
 						
 						if(qtlCount>0){
-							rsC=stCen.executeQuery("select distinct trabbr, tid from tmstraits");
+							qtlExists=true;
+							/*rsC=stCen.executeQuery("select distinct trabbr, tid from tmstraits");
 							while(rsC.next()){							
 								tidsList.add(rsC.getInt(2));
 									traitsMap.put(rsC.getInt(2), rsC.getString(1));
@@ -487,11 +495,16 @@ public class RetrieveExportABHAction extends Action{
 							while(rsN.next()){							
 								if(!tidsList.contains(rsN.getInt(2)))
 									traitsMap.put(rsN.getInt(2), rsN.getString(1));
+							}*/
+							for(int t=0; t<tid.size();t++){
+								Term term =om.getTermById(tid.get(t));
+								//System.out.println(".................def:"+term.getDefinition()+"   id:"+term.getId()+"  name=:"+term.getName()+"  vocID:"+term.getVocabularyId()+"  nsyn:"+term.getNameSynonyms());
+								tidsList.add(term.getId());
+								traitsMap.put(term.getId(), term.getName());
 							}
 							
 							
 							
-							qtlExists=true;
 							rsQ=stCen.executeQuery("select * from gdms_qtl_details, gdms_qtl where gdms_qtl_details.qtl_id in ("+qtl_id.substring(0, qtl_id.length()-1)+") and gdms_qtl.qtl_id=gdms_qtl_details.qtl_id order by gdms_qtl_details.linkage_group, gdms_qtl_details.qtl_id");
 							while(rsQ.next()){
 								String Fmarkers=rsQ.getString(12)+"/"+rsQ.getString(13);

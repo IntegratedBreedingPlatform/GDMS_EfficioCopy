@@ -2,7 +2,7 @@
 <%@ taglib uri="/WEB-INF/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
 <%@ page import="java.util.ArrayList,java.util.Iterator,jxl.format.*" %>
-<%@ page import="java.io.*,jxl.*,jxl.write.*,java.util.Calendar,java.util.StringTokenizer"%>
+<%@ page import="java.io.*,jxl.*,jxl.write.*,java.util.Calendar,java.util.StringTokenizer, org.apache.commons.io.FileUtils"%>
 <html:html>
 	<head>
 
@@ -89,19 +89,36 @@
 			Calendar now = Calendar.getInstance();
 			String foldername="MarkerFiles";
 			String fname1=session.getServletContext().getRealPath("//")+"/"+foldername;
+			if(new File(fname1).exists()){				
+				FileUtils.cleanDirectory(new File(fname1)); 
+			}
+			
 			if(!new File(fname1).exists())
 		       	new File(fname1).mkdir();
 			//System.out.println("fname1="+fname1);
+			String pathWB=request.getSession().getAttribute("WBPath").toString();
+			if(!new File(pathWB).exists())
+		       	new File(pathWB).mkdir();
+			String createfileWB=pathWB+"/Marker"+now.getTimeInMillis()+".xls";
+			File fileWB=new File(createfileWB);
+			fileWB.createNewFile();		
+			
 			String createfile=fname1+"/Marker"+now.getTimeInMillis()+".xls";
 			File file=new File(createfile);
-			file.createNewFile();		
+			file.createNewFile();	
+			
+			WritableWorkbook workbookWB = Workbook.createWorkbook(new File(createfileWB));
+			WritableSheet sheetWB=workbookWB.createSheet("MarkerDetails",0);			
 			
 			WritableWorkbook workbook = Workbook.createWorkbook(new File(createfile));
 			WritableSheet sheet=workbook.createSheet("MarkerDetails",0);
+			
 			WritableFont wf = new WritableFont(WritableFont.TIMES,WritableFont.DEFAULT_POINT_SIZE, WritableFont.BOLD,false,UnderlineStyle.SINGLE);
 		   	WritableCellFormat cf = new WritableCellFormat(wf);
 		    cf.setWrap(true); 
-			String filenm=foldername+"/Marker"+now.getTimeInMillis()+".xls";
+			
+		    
+		    String filenm=foldername+"/Marker"+now.getTimeInMillis()+".xls";
 			
 			//System.out.println("filenm="+filenm);
 			
@@ -186,9 +203,13 @@
 								String[] splitGenotype=splitStr[p].split("!~!");
 								Label ll = new Label(p,k,splitGenotype[0]);
 								sheet.addCell(ll);
+								Label llW = new Label(p,k,splitGenotype[0]);
+								sheetWB.addCell(llW);
 							}else{					
 								Label ll = new Label(p,k,splitStr[p]);
 								sheet.addCell(ll);
+								Label llW = new Label(p,k,splitStr[p]);
+								sheetWB.addCell(llW);
 							}
 							if((p==(splitStr.length-1))&& (splitStr.length<len)){
 								for(p=splitStr.length;p<len;p++){
@@ -206,6 +227,9 @@
 					}
 					workbook.write();
 					workbook.close();
+					workbookWB.write();
+					workbookWB.close();
+					
 					}else{
 				
 				String searchType=session.getAttribute("searchType").toString();
@@ -288,6 +312,7 @@
 				<%if(request.getSession().getAttribute("markerType").equals("snp")){ %>
 					<html:button property="nButton" onclick="funcSubmitPage()" value="Create KBio Order Form"/>
 					<html:hidden property="kbioMarkers"/>
+					<html:hidden property="fromPage" value="markers"/>
 				<%} %>
 		</center>
 		</html:form>

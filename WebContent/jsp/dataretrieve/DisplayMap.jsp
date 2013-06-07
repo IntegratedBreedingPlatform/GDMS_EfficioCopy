@@ -71,6 +71,7 @@
 				mdata=(ArrayList)request.getSession().getAttribute("map_data");
 				String testing=request.getSession().getAttribute("finalData").toString();
 				String fromPage=session.getAttribute("fromPage").toString();
+				System.out.println("...fromPage in jsp...:"+fromPage);
 				//mtaList=(ArrayList)request.getSession().getAttribute("mtaMIDsList");
 				//System.out.println("...mtaList=:"+mtaList);
 				//mtaTraits=(HashMap)request.getSession().getAttribute("mtaTraits");
@@ -79,8 +80,7 @@
 			<logic:notEmpty name="map_data">
 				<html:hidden property="traitValues" value='<%=testing%>'/>
 				<html:hidden property="mtaValues" value='<%=mtaDetails%>'/>
-				<br>
-				<br>
+				<br><br>
 				<%
 				String map_unit=session.getAttribute("map_unit").toString();
 				int actualCount=Integer.parseInt(session.getAttribute("recCount").toString());
@@ -191,7 +191,7 @@
 					<br><br>
 					<input type="hidden" name="dataToExp"/>
 					<input type="hidden" name="op" value='<%=session.getAttribute("polyType") %>'/>
-					<html:button property="back" value="Back" onclick="javascript:history.back()"/>
+					<html:button property="back" value="Back" onclick="earlierPage()"/>
 					<html:button property="export" value="Export" onclick="submitPage()"/>
  				</center>
 			</logic:notEmpty>
@@ -381,7 +381,7 @@ var mapUnit=document.forms[0].mapUnit.value;
 		}
 		//alert(strData);
 		if(count<1){
-			alert("None of them are selected");
+			alert("None of the markers are selected");
 			return false;
 		}else{
 			document.forms[0].elements['dataToExp'].value=strData;
@@ -407,6 +407,13 @@ var mapUnit=document.forms[0].mapUnit.value;
 				obj.checked=true;
 			}			    		          
 		}		
+	}
+	
+	function earlierPage(){
+		//alert(document.forms[0].elements['fromPage'].value);
+		//var map=document.forms[0].elements['fromPage'].value;			
+		document.forms[0].action="dataretrieval.do?map";		
+		document.forms[0].submit();
 	}
 	
 </script>

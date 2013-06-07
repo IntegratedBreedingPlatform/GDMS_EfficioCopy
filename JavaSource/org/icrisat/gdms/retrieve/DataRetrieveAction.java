@@ -1,5 +1,7 @@
 package org.icrisat.gdms.retrieve;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,17 +16,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.sql.DataSource;
 
-import org.apache.struts.Globals;
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -37,25 +37,25 @@ import org.generationcp.middleware.hibernate.HibernateSessionProvider;
 import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
 import org.generationcp.middleware.manager.WorkbenchDataManagerImpl;
-import org.generationcp.middleware.manager.api.GenotypicDataManager;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
 import org.generationcp.middleware.manager.api.WorkbenchDataManager;
 import org.generationcp.middleware.pojos.GidNidElement;
 import org.generationcp.middleware.pojos.Name;
-import org.generationcp.middleware.pojos.workbench.WorkFlowActivity;
+import org.generationcp.middleware.pojos.workbench.Project;
 import org.generationcp.middleware.pojos.workbench.WorkbenchSetting;
 import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
 import org.generationcp.middleware.util.HibernateUtil;
-import org.hibernate.Query;
+import org.generationcp.middleware.v2.domain.StandardVariable;
+import org.generationcp.middleware.v2.domain.Term;
+import org.generationcp.middleware.v2.manager.api.OntologyDataManager;
 import org.icrisat.gdms.common.FileUploadToServer;
-
 public class DataRetrieveAction extends Action{
 	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();  
 	Connection con;
 	Connection conn;
 	private static WorkbenchDataManager wdm;
 	private static HibernateUtil hibernateUtil;
-	
+	ArrayList<Integer> tid=new ArrayList();
 	String str="";
 	String strVal="";
 	String str1="";
@@ -86,19 +86,9 @@ public class DataRetrieveAction extends Action{
 		//System.out.println(".................................:"+retrieveOP);
 		float distance=0;
 		int mCount=0;
-		String mapData="";
-		ArrayList CD=new ArrayList();
-		ArrayList dist=new ArrayList();
-		List listValues=null;
-		Query query=null;
-		String exp="";
-		//Query query=null;	
-		Query query1=null;
-		Query query2=null;
+	
 		ManagerFactory factory = null;
-		/*List alleleList=new ArrayList();
-		List charList=new ArrayList(); 
-		List mapCharList=new ArrayList(); */
+		
 		int alleleCount=0;
 		int charCount=0;
 		int mapCharCount=0;
@@ -109,9 +99,7 @@ public class DataRetrieveAction extends Action{
 		int locCharCount=0;
 		int locMapCharCount=0;
 		try{
-			/*ServletContext context = servlet.getServletContext();
-			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
-			con=dataSource.getConnection();	*/
+			
 			Properties p=new Properties();
 			
 			p.load(new FileInputStream(session.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
@@ -162,15 +150,6 @@ public class DataRetrieveAction extends Action{
 			Statement st=con.createStatement();
 			
 			Statement stmtN=con.createStatement();
-			Statement stA=con.createStatement();
-			Statement stC=con.createStatement();
-			Statement stM=con.createStatement();
-			Statement stmtC=con.createStatement();
-			Statement stmtA=con.createStatement();
-			Statement stmtM=con.createStatement();
-			Statement stmtMp=con.createStatement();
-			Statement stmt=con.createStatement();
-			Statement stmtR=con.createStatement();
 			Statement stAC=conn.createStatement();
 			Statement stAL=con.createStatement();
 			Statement stCC=conn.createStatement();
@@ -178,34 +157,47 @@ public class DataRetrieveAction extends Action{
 			Statement stML=con.createStatement();
 			Statement stMC=conn.createStatement();
 			
-			Statement stmtG=con.createStatement();
-			Statement stmttest=con.createStatement();
-			
 			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
 			GermplasmDataManager manager = factory.getGermplasmDataManager();
+			OntologyDataManager om=factory.getNewOntologyDataManager();
 			
-			DatabaseConnectionParameters workbenchDb = new DatabaseConnectionParameters("DatabaseConfig.properties", "workbench");
+			/*DatabaseConnectionParameters workbenchDb = new DatabaseConnectionParameters("DatabaseConfig.properties", "workbench");
 	        hibernateUtil = new HibernateUtil(workbenchDb.getHost(), workbenchDb.getPort(), workbenchDb.getDbName(), 
 	                                workbenchDb.getUsername(), workbenchDb.getPassword());
 	        HibernateSessionProvider sessionProvider = new HibernateSessionPerThreadProvider(hibernateUtil.getSessionFactory());
 	        wdm = new WorkbenchDataManagerImpl(sessionProvider);
-			
-			
-			GenotypicDataManager gdms=factory.getGenotypicDataManager();
-			//System.out.println("maps     ====  :"+gdms.getAllMaps(0, 5, Database.LOCAL));
-			
-			//System.out.println("..........installation directory........  :"+wdm.getWorkbenchSetting().getInstallationDirectory());
+	       // final WorkbenchDataManager workbenchDataManager=null;	
+	        //  WorkbenchSetting workbenchSetting = wdm.getWorkbenchSetting();
+           
+               // System.out.println("%%%%%%%%%%%%%%%%%%%%%%%%   :"+workbenchSetting.getInstallationDirectory());
+           System.out.println("......................:"+session.getServletContext().getRealPath("//"));
+           String path="";
+           //String bPath=session.getServletContext().getRealPath("//");
+           String bPath="C:\\IBWorkflowSystem\\infrastructure\\tomcat\\webapps\\GDMS";
+           //String strTest2  = strTest1.substring(0,strTest1.lastIndexOf("::"));
+          // name.substring(0,name.indexOf(","));  
+           String op=bPath.substring(0, bPath.indexOf("IBWorkflowSystem")-1);
+          
+           System.out.println(",,,,,,,,,,,,,  :"+bPath.substring(0, bPath.indexOf("IBWorkflowSystem")-1));
+           HashMap<Object, String> IBWFProjects= new HashMap<Object, String>();
+	        List<Project> projects = wdm.getProjects();
+	        Long projectId = Long.valueOf(0);
+	        System.out.println("testGetProjects(): ");
+	        for (Project project : projects) {
+	            System.out.println("  " + project.getLocalDbName());
+	            projectId = project.getProjectId();
+	            IBWFProjects.put(project.getLocalDbName(),project.getProjectId()+"_"+project.getProjectName());
+	        }
+	        System.out.println(".........:"+IBWFProjects.get(dbNameL));
+	        path=op+"/IBWorkflowSystem/workspace/"+IBWFProjects.get(dbNameL)+"/gdms/output";
+	        System.out.println("**************  :"+path);
+	        session.setAttribute("OutputPath", path);*/
+			//System.out.println("..........installation directory........  :"+workbenchSetting.getInstallationDirectory());
 			if(retrieveOP.equalsIgnoreCase("first")){
 				if(session!=null){
 					session.removeAttribute("indErrMsg");	
 				}
-				/*rs=stmt.executeQuery("select distinct map_name from gdms_map");
-				while(rs.next()){
-					mapList.add(rs.getString(1));
-				}
-				//query2=hsession.createQuery("select distinct map_name from MapBean");
-				//mapList=query2.list();
-				session.setAttribute("mapList", mapList);*/
+				
 				str="qtlPage";
 			}else if(retrieveOP.equalsIgnoreCase("Submit")){
 				/** for retrieving polymorphic markers between 2 lines **/
@@ -231,11 +223,8 @@ public class DataRetrieveAction extends Action{
 				ArrayList mark2=new ArrayList();
 				ArrayList ch1=new ArrayList();
 				ArrayList ch2=new ArrayList();				
-				/*int alleleCount=0;
-				int charCount=0;
-				int mapCharCount=0;
-				*/
-				String geno="";
+				
+				
 				String markers="";
 				int markerCount=0;
 				
@@ -252,7 +241,6 @@ public class DataRetrieveAction extends Action{
 				session.setAttribute("selLines", selLines);
 				
 				
-				Statement stmtMap=con.createStatement();
 				/**
 				 * Query for retrieving the gid of the respective germplasm_name using middleware
 				 */			
@@ -261,13 +249,9 @@ public class DataRetrieveAction extends Action{
 				for(int r=0;r<results.size();r++){
 					gids1=gids1+results.get(r).getGermplasmId()+",";					
 				}
-				/*rs = stmt.executeQuery("select distinct gid from names where nval in ("+strVal+")");				
-				while(rs.next()){				
-					gids1 = gids1+rs.getString(1)+",";
-				}*/
-				//System.out.println("...........   :"+gids1);
+				
 				String nid="";
-				ArrayList nidList=new ArrayList();
+				ArrayList<Integer> nidList=new ArrayList<Integer>();
 				//System.out.println("select distinct nid from gdms_acc_metadataset where gid in ("+gids1.substring(0, gids1.length()-1)+")");
 				rsN=stCen.executeQuery("select distinct nid from gdms_acc_metadataset where gid in ("+gids1.substring(0, gids1.length()-1)+")");
 				while(rsN.next()){
@@ -291,31 +275,16 @@ public class DataRetrieveAction extends Action{
 					gids=gids+names.getGermplasmId()+",";
 				}
 				
-				
-				//System.out.println(",,,,,,,,,,,,,,,,,,,,  gids=:"+gids);
-				/*
-				rs=stmt.executeQuery("select gid, nval from names where nid in("+nid.substring(0, nid.length()-1)+")");
-				while(rs.next()){
-					gids=gids+rs.getString(1)+",";
-				}*/
-				
-				
 				gids = gids.substring(0,gids.length()-1);
 				String[] gidsO=gids.split(",");
 				int gid1=Integer.parseInt(gidsO[0]);
 				int gid2=Integer.parseInt(gidsO[1]);
-				//System.out.println("gids="+gids);
-				
-				
-				
 				
 				String polyType=session.getAttribute("polyType").toString();
-			//	System.out.println("....:"+polyType);
+				//System.out.println("....:"+polyType);
 				
-				if(polyType.equalsIgnoreCase("fingerprinting")){
-				
-					/** checking whether the gid exists in 'allele_values' table **/
-					
+				if(polyType.equalsIgnoreCase("fingerprinting")){				
+					/** checking whether the gid exists in 'allele_values' table **/					
 					ResultSet rsa=stCen.executeQuery("select count(*) from gdms_allele_values where gid in ("+gids+")");
 					while (rsa.next()){
 						cenAlleleCount=rsa.getInt(1);						
@@ -862,11 +831,6 @@ public class DataRetrieveAction extends Action{
 				int count=0;
 				int start=0;
 				int end=100;
-				//gdms.getMarkerIdsByMarkerNames(mList, 0, end, Database.LOCAL);				
-					
-					
-					//System.out.println("select marker_id from gdms_marker where marker_name in("+ m1.substring(0,m1.length()-1) +") order by marker_id");
-					
 					rs=stCen.executeQuery("select marker_id from gdms_marker where marker_name in("+ m1.substring(0,m1.length()-1)+") order by marker_id");
 					rs2=stLoc.executeQuery("select marker_id from gdms_marker where marker_name in("+ m1.substring(0,m1.length()-1)+") order by marker_id");
 					while(rs.next()){
@@ -1590,23 +1554,7 @@ public class DataRetrieveAction extends Action{
 					session.setAttribute("datasetType", "mapping");
 				}
 				
-				//System.out.println(markerList);
 				
-				//query2=hsession.createQuery("select distinct map_name from MapBean");
-				/*GenotypicDataManager gm=factory.getGenotypicDataManager();				
-				
-				List<Map> maps = gm.getAllMaps(0, 10, Database.LOCAL);
-		        
-		        if(maps == null || maps.isEmpty()) {
-		            System.out.println("No records found.");
-		        } else {
-		            for(Map map : maps) {
-		                System.out.println(" " + map);
-		                mList.add(map.getMapName());
-		            }
-		        }*/
-				
-				//mapList=query2.list();
 				mapList.clear();
 				rsMp=stCen.executeQuery("select distinct map_name from gdms_map");
 				while(rsMp.next()){
@@ -1639,7 +1587,7 @@ public class DataRetrieveAction extends Action{
 				ArrayList traitsComList=new ArrayList();
 				SortedMap map = new TreeMap();
 				SortedMap traitsMap = new TreeMap();
-				//SortedMap traitsMap = new TreeMap();
+				SortedMap traitMap = new TreeMap();
 				SortedMap mtaMap = new TreeMap();
 				ArrayList mtaMarkers=new ArrayList();
 				
@@ -1675,18 +1623,12 @@ public class DataRetrieveAction extends Action{
 					//System.out.println("******************:"+traitsComList);
 					//Statement stC=conn.createStatement();
 					//System.out.println("select distinct trabbr, trname, ontology from tmstraits");
-					rsC=stCen.executeQuery("select distinct trabbr, trname, ontology, tid from tmstraits");
-					while(rsC.next()){
-						if(!(traitsComList.contains(rsC.getString(1)))){
-							traitsComList.add(rsC.getString(1));
-							map.put(rsC.getString(1), rsC.getString(2)+"!~!"+rsC.getString(3));
-							
-						}
-						tidsList.add(rsC.getInt(4));
-							traitsMap.put(rsC.getInt(4), rsC.getString(1));
-						//traitsComList.add(rsC.getString(1)+"!~!"+rsC.getString(2)+"!~!"+rsC.getString(3));
-					}
-					rsN=stmtN.executeQuery("select distinct trabbr, trname, ontology, tid from tmstraits");
+				ResultSet rsQL=null;
+				String queryQ="";
+				List qtlList=new ArrayList();
+				if(opType.equals("QTLName")){
+					
+					/*rsN=stmtN.executeQuery("select distinct trabbr, trname, ontology, tid from tmstraits");
 					while(rsN.next()){
 						if(!(traitsComList.contains(rsN.getString(1)))){
 							traitsComList.add(rsN.getString(1));
@@ -1694,34 +1636,31 @@ public class DataRetrieveAction extends Action{
 						}
 						if(!tidsList.contains(rsN.getInt(4)))
 							traitsMap.put(rsN.getInt(4), rsN.getString(1));
-					}
-					//System.out.println("********CEN**********:"+traitsComList);
-					//System.out.println("map=:"+map);
-				//}
-					//System.out.println("traitsMap:"+traitsMap);
-				ResultSet rsQL=null;
-				String queryQ="";
-				List qtlList=new ArrayList();
-				if(opType.equals("QTLName")){
+					}*/
+					
 					/** if retrieval is through QTL Name **/
 					qtlDataList.clear();
 					//System.out.println("select qtl_id from qtl where qtl_name like '"+qtl+"%'");
 					if(qtl.equalsIgnoreCase("*")){
 						//System.out.println("***************************");
-						queryQ="select qtl_id from gdms_qtl order by qtl_id";
+						queryQ="select distinct qtl_id, tid from gdms_qtl_details order by qtl_id";
 						rs1=stCen.executeQuery(queryQ);
 						rsQL=stLoc.executeQuery(queryQ);
 					}else{
 						//System.out.println("else if");
-						//System.out.println("select qtl_id from gdms_qtl where qtl_name like '"+qtl+"%' order by qtl_id");
-						rs1=stCen.executeQuery("select qtl_id from gdms_qtl where qtl_name like '"+qtl+"%' order by qtl_id");
-						rsQL=stLoc.executeQuery("select qtl_id from gdms_qtl where qtl_name like '"+qtl+"%' order by qtl_id");
+						System.out.println("select gdms_qtl_details.qtl_id, gdms_qtl_details.tid from gdms_qtl_details join gdms_qtl on gdms_qtl.qtl_id=gdms_qtl_details.qtl_id where gdms_qtl.qtl_name like '"+qtl+"%' order by gdms_qtl_details.qtl_id");
+						rs1=stCen.executeQuery("select gdms_qtl_details.qtl_id, gdms_qtl_details.tid from gdms_qtl_details join gdms_qtl on gdms_qtl.qtl_id=gdms_qtl_details.qtl_id where gdms_qtl.qtl_name like '"+qtl+"%' order by gdms_qtl_details.qtl_id");
+						rsQL=stLoc.executeQuery("select gdms_qtl_details.qtl_id, gdms_qtl_details.tid from gdms_qtl_details join gdms_qtl on gdms_qtl.qtl_id=gdms_qtl_details.qtl_id where gdms_qtl.qtl_name like '"+qtl+"%' order by gdms_qtl_details.qtl_id");
 					}
 					while(rs1.next()){
-						qtlList.add(rs1.getInt(1));						
+						qtlList.add(rs1.getInt(1));	
+						if(!tid.contains(rs1.getInt(2)))
+							tid.add(rs1.getInt(2));
 					}
 					while(rsQL.next()){
-						qtlList.add(rsQL.getInt(1));						
+						qtlList.add(rsQL.getInt(1));	
+						if(!tid.contains(rsQL.getInt(2)))
+							tid.add(rsQL.getInt(2));
 					}
 					System.out.println(qtlList);
 					String mapIds="";
@@ -1730,6 +1669,18 @@ public class DataRetrieveAction extends Action{
 						req.getSession().setAttribute("indErrMsg", ErrMsg);
 						return am.findForward("ErrMsg");
 					}else{
+						for(int t=0; t<tid.size();t++){
+							Term term =om.getTermById(tid.get(t));
+							if(!(traitsComList.contains(term.getName()))){
+								traitsComList.add(term.getName());
+								map.put(term.getName(), term.getName()+"!~!"+term.getName());
+								
+							}
+							tidsList.add(term.getId());
+								traitsMap.put(term.getId(), term.getName());
+						}
+						
+						
 						for(int q=0;q<qtlList.size();q++){
 							qtlId=qtlId+qtlList.get(q)+",";
 						}
@@ -1799,6 +1750,29 @@ public class DataRetrieveAction extends Action{
 					str="retQTL";
 				}else if(opType.equals("Trait")){
 					/** if the option is through trait name **/
+					//rsC=stCen.executeQuery("select distinct trabbr, trname, ontology, tid from tmstraits");
+					rsC=stCen.executeQuery("select distinct cvterm_id, name from cvterm");
+					while(rsC.next()){
+						if(!(traitsComList.contains(rsC.getString(1)))){
+							traitsComList.add(rsC.getString(1));
+							map.put(rsC.getString(1), rsC.getString(2)+"!~!"+rsC.getInt(1));
+							
+						}
+						tidsList.add(rsC.getString(2));
+							traitsMap.put(rsC.getInt(1), rsC.getString(2));
+							traitMap.put(rsC.getString(2), rsC.getInt(1));
+						//traitsComList.add(rsC.getString(1)+"!~!"+rsC.getString(2)+"!~!"+rsC.getString(3));
+					}
+					rsN=stmtN.executeQuery("select distinct cvterm_id, name from cvterm");
+					while(rsN.next()){
+						if(!(traitsComList.contains(rsN.getString(1)))){
+							traitsComList.add(rsN.getString(1));
+							map.put(rsN.getString(1), rsN.getString(2)+"!~!"+rsN.getInt(1));							
+						}
+						if(!tidsList.contains(rsN.getString(2)))
+							traitsMap.put(rsN.getInt(1), rsN.getString(2));
+						traitMap.put(rsN.getString(2), rsN.getInt(1));
+					}
 					String mtaMarkerIds="";
 					String mtaMapIds="";
 					int mtaCount=0;
@@ -1816,6 +1790,7 @@ public class DataRetrieveAction extends Action{
 						mtaMapIds=mtaMapIds+rsL.getInt(2)+",";
 						mtaCount++;
 					}
+					System.out.println("mtaMapIds=:"+mtaMapIds);
 					if(mtaCount>0){
 						mtaMarkerIds=mtaMarkerIds.substring(0, mtaMarkerIds.length()-1);
 						//System.out.println("mtaMarkerIds..........:"+mtaMarkerIds);
@@ -1836,14 +1811,29 @@ public class DataRetrieveAction extends Action{
 						}
 						/*getting maps of mta's from both central and local */
 					
-						rsMaps=stCen.executeQuery("SELECT map_id, map_name FROM gdms_map where map_id in ("+mtaMapIds+")");
+						rsMaps=stCen.executeQuery("SELECT map_id, map_name FROM gdms_map");
 						while(rsMaps.next()){
 							if(!(mtas.contains(rsMaps.getInt(1)))){
 								mtas.add(rsMaps.getInt(1));
 								mtaMaps.put(rsMaps.getInt(1), rsMaps.getString(2));
 							}
 						}
-						rsMapsL=stLoc.executeQuery("SELECT map_id, map_name FROM gdms_map where map_id in ("+mtaMapIds+")");
+						rsMapsL=stLoc.executeQuery("SELECT map_id, map_name FROM gdms_map");
+						while(rsMapsL.next()){
+							if(!(mtas.contains(rsMapsL.getInt(1)))){
+								mtas.add(rsMapsL.getInt(1));
+								mtaMaps.put(rsMapsL.getInt(1), rsMapsL.getString(2));
+							}
+						}
+					}else{
+						rsMaps=stCen.executeQuery("SELECT map_id, map_name FROM gdms_map");
+						while(rsMaps.next()){
+							if(!(mtas.contains(rsMaps.getInt(1)))){
+								mtas.add(rsMaps.getInt(1));
+								mtaMaps.put(rsMaps.getInt(1), rsMaps.getString(2));
+							}
+						}
+						rsMapsL=stLoc.executeQuery("SELECT map_id, map_name FROM gdms_map");
 						while(rsMapsL.next()){
 							if(!(mtas.contains(rsMapsL.getInt(1)))){
 								mtas.add(rsMapsL.getInt(1));
@@ -1858,12 +1848,16 @@ public class DataRetrieveAction extends Action{
 							//qtlId=rs1.getInt(1);
 							qtl_id=qtl_id+rs1C.getInt(2)+",";	
 							count=count+1;
+							if(!tid.contains(rs1C.getInt(1)))
+								tid.add(rs1C.getInt(1));
 						}
 						rs1=stLoc.executeQuery("select distinct tid, qtl_id from gdms_qtl_details order by qtl_id");
 						while(rs1.next()){
 							//qtlId=rs1.getInt(1);
 							qtl_id=qtl_id+rs1.getInt(2)+",";	
 							count=count+1;
+							if(!tid.contains(rs1.getInt(1)))
+								tid.add(rs1.getInt(1));
 						}
 						//System.out.println(count+"   "+qtl_id);
 						rsMtasC=stCen.executeQuery("select * from gdms_mta");
@@ -1881,8 +1875,20 @@ public class DataRetrieveAction extends Action{
 					}else{
 						String tids="";
 						int tidsCount=0;
+						
+						String trAbbr=qtl;
+						//System.out.println("testGetCvTermById(): " + term);
+						//System.out.println("Test FindStandardVariablesByNameOrSynonym");
+						Set<StandardVariable> standardVariables = om.findStandardVariablesByNameOrSynonym(trAbbr);
+						assertTrue(standardVariables.size() == 1);
+						for (StandardVariable stdVar : standardVariables) {
+							System.out.println(stdVar.getId()+"   "+stdVar.getNameSynonyms()+"   "+stdVar.getName());
+							tids=tids+stdVar.getId()+",";
+							tidsCount++;
+						}
+						
 						//rs1=st.executeQuery("select qtl_id from qtl_linkagemap where trait='"+qtl+"' order by qtl_id");
-						rsM=stCen.executeQuery("select tid from tmstraits where trabbr like '"+qtl+"%' order by tid");
+						/*rsM=stCen.executeQuery("select tid from tmstraits where trabbr like '"+qtl+"%' order by tid");
 						while(rsM.next()){
 							tids=tids+rsM.getInt(1)+",";
 							tidsCount++;
@@ -1891,7 +1897,7 @@ public class DataRetrieveAction extends Action{
 						while(rsML.next()){
 							tids=tids+rsML.getInt(1)+",";
 							tidsCount++;
-						}
+						}*/
 						if(tidsCount>0){
 						rs1C=stCen.executeQuery("select qtl_id from gdms_qtl_details where tid in("+tids.substring(0, tids.length()-1)+") order by tid");						
 						while(rs1C.next()){
@@ -1909,15 +1915,16 @@ public class DataRetrieveAction extends Action{
 							qtl_id=qtl_id+rs1.getInt(1)+",";	
 							count=count+1;
 						}
+						//qtl=qtl+"%";
 						//System.out.println("traitsMap:"+traitsMap);
-						rsMtasC=stCen.executeQuery("select * from gdms_mta where trait like '"+qtl+"%'");
+						rsMtasC=stCen.executeQuery("select * from gdms_mta where tid ="+traitMap.get(qtl));
 						while(rsMtasC.next()){
 							mtaList=mtaList+traitsMap.get(Integer.parseInt(rsMtasC.getString("tid")))+"!~!"+mtaMap.get(rsMtasC.getInt("marker_id"))+"!~!"+mtaMaps.get(rsMtasC.getInt("map_id"))+"!~!"+rsMtasC.getString("linkage_group")+"!~!"+rsMtasC.getFloat("position")+"!~!"+rsMtasC.getString("hv_allele")+"!~!"+rsMtasC.getInt("effect")+"!~!"+rsMtasC.getString("experiment")+"!~!"+rsMtasC.getFloat("score_value")+"!~!"+rsMtasC.getFloat("r_square")+"~~!!~~";
 							mtaExists=true;
 						}
 						
 						
-						rsMtas=stLoc.executeQuery("select * from gdms_mta where trait like '"+qtl+"%'");
+						rsMtas=stLoc.executeQuery("select * from gdms_mta where tid ="+traitMap.get(qtl));
 						while(rsMtas.next()){
 							mtaList=mtaList+traitsMap.get(Integer.parseInt(rsMtas.getString("tid")))+"!~!"+mtaMap.get(rsMtas.getInt("marker_id"))+"!~!"+mtaMaps.get(rsMtas.getInt("map_id"))+"!~!"+rsMtas.getString("linkage_group")+"!~!"+rsMtas.getFloat("position")+"!~!"+rsMtas.getString("hv_allele")+"!~!"+rsMtas.getInt("effect")+"!~!"+rsMtas.getString("experiment")+"!~!"+rsMtas.getFloat("score_value")+"!~!"+rsMtas.getFloat("r_square")+"~~!!~~";
 							mtaExists=true;
@@ -1941,18 +1948,18 @@ public class DataRetrieveAction extends Action{
 					req.getSession().setAttribute("qtl", qtl);
 					//System.out.println("traitsMap=:"+traitsMap);
 					
-					rsQC=stCen.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.tid, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square, gdms_qtl_details.interactions, gdms_qtl_details.clen, gdms_qtl_details.se_additive, gdms_qtl_details.hv_parent, gdms_qtl_details.hv_allele, gdms_qtl_details.lv_parent, gdms_qtl_details.lv_allele FROM gdms_qtl_details, gdms_qtl, gdms_map WHERE gdms_qtl_details.qtl_id IN("+qtl_id.substring(0,qtl_id.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
+					rsQC=stCen.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_id,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.tid, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square, gdms_qtl_details.interactions, gdms_qtl_details.clen, gdms_qtl_details.se_additive, gdms_qtl_details.hv_parent, gdms_qtl_details.hv_allele, gdms_qtl_details.lv_parent, gdms_qtl_details.lv_allele FROM gdms_qtl_details, gdms_qtl, gdms_map WHERE gdms_qtl_details.qtl_id IN("+qtl_id.substring(0,qtl_id.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
 					while(rsQC.next()){
 						//System.out.println(",,,,,,,CEN,,,,,,,,,:"+rsQC.getInt(6));
 						//strData=strData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+";;;";
-						qtlDataList.add(rsQC.getString(1)+"!~!"+rsQC.getString(2)+"!~!"+rsQC.getString(3)+"!~!"+rsQC.getFloat(4)+"!~!"+rsQC.getFloat(5)+"!~!"+traitsMap.get(rsQC.getInt(6))+"!~!"+rsQC.getString(7)+"!~!"+rsQC.getString(8)+"!~!"+rsQC.getString(9)+"!~!"+rsQC.getFloat(10)+"!~!"+rsQC.getFloat(11)+"!~!"+rsQC.getString(13)+"!~!"+rsQC.getFloat(12)+"!~!"+rsQC.getString(14)+"!~!"+rsQC.getString(15)+"!~!"+rsQC.getString(16)+"!~!"+rsQC.getString(17)+"!~!"+rsQC.getString(18)+"!~!"+rsQC.getString(19));
+						qtlDataList.add(rsQC.getString(1)+"!~!"+mtaMaps.get(rsQC.getInt(2))+"!~!"+rsQC.getString(3)+"!~!"+rsQC.getFloat(4)+"!~!"+rsQC.getFloat(5)+"!~!"+traitsMap.get(rsQC.getInt(6))+"!~!"+rsQC.getString(7)+"!~!"+rsQC.getString(8)+"!~!"+rsQC.getString(9)+"!~!"+rsQC.getFloat(10)+"!~!"+rsQC.getFloat(11)+"!~!"+rsQC.getString(13)+"!~!"+rsQC.getFloat(12)+"!~!"+rsQC.getString(14)+"!~!"+rsQC.getString(15)+"!~!"+rsQC.getString(16)+"!~!"+rsQC.getString(17)+"!~!"+rsQC.getString(18)+"!~!"+rsQC.getString(19));
 					}		
 					
-					rs=stLoc.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_name,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.tid, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square, gdms_qtl_details.interactions, gdms_qtl_details.clen, gdms_qtl_details.se_additive, gdms_qtl_details.hv_parent, gdms_qtl_details.hv_allele, gdms_qtl_details.lv_parent, gdms_qtl_details.lv_allele FROM gdms_qtl_details, gdms_qtl, gdms_map WHERE gdms_qtl_details.qtl_id IN("+qtl_id.substring(0,qtl_id.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
+					rs=stLoc.executeQuery("SELECT gdms_qtl.qtl_name,gdms_map.map_id,gdms_qtl_details.linkage_group AS chromosome, gdms_qtl_details.min_position, gdms_qtl_details.max_position, gdms_qtl_details.tid, gdms_qtl_details.experiment, gdms_qtl_details.left_flanking_marker, gdms_qtl_details.right_flanking_marker, gdms_qtl_details.effect, gdms_qtl_details.score_value, gdms_qtl_details.r_square, gdms_qtl_details.interactions, gdms_qtl_details.clen, gdms_qtl_details.se_additive, gdms_qtl_details.hv_parent, gdms_qtl_details.hv_allele, gdms_qtl_details.lv_parent, gdms_qtl_details.lv_allele FROM gdms_qtl_details, gdms_qtl, gdms_map WHERE gdms_qtl_details.qtl_id IN("+qtl_id.substring(0,qtl_id.length()-1)+") AND gdms_qtl.qtl_id=gdms_qtl_details.qtl_id AND gdms_qtl_details.map_id=gdms_map.map_id order by gdms_qtl.qtl_id");
 					while(rs.next()){
 						//System.out.println(",,,,,,,,,Loc ,,,,,,,,:"+rs.getInt(6));
 						//strData=strData+rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+rs.getString(6)+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+";;;";
-						qtlDataList.add(rs.getString(1)+"!~!"+rs.getString(2)+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+traitsMap.get(rs.getInt(6))+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+"!~!"+rs.getString(14)+"!~!"+rs.getString(15)+"!~!"+rs.getString(16)+"!~!"+rs.getString(17)+"!~!"+rs.getString(18)+"!~!"+rs.getString(19));
+						qtlDataList.add(rs.getString(1)+"!~!"+mtaMaps.get(rs.getInt(2))+"!~!"+rs.getString(3)+"!~!"+rs.getFloat(4)+"!~!"+rs.getFloat(5)+"!~!"+traitsMap.get(rs.getInt(6))+"!~!"+rs.getString(7)+"!~!"+rs.getString(8)+"!~!"+rs.getString(9)+"!~!"+rs.getFloat(10)+"!~!"+rs.getFloat(11)+"!~!"+rs.getString(13)+"!~!"+rs.getFloat(12)+"!~!"+rs.getString(14)+"!~!"+rs.getString(15)+"!~!"+rs.getString(16)+"!~!"+rs.getString(17)+"!~!"+rs.getString(18)+"!~!"+rs.getString(19));
 					}					
 					
 					

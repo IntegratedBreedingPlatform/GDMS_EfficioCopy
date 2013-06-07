@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.SortedMap;
-import java.util.StringTokenizer;
 import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,12 +22,13 @@ import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 
-import org.generationcp.middleware.manager.DatabaseConnectionParameters;
+import org.generationcp.middleware.manager.GetGermplasmByNameModes;
 import org.generationcp.middleware.manager.ManagerFactory;
+import org.generationcp.middleware.manager.Operation;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
+import org.generationcp.middleware.pojos.Germplasm;
 import org.generationcp.middleware.pojos.Name;
 import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
-import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
@@ -44,7 +44,8 @@ public class SSRGenotypingDataUpload {
 	java.sql.Connection conn;
 	java.sql.Connection con;
 	
-	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();  
+	//static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>();
+	static Map<String, ArrayList<Integer>> hashMap = new HashMap<String,  ArrayList<Integer>>(); 
 	Properties prop=new Properties();
 	
 	public String getUpload(HttpServletRequest request, String fname) throws SQLException{
@@ -100,6 +101,7 @@ public class SSRGenotypingDataUpload {
 	        String notMatchingData="";
 	        String notMatchingGIDS="";
 	        String notMatchingDataExists="";
+	        String notMatchingDataDB="";
 	        int markerID=0;
 	        String ErrMsg = "";
 			//int intDataOrderIndex = 1;
@@ -253,9 +255,10 @@ public class SSRGenotypingDataUpload {
 				ArrayList gidsForQuery=new ArrayList();
 				String gNames="";
 				HashMap<Integer, String> GIDsMap = new HashMap<Integer, String>();
+				HashMap<String, Integer> GIDsMap1 = new HashMap<String, Integer>();
 				ArrayList gidNamesList=new ArrayList();
 				 //SortedMap GIDsMap = new TreeMap();
-	            for(int d=1;d<gidsList.size();d++){	               
+	            for(int d=0;d<gidsList.size();d++){	               
 	            	//gidsForQuery = gidsForQuery + gidsList.get(d)+",";
 	            	
 	            	gNames=gNames+"'"+gnamesList.get(d).toString()+"',";
@@ -264,6 +267,7 @@ public class SSRGenotypingDataUpload {
 	            	
 	            	
 	            	GIDsMap.put((Integer.parseInt(gidsList.get(d).toString())), gnamesList.get(d).toString());
+	            	GIDsMap1.put(gnamesList.get(d).toString(),(Integer.parseInt(gidsList.get(d).toString())));
 	            }
 	            //gidsForQuery=gidsForQuery.substring(0, gidsForQuery.length()-1);
 	           // System.out.println("GIDsMap.."+GIDsMap);
@@ -276,15 +280,31 @@ public class SSRGenotypingDataUpload {
 	            List lstgermpName = new ArrayList();
 	            
 				List<Name> names = null;
-				for(int n=0;n<gidsList.size();n++){
+				/*for(int n=0;n<gidsList.size();n++){
 					names = manager.getNamesByGID(Integer.parseInt(gidsList.get(n).toString()), null, null);
 					for (Name name : names) {					
 						 lstgermpName.add(name.getGermplasmId());
 						 gidsmap.put(name.getGermplasmId(), name.getNval());
 						 addValues(name.getGermplasmId(), name.getNval().toLowerCase());	
 			        }
+				}*/
+	            ArrayList gidsDBList = new ArrayList();
+				ArrayList gNamesDBList = new ArrayList();
+				hashMap.clear();
+				for(int n=0;n<gnamesList.size();n++){
+					List<Germplasm> germplasmList = manager.getGermplasmByName(gnamesList.get(n).toString(), 0, new Long(manager.countGermplasmByName(gnamesList.get(n).toString(), Operation.EQUAL)).intValue(), Operation.EQUAL);
+					for (Germplasm g : germplasmList) {
+						System.out.println("Checking  ==:"+g.getGid()+"   "+gnamesList.get(n));
+					
+			        	if(!(gidsDBList.contains(g.getGid()))){
+			        		gidsDBList.add(g.getGid());
+			        		gNamesDBList.add(gnamesList.get(n).toString());
+			        		addValues(gnamesList.get(n).toString(), g.getGid());					        		
+			        	}				        	
+			           //System.out.println("  " + g.getGid());
+			        }
+			        //System.out.println(n+":"+gnamesList.get(n).toString()+"   "+hashMap.get(gnamesList.get(n).toString()));
 				}
-	            
 	            
 	           /* SortedMap gidsmap = new TreeMap();
 	            List lstgermpName = new ArrayList();
@@ -298,7 +318,7 @@ public class SSRGenotypingDataUpload {
 	            /*Iterator iterator = gidsmap.keySet().iterator();
 		        Iterator iterator1 = sortedMap.keySet().iterator();*/
 	           //System.out.println("map=:"+map.size());
-	           if(gidsmap.size()==0){
+	           if(gNamesDBList.size()==0){
 	        	   alertGID="yes";
 	        	   size=0;
 	           }
@@ -320,8 +340,8 @@ public class SSRGenotypingDataUpload {
 	          // String gNameFromMap="";
 	           ArrayList gNameFromMap=new ArrayList();
 	           //System.out.println("gidNamesList="+gidNamesList);
-	           if(gidsmap.size()>0){
-		           for(int gi=0;gi<gidNamesList.size();gi++){
+	           if(gNamesDBList.size()>0){
+		           /*for(int gi=0;gi<gidNamesList.size();gi++){
 		        	   String arrP[]=new String[3];
 						 StringTokenizer stzP = new StringTokenizer(gidNamesList.get(gi).toString(), ",");
 						 int iP=0;
@@ -346,19 +366,34 @@ public class SSRGenotypingDataUpload {
 		        		   size=sortedMap.size();
 		        		   notMatchingGIDS=notMatchingGIDS+gidToCompare+", ";
 		        	   }
-		           }
+		           }*/
+		           for(int n=0;n<gnamesList.size();n++){
+	        		   if(gNamesDBList.contains(gnamesList.get(n))){
+	        			   if(!(hashMap.get(gnamesList.get(n).toString()).contains(GIDsMap1.get(gnamesList.get(n).toString())))){
+	        				   notMatchingData=notMatchingData+gnamesList.get(n)+"   "+GIDsMap1.get(gnamesList.get(n).toString())+"\n\t";
+	        				   notMatchingDataDB=notMatchingDataDB+gnamesList.get(n)+"="+hashMap.get(gnamesList.get(n))+"\t";
+			        		   alertGN="yes";
+	        			   }
+	        		   }else{
+	        			   //int gid=GIDsMap.get(gnamesList.get(n).toString());
+	        			   alertGID="yes";
+		        		   size=hashMap.size();
+		        		   notMatchingGIDS=notMatchingGIDS+gnamesList.get(n).toString()+", ";
+	        		   }
+	        	   }
 	           }
 	           if((alertGN.equals("yes"))&&(alertGID.equals("no"))){
 	        	   //String ErrMsg = "GID(s) ["+notMatchingGIDS.substring(0,notMatchingGIDS.length()-1)+"] of Germplasm(s) ["+notMatchingData.substring(0,notMatchingData.length()-1)+"] being assigned to ["+notMatchingDataExists.substring(0,notMatchingDataExists.length()-1)+"] \n Please verify the template ";
-	        	   ErrMsg = "Please verify the name(s) provided with the following GID(s) which do not match the name(s) present in the database: \n\t "+notMatchingData;
+	        	   ErrMsg = "Please verify the name(s) provided \t "+notMatchingData+" which do not match the GID(s) present in the database"+notMatchingDataDB;
 	        	   request.getSession().setAttribute("indErrMsg", ErrMsg);
 	        	   return "ErrMsg";	 
 	           }
 	           if((alertGID.equals("yes"))&&(alertGN.equals("no"))){	        	   
 	        	   if(size==0){
-	        		   ErrMsg = "The GIDs provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS ";
+	        		   //ErrMsg = "The GIDs provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS ";
+	        		   ErrMsg = "The Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook ";
 	        	   }else{
-	        		   ErrMsg = "The following GID(s) provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS \n \t"+notMatchingGIDS;
+	        		   ErrMsg = "The following Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook \n \t"+notMatchingGIDS;
 	        		   //ErrMsg = "Please verify the GID/Germplasm(s) provided as some of them do not exist in the database. \n Please upload germplasm information into GMS ";
 	        	   }	        	   
 	        	   //ErrMsg = "Please verify the following GID/Germplasm(s) doesnot exists. \n Upload germplasm Information into GMS \n\t"+notMatchingGIDS;
@@ -367,7 +402,7 @@ public class SSRGenotypingDataUpload {
 	           }
 			
 	           if((alertGID.equals("yes"))&&(alertGN.equals("yes"))){
-	        	   ErrMsg = "The following GID(s) provided do not exist in the database. \n Please upload the relevant germplasm information to the GMS \n \t"+notMatchingGIDS+" \n Please verify the name(s) provided with the following GID(s) which do not match the name(s) present in the database: \n\t "+notMatchingData;
+	        	   ErrMsg = "The following Germplasm(s) provided do not exist in the database. \n Please upload the relevant germplasm information through the Fieldbook \n \t"+notMatchingGIDS+" \n Please verify the name(s) provided "+notMatchingData+" which do not match the GIDS(s) present in the database "+notMatchingDataDB;
 	        	   request.getSession().setAttribute("indErrMsg", ErrMsg);
 	        	   return "ErrMsg";	 
 	           }
@@ -384,8 +419,8 @@ public class SSRGenotypingDataUpload {
 	            //System.out.println("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
 	            
 	            
-	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
-	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markersForQuery+")");
+	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+markersForQuery.toLowerCase()+")");
+	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+markersForQuery.toLowerCase()+")");
 	            
 	            while(rsMC.next()){
 	            	//lstMarIdNames.add(rsMC.getString(2)+":"+rsMC.getString(1));
@@ -430,7 +465,7 @@ public class SSRGenotypingDataUpload {
 			while(rsLoc.next()){
 				result1.add(rsLoc.getString(1));						
 			}
-			//System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+			
 			rsCen=stCen.executeQuery("select dataset_name from gdms_dataset where dataset_name='"+dname+"'");
 			while(rsCen.next()){
 				result1.add(rsCen.getString(1));	
@@ -469,48 +504,23 @@ public class SSRGenotypingDataUpload {
 			//System.out.println("dataset id = ");
 			session.save(ub);
 			
-			/*for(int n=0;n<nidsmap.size();n++){
-				DatasetGidsBean gb= new DatasetGidsBean();
-				gb.setGid(Integer.parseInt(gidsList.get(n).toString()));
-				
-				//gb.setGermplasm_name(gnamesList.get(g).toString());
-				//gb.setDataset_id(dataset_id);
-				session.save(gb);
-			}*/
-			/*ArrayList lstNids=uptMId.getNids("gid, nid", "names", "nval", session, gNames.substring(0,gNames.length()-1));
-	        for(int w=0;w<lstNids.size();w++){
-	        	Object[] strMareO= (Object[])lstNids.get(w);
-	            //System.out.println("....."+strMareO[0]+"   "+strMareO[1]);
-	            DatasetGidsBean gb= new DatasetGidsBean();
-	 			gb.setGid(Integer.parseInt(strMareO[0].toString()));
-	 			gb.setNid(Integer.parseInt(strMareO[1].toString()));
-	 				
-	 			session.save(gb);
-	 		}*/
 			SortedMap mapN = new TreeMap();
 			//System.out.println(",,,,,,,,,,,,,,,,,gNames="+gNames);
 			ArrayList finalList =new ArrayList();
 			ArrayList gidL=new ArrayList();
 			
-			/*ArrayList lstNids=uptMId.getNids("gid, nid", "names", "nval", session, gNames.substring(0,gNames.length()-1));
-			for(int w=0;w<lstNids.size();w++){
-	        	Object[] strMareO= (Object[])lstNids.get(w);
-	           // System.out.println("W=....."+w+"    "+strMareO[0]+"   "+strMareO[1]);
-	            if(!gidL.contains(Integer.parseInt(strMareO[0].toString())))
-	            	gidL.add(Integer.parseInt(strMareO[0].toString()));
-	            mapN.put(Integer.parseInt(strMareO[0].toString()), strMareO[1]);
-	          
-	 		}*/
-			
 			Name name = null;
+			
 			for(int n=0;n<gidsList.size();n++){
-				name = manager.getNameByGIDAndNval(Integer.parseInt(gidsList.get(n).toString()), gnamesList.get(n).toString());
+				name = manager.getNameByGIDAndNval(Integer.parseInt(gidsList.get(n).toString()), gnamesList.get(n).toString(), GetGermplasmByNameModes.STANDARDIZED);
+				if(name==null){
+					name=manager.getNameByGIDAndNval(Integer.parseInt(gidsList.get(n).toString()), gnamesList.get(n).toString(), GetGermplasmByNameModes.NORMAL);
+				}
 				if(!gidL.contains(name.getGermplasmId()))
 	            	gidL.add(name.getGermplasmId());
 	            mapN.put(name.getGermplasmId(), name.getNid());
-				
 			}
-			
+			//System.out.println("mapN=:"+mapN);
 	       
 	        for(int a=0;a<gidsList.size();a++){
 	        	int gid1=Integer.parseInt(gidsList.get(a).toString());
@@ -788,12 +798,12 @@ public class SSRGenotypingDataUpload {
 		}
 		return str;
 	}
-	private static void addValues(int key, String value){
-		ArrayList<String> tempList = null;
+	private static void addValues(String key, Integer value){
+		ArrayList<Integer> tempList = null;
 		if(hashMap.containsKey(key)){
 			tempList=hashMap.get(key);
 			if(tempList == null)
-				tempList = new ArrayList<String>();
+				tempList = new ArrayList<Integer>();
 			tempList.add(value);
 		}else{
 			tempList = new ArrayList();

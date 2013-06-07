@@ -153,7 +153,7 @@ public class MapDataUpload {
 					while(rsLoc.next()){
 						result1.add(rsLoc.getString(1));						
 					}
-					//System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
+					
 					rsCen=stCen.executeQuery("select map_name from gdms_map where map_name='"+map_name+"'");
 					while(rsCen.next()){
 						result1.add(rsCen.getString(1));	
@@ -308,8 +308,8 @@ public class MapDataUpload {
 	            List lstMarkers = new ArrayList();
 	            
 	            //System.out.println("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markers.substring(0, markers.length()-1)+")");
-	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markers.substring(0, markers.length()-1)+")");
-	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where marker_name in ("+markers.substring(0, markers.length()-1)+")");
+	            rsML=stLoc.executeQuery("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+markers.substring(0, markers.length()-1).toLowerCase()+")");
+	            rsMC=stCen.executeQuery("select distinct marker_id, marker_name from gdms_marker where Lower(marker_name) in ("+markers.substring(0, markers.length()-1).toLowerCase()+")");
 	            
 	            while(rsMC.next()){
 	            	//lstMarIdNames.add(rsMC.getString(2)+":"+rsMC.getString(1));

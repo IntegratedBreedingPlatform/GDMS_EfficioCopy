@@ -84,6 +84,8 @@
    <form-property name="exportTypeH" type="java.lang.String"/>
    <form-property name="GNamesText" type="java.lang.String"/>
    <form-property name="SearchMark" type="java.lang.String"/>
+   <form-property name="fromPage" type="java.lang.String"/>
+    <form-property name="mapsCount" type="java.lang.String"/>
   </form-bean>
   <form-bean name="datadeletion" type="org.apache.struts.action.DynaActionForm">
    <form-property name="delOpQ" type="java.lang.String"/>
@@ -94,6 +96,7 @@
    <form-property name="maps" type="java.lang.String"/>
    <form-property name="dataSet" type="java.lang.String"/>
    <form-property name="getOp" type="java.lang.String"/>
+  
   </form-bean>
  </form-beans>
  <global-exceptions/>

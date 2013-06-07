@@ -56,8 +56,8 @@ function msg(){
 							&nbsp;&nbsp;&nbsp;<html:text property="qtl" value="" style="COLOR:#666;"/>
 						</td>
 					</tr>
-						
-					
+					<tr><td>&nbsp;</td></tr>	
+					<tr class="displayText" align="center"><td>Enter asterisk (*) to retrieve all </td></tr>
 					<tr><td>&nbsp;</td></tr>
 					<tr><td>&nbsp;</td></tr>
 					<tr class="displayText" align="center">

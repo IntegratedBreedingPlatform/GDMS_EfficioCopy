@@ -1,5 +1,7 @@
 package org.icrisat.gdms.upload;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.sql.DriverManager;
@@ -9,8 +11,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -22,6 +27,9 @@ import jxl.Sheet;
 import jxl.Workbook;
 
 import org.generationcp.middleware.manager.ManagerFactory;
+import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
+import org.generationcp.middleware.v2.domain.StandardVariable;
+import org.generationcp.middleware.v2.manager.api.OntologyDataManager;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -42,7 +50,7 @@ public class QTLDataUpload {
 		session = HibernateSessionFactory.currentSession(crop);
 		tx=session.beginTransaction();	
 	}*/
-		
+	static Map<Integer, ArrayList<String>> hashMap = new HashMap<Integer,  ArrayList<String>>(); 	
 	public String setQTLData(HttpServletRequest request, String qtlfile) throws SQLException{
 		String result = "inserted";
 		String dataset_type="QTL";
@@ -98,7 +106,8 @@ public class QTLDataUpload {
 			factory = new ManagerFactory(local, central);
 			TraitDataManager manager=factory.getTraitDataManager();			
 			*/
-			
+			 factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(request);
+				OntologyDataManager om=factory.getNewOntologyDataManager();
 			String ErrMsg="";
 			MaxIdValue uptMId=new MaxIdValue();
 			
@@ -179,6 +188,20 @@ public class QTLDataUpload {
 			 SortedMap map = new TreeMap();
 	         List retTraits = new ArrayList();
 			
+	         for(int t=0;t<traitList.size();t++){
+	        	 Set<StandardVariable> standardVariables = om.findStandardVariablesByNameOrSynonym(traitList.get(t).toString());
+				assertTrue(standardVariables.size() == 1);
+				for (StandardVariable stdVar : standardVariables) {
+					System.out.println(stdVar.getId()+"   "+stdVar.getNameSynonyms()+"   "+stdVar.getName());
+					traitsComList.add(stdVar.getId());
+					retTraits.add(stdVar.getName());
+					map.put(stdVar.getName(), stdVar.getId());
+					/*tids=tids+stdVar.getId()+",";
+					tidsCount++;*/
+				}
+	         }
+	         
+	        /* 
 			//System.out.println("select traitid, trabbr from tmstraits where trabbr in ("+traits+")");
 			rsCen=stCen.executeQuery("select tid, trabbr from tmstraits where trabbr in ("+traits+")");
 			while(rsCen.next()){
@@ -193,7 +216,7 @@ public class QTLDataUpload {
 				//+"!~!"+rsN.getString(2)+"!~!"+rsN.getString(3));
 				retTraits.add(rsLoc.getString(2));
 				map.put(rsLoc.getString(2), rsLoc.getString(1));
-			}
+			}*/
 			
 			rsQL=stLoc.executeQuery("select * from gdms_qtl where qtl_name in ("+qtls+")");
 			rsQC=stCen.executeQuery("select * from gdms_qtl where qtl_name in ("+qtls+")");
@@ -384,24 +407,42 @@ public class QTLDataUpload {
 			//int qtlId=intqtlId+1;
 			int qtlId=intqtlId-1;
 			List mapIdL=new ArrayList();
-			
+			List mapIdLG=new ArrayList();
 			//System.out.println("rowCount=:"+rowCount);
+			hashMap.clear();
 			for (int i=1;i<rowCount;i++){
 				if(sheetData.getCell(1,i).getContents().trim()!=""){
 					//System.out.println("select map_id from gdms_map where map_name='"+sheetData.getCell(2,i).getContents().trim()+"'");
-					rsML=stLoc.executeQuery("select map_id from gdms_map where map_name='"+sheetData.getCell(2,i).getContents().trim()+"'");
-					rsMC=stCen.executeQuery("select map_id from gdms_map where map_name='"+sheetData.getCell(2,i).getContents().trim()+"'");
+					rsML=stLoc.executeQuery("select gdms_map.map_id, gdms_markers_onmap.linkage_group from gdms_map join gdms_markers_onmap on gdms_map.map_id=gdms_markers_onmap.map_id where gdms_map.map_name='"+sheetData.getCell(2,i).getContents().trim()+"'");
+					rsMC=stCen.executeQuery("select gdms_map.map_id, gdms_markers_onmap.linkage_group from gdms_map join gdms_markers_onmap on gdms_map.map_id=gdms_markers_onmap.map_id where gdms_map.map_name='"+sheetData.getCell(2,i).getContents().trim()+"'");
 					while(rsMC.next()){
-						mapIdL.add(rsMC.getInt(1));
+						if(!(mapIdL.contains(rsMC.getInt(1)))){
+							mapIdL.add(rsMC.getInt(1));							
+						}
+						if(!(mapIdLG.contains(rsMC.getString(2)))){
+							mapIdLG.add(rsMC.getString(2));	
+							addValues(rsMC.getInt(1), rsMC.getString(2));
+						}
 					}
 					while(rsML.next()){
-						if(!(mapIdL.contains(rsML.getInt(1))))
-							mapIdL.add(rsML.getInt(1));
+						if(!(mapIdL.contains(rsML.getInt(1)))){
+							mapIdL.add(rsML.getInt(1));							
+						}
+						if(!(mapIdLG.contains(rsML.getString(2)))){
+							mapIdLG.add(rsML.getString(2));	
+							addValues(rsML.getInt(1), rsML.getString(2));
+						}
 					}
-					//mapId=uptMId.getMapId("map_id", "gdms_map", "map_name", session,sheetData.getCell(2,i).getContents().trim());
-					//System.out.println("mapId="+mapIdL);
+					
 					if(mapIdL.size()!=0){
 						linkMapId=linkMapId+mapIdL.get(0)+",";
+						if(!mapIdLG.contains(sheetData.getCell(1,i).getContents().trim().toString())){
+							ExcelSheetColumnName escn =  new ExcelSheetColumnName();
+							String strColName = escn.getColumnName(sheetData.getCell(1, i).getColumn());
+							ErrMsg = "Please Check. \n Linkage Group `"+sheetData.getCell(1,i).getContents().trim()+"` at cell position "+strColName+(sheetData.getCell(1, i).getRow()+1+" in template uploaded does not match with the Linkage Grounp in Map "+hashMap.get(mapIdL.get(0)));
+							request.getSession().setAttribute("indErrMsg", ErrMsg);
+							return "ErrMsg";
+						}
 					}else{
 						ExcelSheetColumnName escn =  new ExcelSheetColumnName();
 						String strColName = escn.getColumnName(sheetData.getCell(2, i).getColumn());
@@ -488,4 +529,18 @@ public class QTLDataUpload {
 		return result;	
 	}
 
+	private static void addValues(Integer key, String value){
+		ArrayList<String> tempList = null;
+		if(hashMap.containsKey(key)){
+			tempList=hashMap.get(key);
+			if(tempList == null)
+				tempList = new ArrayList<String>();
+			tempList.add(value);
+		}else{
+			tempList = new ArrayList();
+			tempList.add(value);
+		}
+		hashMap.put(key,tempList);
+	}
+	
 }

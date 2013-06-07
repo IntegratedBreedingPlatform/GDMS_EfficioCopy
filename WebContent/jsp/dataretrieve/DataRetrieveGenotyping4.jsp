@@ -82,7 +82,11 @@
 		 		<td nowrap="nowrap">&nbsp;<%=arg[9] %></td><td nowrap="nowrap">&nbsp;<%=arg[10] %></td>
 		 		<td nowrap="nowrap">&nbsp;<%=arg[12] %></td><td nowrap="nowrap">&nbsp;<%=arg[11] %></td>
 		 		<td nowrap="nowrap">&nbsp;<a href='<%=cpath%>' target="new">CMap</a></td>
+		 		<%if(!(arg[15].equals("null"))){%>
 		 		<td nowrap="nowrap">&nbsp;<%=arg[15] %></td>
+		 		<%}else{%>
+		 		<td nowrap="nowrap">&nbsp;</td>
+		 		<%} %>
 		 		<%if(!(arg[16].equals("null"))){%>
 		 		<td nowrap="nowrap">&nbsp;<%=arg[16] %></td>
 		 		<%}else{%>

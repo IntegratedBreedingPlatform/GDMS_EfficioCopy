@@ -49,7 +49,7 @@
 				<html:errors/>
 				<br>
 				<% if(session.getAttribute("dataC")=="yes") {%>
-				<br>
+				
 				<div align="center" class="displayText">Can delete Genotyping Data, QTL information Maps & MTAs from <b>Local</b></div><br>
 				<div align="center" class="displayText">Showing the available data as datasets </div>
     			<br><br>    								

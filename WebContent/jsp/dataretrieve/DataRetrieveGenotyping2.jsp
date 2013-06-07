@@ -567,18 +567,12 @@
  				</logic:notEmpty>
  				<center>
 					<br><br>
- 				<html:button property="backButton" value="Back" onclick="javascript:history.back()"/>
- 				
+ 					<html:button property="backButton" value="Back" onclick="javascript:history.back()"/> 				
  				</center>
- 			</logic:empty>
- 			
- 			
- 			
- 			
- 			
- 			
+ 			</logic:empty>	
  			
  			<%} %>
+ 			<html:hidden property="fromPage" />
 		</html:form>
 	</body>
 </html:html>
@@ -598,6 +592,7 @@ function funcSubmitPage(val){
 		}
 	}else if(val=="Create KBio Order Form"){
 		//alert('<%=session.getAttribute("result")%>')	
+		document.forms[0].elements['fromPage'].value='poly';
 		document.forms[0].action="exportKBIOFile.do?poly";
 		document.forms[0].submit();
 	}

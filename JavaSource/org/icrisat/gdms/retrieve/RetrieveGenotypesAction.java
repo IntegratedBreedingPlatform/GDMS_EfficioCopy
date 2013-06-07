@@ -9,7 +9,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -25,11 +27,17 @@ import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.generationcp.middleware.hibernate.HibernateSessionPerThreadProvider;
+import org.generationcp.middleware.hibernate.HibernateSessionProvider;
 import org.generationcp.middleware.manager.DatabaseConnectionParameters;
 import org.generationcp.middleware.manager.ManagerFactory;
+import org.generationcp.middleware.manager.WorkbenchDataManagerImpl;
 import org.generationcp.middleware.manager.api.GermplasmDataManager;
+import org.generationcp.middleware.manager.api.WorkbenchDataManager;
 import org.generationcp.middleware.pojos.Name;
+import org.generationcp.middleware.pojos.workbench.Project;
 import org.generationcp.middleware.support.servlet.MiddlewareServletRequestListener;
+import org.generationcp.middleware.util.HibernateUtil;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -45,7 +53,8 @@ import org.icrisat.gdms.upload.IntArrayBean;
 public class RetrieveGenotypesAction extends Action{
 	java.sql.Connection conn;
 	java.sql.Connection con;
-	
+	private static WorkbenchDataManager wdm;
+	private static HibernateUtil hibernateUtil;
 	public ActionForward execute(ActionMapping am, ActionForm af, HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
 		// TODO Auto-generated method stub
@@ -64,6 +73,8 @@ public class RetrieveGenotypesAction extends Action{
 		mid=Integer.parseInt(mid1);
 		ManagerFactory factory = null;
 		Properties prop=new Properties();
+		String pathWB="";
+		String filePathWB="";
 		try{
 			/*Class.forName("com.mysql.jdbc.Driver");
 			con=DriverManager.getConnection("jdbc:mysql://localhost:3306/icis","root","root");*/
@@ -100,6 +111,31 @@ public class RetrieveGenotypesAction extends Action{
 			
 			
 			factory = MiddlewareServletRequestListener.getManagerFactoryForRequest(req);
+			
+			DatabaseConnectionParameters workbenchDb = new DatabaseConnectionParameters("DatabaseConfig.properties", "workbench");
+	        hibernateUtil = new HibernateUtil(workbenchDb.getHost(), workbenchDb.getPort(), workbenchDb.getDbName(), 
+	                                workbenchDb.getUsername(), workbenchDb.getPassword());
+	        HibernateSessionProvider sessionProvider = new HibernateSessionPerThreadProvider(hibernateUtil.getSessionFactory());
+	        wdm = new WorkbenchDataManagerImpl(sessionProvider);	
+	        
+	        HashMap<Object, String> IBWFProjects= new HashMap<Object, String>();
+	        List<Project> projects = wdm.getProjects();
+	        Long projectId = Long.valueOf(0);
+	        //System.out.println("testGetProjects(): ");
+	        for (Project project : projects) {
+	            //System.out.println("  " + project.getLocalDbName());
+	            projectId = project.getProjectId();
+	            IBWFProjects.put(project.getLocalDbName(),project.getProjectId()+"-"+project.getProjectName());
+	        }
+			String bPath=session.getServletContext().getRealPath("//");
+	        //String bPath="C:\\IBWorkflowSystem\\infrastructure\\tomcat\\webapps\\GDMS";
+	        String opPath=bPath.substring(0, bPath.indexOf("IBWorkflowSystem")-1);
+	       
+	        pathWB=opPath+"/IBWorkflowSystem/workspace/"+IBWFProjects.get(dbNameL)+"/gdms/output/MarkerFiles";
+	        //pathWB="C:/IBWorkflowSystem/workspace/1-TL1_Groundnut/gdms/output/MarkerFiles";
+	      
+	        session.setAttribute("WBPath", pathWB);
+			
 			
 			ArrayList gidsT=new ArrayList();
 			ResultSet rsC=null;

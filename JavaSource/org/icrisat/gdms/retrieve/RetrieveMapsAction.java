@@ -116,11 +116,13 @@ public class RetrieveMapsAction extends Action{
 			String[] maps=null;
 			String marker="";String markersforQuery="";
 			map=df.get("maps").toString();
-			//System.out.println(map);
+			session.setAttribute("maps", map);
+			System.out.println("..............  :"+fromPage);
 			if(fromPage.equalsIgnoreCase("polymap")){
-				//System.out.println(".....**************....."+session.getAttribute("result"));
+				//System.out.println(".....**************....."+session.getAttribute("result"));				
 				markers=(ArrayList)session.getAttribute("result");	
 				//mapName  = map.substring(0,map.lastIndexOf("("));
+				req.getSession().setAttribute("resultM", markers);
 				for(int m=0;m<markers.size();m++){
 					//System.out.println(".....**************....."+markers.get(m));
 					marker=marker+"'"+markers.get(m)+"',";
@@ -159,6 +161,12 @@ public class RetrieveMapsAction extends Action{
 						lstMarkers.add(rsC.getInt(1));
 		            	markersMap.put(rsC.getInt(1), rsC.getString(2));						
 					}
+					rsL=stLoc.executeQuery("select marker_id, marker_name from gdms_marker where marker_name in ("+markersforQuery+")");
+					while(rsL.next()){
+						marker_id=marker_id+rsL.getInt(1)+",";
+						lstMarkers.add(rsL.getInt(1));
+		            	markersMap.put(rsL.getInt(1), rsL.getString(2));						
+					}
 					marker_id=marker_id.substring(0, marker_id.length()-1);
 					rs1C=stCen.executeQuery("SELECT distinct gdms_markers_onmap.marker_id, gdms_map.map_name, gdms_markers_onmap.start_position, gdms_markers_onmap.linkage_group, gdms_map.map_unit FROM gdms_map join gdms_markers_onmap on gdms_map.map_id=gdms_markers_onmap.map_id where gdms_markers_onmap.marker_id in ("+marker_id+") and gdms_map.map_id="+mapId+" order BY gdms_map.map_name, gdms_markers_onmap.linkage_group, gdms_markers_onmap.start_position asc");
 					while(rs1C.next()){	
@@ -174,12 +182,19 @@ public class RetrieveMapsAction extends Action{
 						traitsList.add(markersMap.get(rs2C.getInt(1))+"!~!"+rs2C.getString(2)+"!~!"+rs2C.getString(3)+"!~!"+rs2C.getString(4)+"!~!"+rs2C.getString(5));
 					}
 				}else{
+					rsC=stCen.executeQuery("select marker_id, marker_name from gdms_marker where marker_name in ("+markersforQuery+")");
+					while(rsC.next()){
+						marker_id=marker_id+rsC.getInt(1)+",";
+						lstMarkers.add(rsC.getInt(1));
+		            	markersMap.put(rsC.getInt(1), rsC.getString(2));						
+					}
 					rsL=stLoc.executeQuery("select marker_id, marker_name from gdms_marker where marker_name in ("+markersforQuery+")");
 					while(rsL.next()){
 						marker_id=marker_id+rsL.getInt(1)+",";
 						lstMarkers.add(rsL.getInt(1));
 		            	markersMap.put(rsL.getInt(1), rsL.getString(2));						
 					}
+					System.out.println("#############:"+marker_id);
 					marker_id=marker_id.substring(0, marker_id.length()-1);
 					
 					rs1L=stLoc.executeQuery("SELECT distinct gdms_markers_onmap.marker_id, gdms_map.map_name, gdms_markers_onmap.start_position, gdms_markers_onmap.linkage_group, gdms_map.map_unit FROM gdms_map join gdms_markers_onmap on gdms_map.map_id=gdms_markers_onmap.map_id where gdms_markers_onmap.marker_id in ("+marker_id+") and gdms_map.map_id="+mapId+" order BY gdms_map.map_name, gdms_markers_onmap.linkage_group, gdms_markers_onmap.start_position asc");
@@ -271,7 +286,7 @@ public class RetrieveMapsAction extends Action{
 					}					
 				}				
 			}
-			//System.out.println("*********************   :"+traitsList);
+			System.out.println("*********************   :"+traitsList);
 			
 			//System.out.println("select marker_id from gdms_mta where marker_id in("+marker_id+")");
 			//rsMTA=stCen.executeQuery("select marker_id, trait, map_id from gdms_mta where marker_id in("+marker_id+")");
@@ -326,7 +341,8 @@ public class RetrieveMapsAction extends Action{
 				}
 				
 				
-				rsTC=stCen.executeQuery("SELECT tid, trabbr FROM tmstraits");
+				//rsTC=stCen.executeQuery("SELECT tid, trabbr FROM tmstraits");
+				rsTC=stCen.executeQuery("select distinct cvterm_id, name from cvterm");
 				while(rsTC.next()){
 					if(!(mtaTraitsL.contains(rsTC.getInt(1)))){
 						mtaTraitsL.add(rsTC.getInt(1));
@@ -334,7 +350,8 @@ public class RetrieveMapsAction extends Action{
 						traits.add(rsTC.getString(2));
 					}
 				}
-				rsTL=stLoc.executeQuery("SELECT tid, trabbr FROM tmstraits");
+				//rsTL=stLoc.executeQuery("SELECT tid, trabbr FROM tmstraits");
+				rsTL=stLoc.executeQuery("select distinct cvterm_id, name from cvterm");
 				while(rsTL.next()){
 					if(!(mtaTraitsL.contains(rsTL.getInt(1)))){
 						mtaTraitsL.add(rsTL.getInt(1));
@@ -346,26 +363,29 @@ public class RetrieveMapsAction extends Action{
 			}else{
 				//System.out.println("SELECT tid, trabbr FROM tmstraits");
 				//rsTC=stCen.executeQuery("SELECT tid, trabbr FROM tmstraits where tid in ("+tids.substring(0, tids.length()-1)+")");
-				rsTC=stCen.executeQuery("SELECT tid, trabbr FROM tmstraits");
-				while(rsTC.next()){
-					if(!(mtaTraitsL.contains(rsTC.getInt(1)))){
-						mtaTraitsL.add(rsTC.getInt(1));
-						mtaTraitsMap.put(rsTC.getInt(1), rsTC.getString(2));
-						traits.add(rsTC.getString(2));
+				if(traitsList.size()>0){
+					//rsTC=stCen.executeQuery("SELECT tid, trabbr FROM tmstraits");
+					rsTC=stCen.executeQuery("select distinct cvterm_id, name from cvterm");
+					while(rsTC.next()){
+						if(!(mtaTraitsL.contains(rsTC.getInt(1)))){
+							mtaTraitsL.add(rsTC.getInt(1));
+							mtaTraitsMap.put(rsTC.getInt(1), rsTC.getString(2));
+							traits.add(rsTC.getString(2));
+						}
+					}
+					//rsTL=stLoc.executeQuery("SELECT tid, trabbr FROM tmstraits");
+					rsTL=stLoc.executeQuery("select distinct cvterm_id, name from cvterm");
+					while(rsTL.next()){
+						if(!(mtaTraitsL.contains(rsTL.getInt(1)))){
+							mtaTraitsL.add(rsTL.getInt(1));
+							mtaTraitsMap.put(rsTL.getInt(1), rsTL.getString(2));
+							traits.add(rsTL.getString(2));
+						}
 					}
 				}
-				rsTL=stLoc.executeQuery("SELECT tid, trabbr FROM tmstraits");
-				while(rsTL.next()){
-					if(!(mtaTraitsL.contains(rsTL.getInt(1)))){
-						mtaTraitsL.add(rsTL.getInt(1));
-						mtaTraitsMap.put(rsTL.getInt(1), rsTL.getString(2));
-						traits.add(rsTL.getString(2));
-					}
-				}
-				
 			}
 			
-		//	System.out.println("@@@@@@@@@@@@@@@@@ mtaTraitsMap:"+mtaTraitsMap);
+			//System.out.println("@@@@@@@@@@@@@@@@@ mtaTraitsMap:"+mtaTraitsMap);
 			
 			
 			req.getSession().setAttribute("mtaCount", mtaCount);

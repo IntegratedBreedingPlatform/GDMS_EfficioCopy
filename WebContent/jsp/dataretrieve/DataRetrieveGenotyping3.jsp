@@ -137,7 +137,7 @@
 												<%} %>
 											</tr>
 									 	</table>
-									 	
+									 	<html:hidden property="mapsCount"/>
 									</center>
 								</span>
 						    	 </td>
@@ -265,16 +265,16 @@
 											</td>
 										</tr>
 										<%
-										
 										//for(int l=0;l<ExportFormats.length;l++){
 											if(ExportFormats.equals("Genotyping X Marker Matrix")){
 											
 												//if((type.equalsIgnoreCase("SNP"))||(type.equalsIgnoreCase("SSR"))){
 												if(type.equalsIgnoreCase("SNP")){
-													path="./jsp/analysisfiles/matrix"+session.getAttribute("msec")+".txt";
+													path="./analysisfiles/matrix"+session.getAttribute("msec")+".txt";
 												}else{
-													path="./jsp/analysisfiles/matrix"+session.getAttribute("msec")+".xls";
+													path="./analysisfiles/matrix"+session.getAttribute("msec")+".xls";
 												}
+												//fullPath=orgPath+path;
 											}else if(ExportFormats.equals("Flapjack")){
 												label1="Flapjack data file";
 												label2="Flapjack Map file";
@@ -284,6 +284,7 @@
 												path2="../.././tempfiles/Flapjack"+session.getAttribute("msec")+".txt";	
 											}
 										%>
+										
 										<tr>
 											<td colspan="2">&nbsp;</td>
 										</tr>
@@ -291,10 +292,10 @@
 											<td width="15%" align=right>
 												<img src="jsp/Images/bullet2.gif"  border=0 >
 											</td>
-											<td align="left"> 												
-												<a href=<%=path %> target="_blank" class="link2">												
+											<td align="left" > 												
+												<a href="<%=path %>" target="_blank" class="link2">												
 													<b>&nbsp;&nbsp;<%=ExportFormats%></b>													
-												</a>													
+												</a> 											
 											</td>
 										</tr>								
 										
@@ -330,7 +331,7 @@
 							<%for(int f=0;f<files1.length;f++){
 								String[] files=files1[f].split("!~!");
 							%>							
-								<%path="./jsp/analysisfiles/"+files[1]+"CMTV.txt";%>
+								<%path="./analysisfiles/"+files[1]+"CMTV.txt";%>
 								<tr><td colspan="2">&nbsp;</td></tr>
 								<tr>
 									<td width="15%" align=right>
@@ -351,7 +352,8 @@
 								<input type="button" name="Back" value=" Back " onclick="javascript:history.back()"/></td>
 							</tr>
 						<%} %>
-					</table>	  		
+					</table>	  
+					<html:hidden property="mapsCount"/>		
 	  		<%}%>
 	  		<html:hidden property="reportType" value="genotyping"/>
 	  		</center>
@@ -418,7 +420,7 @@ function funcBackCMTV(){
 	document.forms[0].submit();	
 }
 function sub(type){
-	//alert(document.forms[0].str.value);
+	//alert(type);
 	var op=document.forms[0].str.value;
 	var selType="";
 	var mapName="";
@@ -487,20 +489,28 @@ function sub(type){
 				}else{
 					document.forms[0].exportTypeH.value=expTypeValue;
 				}
-				
-				
 				if(document.forms[0].maps.value==""){
-					alert("Please select the Map");
+					document.forms[0].mapsCount.value=0;
+					var msg;
+					msg= "   Would you like to create Flapjack Project with out Map ? ";
+					var agree=confirm(msg);
+					if (agree){	
+						document.forms[0].action="export.do";
+						document.forms[0].submit();	
+					}else{
+						return false;
+					}
 				}else{
+					document.forms[0].mapsCount.value=1;
 					document.forms[0].action="export.do";
 					document.forms[0].submit();
 				}
+				
 			}else{
 				document.forms[0].action="export.do";
 				document.forms[0].submit();
 			}
-		}
-		
+		}		
 	}	
 }
 

@@ -43,7 +43,7 @@
 </head>
 <body>
 <center>
-<img src="jsp/Images/GDMS.gif" border=0 usemap="#Map2">
+<img src="jsp/Images/GDMS_1.gif" border=0 usemap="#Map2">
 	<!--<map name="Map2">
 		<area shape="rect" coords="13,90,60,109" href="../../" alt="Home" target="_parent">
 	 	<area shape="rect" coords="88,90,142,109" href="jsp/common/GDMSLayout.jsp?upl" alt="Upload" target="_parent">
@@ -64,16 +64,34 @@
 	if(!new File(fname1).exists())
        	new File(fname1).mkdir();
 	System.out.println("fname1="+fname1);
-	String createfile=fname1+"/Marker"+now.getTimeInMillis()+".xls";
+	String createfile=fname1+"/Genotypes"+now.getTimeInMillis()+".xls";
 	File file=new File(createfile);
-	file.createNewFile();		
+	file.createNewFile();	
+	
+	String pathWB=request.getSession().getAttribute("WBPath").toString();
+	if(!new File(pathWB).exists())
+       	new File(pathWB).mkdir();
+	String createfileWB=pathWB+"/Genotypes"+now.getTimeInMillis()+".xls";
+	File fileWB=new File(createfileWB);
+	fileWB.createNewFile();
+	
+		
 	
 	WritableWorkbook workbook = Workbook.createWorkbook(new File(createfile));
-	WritableSheet sheet=workbook.createSheet("MarkerDetails",0);
+	WritableSheet sheet=workbook.createSheet("Genotypes",0);
+	
+	WritableWorkbook workbookWB = Workbook.createWorkbook(new File(createfileWB));
+	WritableSheet sheetWB=workbookWB.createSheet("Genotypes",0);
+	
+	
 	WritableFont wf = new WritableFont(WritableFont.TIMES,WritableFont.DEFAULT_POINT_SIZE, WritableFont.BOLD,false,UnderlineStyle.SINGLE);
    	WritableCellFormat cf = new WritableCellFormat(wf);
     cf.setWrap(true); 
-	String filenm=foldername+"/Marker"+now.getTimeInMillis()+".xls";
+    
+    
+	String filenm=foldername+"/Genotypes"+now.getTimeInMillis()+".xls";
+	
+	
 	
 	System.out.println("filenm="+filenm);
 	
@@ -109,8 +127,13 @@
 				
 				Label ll = new Label(k,i1,strVal[0]);
 				sheet.addCell(ll);
+				Label llW = new Label(k,i1,strVal[0]);
+				sheetWB.addCell(llW);				
+				
 				Label l2 = new Label(k1,i1,strVal[1]);
 				sheet.addCell(l2);
+				Label l2W = new Label(k1,i1,strVal[1]);
+				sheetWB.addCell(l2W);
 						%>
 			<tr><td ><%=strVal[0]%><td><%=strVal[1]%></td></tr>
 			<%}
@@ -120,7 +143,8 @@
 		<%
 		workbook.write();
 		workbook.close();
-		
+		workbookWB.write();
+		workbookWB.close();
 		%>
 		
 		<br>

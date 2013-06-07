@@ -43,7 +43,7 @@ public class ExportFormats {
 		
 		try{
 			//System.out.println("****************  EXPORT FORMATS CLASS  *****************");
-			WritableWorkbook workbook=Workbook.createWorkbook(new File(filePath+"/jsp/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".xls"));
+			WritableWorkbook workbook=Workbook.createWorkbook(new File(filePath+"/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".xls"));
 			WritableSheet sheet=workbook.createSheet("DataSheet",0);
 			
 			int accIndex=1,markerIndex=2;
@@ -106,7 +106,8 @@ public class ExportFormats {
 				int firstindex=MarkerIdNameList.indexOf(markerId);
 
 				if(firstindex!=0){
-					firstindex=MarkerIdNameList.indexOf("!&&!"+markerId)+4;
+					//firstindex=MarkerIdNameList.indexOf("!&&!"+markerId)+4;
+					firstindex=MarkerIdNameList.indexOf("!&&!"+markerId+"!&&!")+4;
 				}
 				int nextindex=MarkerIdNameList.indexOf("!&&!", firstindex);
 				MarkernameId=MarkerIdNameList.substring(firstindex,nextindex);
@@ -328,7 +329,7 @@ public class ExportFormats {
 	 */
 	public void CMTVTxt(ArrayList aList, String filePath, HttpServletRequest req){
 		try{
-			FileWriter cmtvstream = new FileWriter(filePath+("//")+"/jsp/analysisfiles/"+(String)req.getSession().getAttribute("msec")+"CMTV.txt");
+			FileWriter cmtvstream = new FileWriter(filePath+("//")+"/analysisfiles/"+(String)req.getSession().getAttribute("msec")+"CMTV.txt");
 			BufferedWriter cmtvBW = new BufferedWriter(cmtvstream);
 			
 			for(int a=0;a<aList.size();a++){		
@@ -355,7 +356,7 @@ public class ExportFormats {
 			int i;String chVal="";
 			HashMap<String,Object> markerAlleles= new HashMap<String,Object>();
 			
-			FileWriter SNPdatstream = new FileWriter(filePath+("//")+"/jsp/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".txt");
+			FileWriter SNPdatstream = new FileWriter(filePath+("//")+"/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".txt");
 			BufferedWriter SNPMatrix = new BufferedWriter(SNPdatstream);
 			SNPMatrix.write("\t");
 			for(int m1 = 0; m1< markList.size(); m1++){
@@ -413,7 +414,8 @@ public class ExportFormats {
 		
 		try{
 			//System.out.println("****************  EXPORT FORMATS CLASS  *****************");
-			WritableWorkbook workbook=Workbook.createWorkbook(new File(filePath+"/jsp/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".xls"));
+			WritableWorkbook workbook=Workbook.createWorkbook(new File(filePath+"/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".xls"));
+			//WritableWorkbook workbook=Workbook.createWorkbook(new File(filePath+"/matrix"+(String)req.getSession().getAttribute("msec")+".xls"));
 			WritableSheet sheet=workbook.createSheet("DataSheet",0);
 			
 			int accIndex=1,markerIndex=2;
@@ -426,7 +428,7 @@ public class ExportFormats {
 			String gname="";
 			//System.out.println(".........parents=:"+parentsList);
 			//System.out.println(" data list=:"+a);
-			//System.out.println("acc list=:"+accList);
+			//System.out.println("markList=:"+markList);
 			int noOfAccs=accList.size();
 			int noOfMarkers=markList.size();
 			String[] parents=parentsList.split("!~!");
@@ -445,18 +447,6 @@ public class ExportFormats {
 				
 			}
 			
-			/*Label l=new Label(0,0," ");
-			sheet.addCell(l);*/
-			/*l=new Label(0,3,gid+"");
-			sheet.addCell(l);
-			//accIndex--;
-			l=new Label(1,3,p[0]);
-			sheet.addCell(l);
-			l=new Label(0,4,gid+"");
-			sheet.addCell(l);
-			//accIndex--;
-			l=new Label(1,4,p[1]);
-			sheet.addCell(l);*/
 			
 			for(i=0;i<noOfMarkers;i++){					
 				l=new Label(markerIndex++,0,(String)markList.get(i));
@@ -480,22 +470,14 @@ public class ExportFormats {
 				l=new Label(1,accIndex++,gname);
 				sheet.addCell(l);
 			}
-			
-			//To write markers
-			/*for(i=0;i<noOfMarkers;i++){					
-				l=new Label(PmarkerIndex++,1,"A");
-				sheet.addCell(l);
-				PmarkerIndex--;
-				l=new Label(PmarkerIndex++,2,"B");
-				sheet.addCell(l);
-				
-			}*/			
+					
 			MarkerIdNameList=MarkerNameIdList(markList);
 			row=1;
 			String[] AllelesList=null;
 			for(int a1=0;a1<a.size();a1++){
 				AllelesList=a.get(a1).toString().split(",");
-				//System.out.println("(AllelesList[1].toString()).equals(previousMarkerId)"+AllelesList[1].toString()+ "  ).equals(  "+previousMarkerId);
+				//System.out.println(AllelesList[1].toString()+ "  ).equals(  "+previousMarkerId);
+				
 				if((AllelesList[1].toString()).equals(previousMarkerId)){
 					row++;
 				}else{
@@ -507,14 +489,18 @@ public class ExportFormats {
 						}
 					}
 				}
+				//System.out.println(MarkerIdNameList);
 				markerId=AllelesList[1];
+				//System.out.println("marker=:"+markerId);
 				int firstindex=MarkerIdNameList.indexOf(markerId);
 
 				if(firstindex!=0){
-					firstindex=MarkerIdNameList.indexOf("!&&!"+markerId)+4;
+					firstindex=MarkerIdNameList.indexOf("!&&!"+markerId+"!&&!")+4;
 				}
 				int nextindex=MarkerIdNameList.indexOf("!&&!", firstindex);
+				//System.out.println(firstindex+"   "+nextindex);
 				MarkernameId=MarkerIdNameList.substring(firstindex,nextindex);
+				//System.out.println(MarkernameId);;
 				int totalcols=sheet.getColumns();
 
 				for(int ss=0;ss<totalcols;ss++){
@@ -544,7 +530,8 @@ public class ExportFormats {
 				}else{
 					allele=allele2;
 				}
-				
+				/*if(a1==64)
+					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");*/
 				l=new Label(columns,row,allele+"");
 				sheet.addCell(l);
 				columns++;
@@ -559,6 +546,13 @@ public class ExportFormats {
 			e.printStackTrace();
 		}
 	}
+	
+	
+	
+	
+	
+	
+	
 	//Matrix for SNP data
 	public void MatrixDataSNPDataset(ArrayList a, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, Map gMap){		
 		try{
@@ -573,7 +567,7 @@ public class ExportFormats {
 			int accIndex=1,markerIndex=1;
 			int i;String chVal="";
 
-			FileWriter SNPdatstream = new FileWriter(filePath+("//")+"/jsp/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".txt");
+			FileWriter SNPdatstream = new FileWriter(filePath+("//")+"/analysisfiles/matrix"+(String)req.getSession().getAttribute("msec")+".txt");
 			BufferedWriter SNPMatrix = new BufferedWriter(SNPdatstream);
 			SNPMatrix.write("\t");
 			for(int m1 = 0; m1< markList.size(); m1++){
@@ -596,6 +590,7 @@ public class ExportFormats {
 				 }
 				SNPMatrix.write("\n"+accList.get(j)+"\t"+gname);		
 			    for (int k=0;k<markList.size();k++){
+			    	//System.out.println(a.get(al)+"   "+markList.get(k)+"  al:"+a.size()+"  k=:"+markList.size());
 				   String strList5=a.get(al).toString();
 				   // String[] arrList6=strList5.split(",");
 				   StringTokenizer stz = new StringTokenizer(strList5.toString(), ",");
@@ -608,7 +603,7 @@ public class ExportFormats {
 					   i1++;
 				   }
 				   //arrList6=strList5.split(",");
-				   //System.out.println(arrList6[0]+".equals(   "+accList.get(j)+"  )) &&   "+arrList6[1]+"   .equals(  "+markList.get(k));
+				   System.out.println(arrList6[0]+".equals(   "+accList.get(j)+"  )) &&   "+arrList6[1]+"   .equals(  "+markList.get(k));
 				   if((Integer.parseInt(arrList6[0])==Integer.parseInt(accList.get(j).toString())) && arrList6[1].equals(markList.get(k))){	
 					   //System.out.println("..........  if condition   ");
 					   /*if(arrList6[2].contains(":")){

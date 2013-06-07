@@ -3,37 +3,44 @@
  */
 package org.icrisat.gdms.retrieve;
 
+import java.io.File;
 import java.io.FileInputStream;
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.sql.DataSource;
 
-import org.apache.struts.Globals;
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.generationcp.middleware.hibernate.HibernateSessionPerThreadProvider;
+import org.generationcp.middleware.hibernate.HibernateSessionProvider;
+import org.generationcp.middleware.manager.DatabaseConnectionParameters;
+import org.generationcp.middleware.manager.WorkbenchDataManagerImpl;
+import org.generationcp.middleware.manager.api.WorkbenchDataManager;
+import org.generationcp.middleware.pojos.workbench.Project;
+import org.generationcp.middleware.util.HibernateUtil;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.icrisat.gdms.common.HibernateSessionFactory;
-import org.icrisat.gdms.upload.MarkerDetailsBean;
 
 public class RetrieveMarkerDetailsAction extends Action{
 	java.sql.Connection conn;
 	java.sql.Connection con;
 	private Session hsession;	
 	private Transaction tx;
+	private static WorkbenchDataManager wdm;
+	private static HibernateUtil hibernateUtil;
+	
 	public ActionForward execute(ActionMapping am, ActionForm af,
 			HttpServletRequest req, HttpServletResponse res)
 			throws Exception {
@@ -52,6 +59,9 @@ public class RetrieveMarkerDetailsAction extends Action{
 		ResultSet rsL=null;
 		ResultSet rs2=null;
 		Statement st2=null;
+		String pathWB="";
+		String filePathWB="";
+			
 		try{			
 			Properties prop=new Properties();
 			
@@ -82,6 +92,33 @@ public class RetrieveMarkerDetailsAction extends Action{
 			stLoc=con.createStatement();
 			
 			st2=con.createStatement();
+			DatabaseConnectionParameters workbenchDb = new DatabaseConnectionParameters("DatabaseConfig.properties", "workbench");
+	        hibernateUtil = new HibernateUtil(workbenchDb.getHost(), workbenchDb.getPort(), workbenchDb.getDbName(), 
+	                                workbenchDb.getUsername(), workbenchDb.getPassword());
+	        HibernateSessionProvider sessionProvider = new HibernateSessionPerThreadProvider(hibernateUtil.getSessionFactory());
+	        wdm = new WorkbenchDataManagerImpl(sessionProvider);	
+	        
+	        HashMap<Object, String> IBWFProjects= new HashMap<Object, String>();
+	        List<Project> projects = wdm.getProjects();
+	        Long projectId = Long.valueOf(0);
+	        //System.out.println("testGetProjects(): ");
+	        for (Project project : projects) {
+	            //System.out.println("  " + project.getLocalDbName());
+	            projectId = project.getProjectId();
+	            IBWFProjects.put(project.getLocalDbName(),project.getProjectId()+"-"+project.getProjectName());
+	        }
+			String bPath=session.getServletContext().getRealPath("//");
+	        //String bPath="C:\\IBWorkflowSystem\\infrastructure\\tomcat\\webapps\\GDMS";
+	        String opPath=bPath.substring(0, bPath.indexOf("IBWorkflowSystem")-1);
+	       
+	        pathWB=opPath+"/IBWorkflowSystem/workspace/"+IBWFProjects.get(dbNameL)+"/gdms/output/MarkerFiles";
+	        //pathWB="C:/IBWorkflowSystem/workspace/1-TL1_Groundnut/gdms/output/MarkerFiles";
+	       /* if(!new File(pathWB+"/MarkerFiles").exists())
+		   		new File(pathWB+"/MarkerFiles").mkdir();
+	        */
+	        session.setAttribute("WBPath", pathWB);
+	        //System.out.println(",,,,,,,,,,,,,  :"+bPath.substring(0, bPath.indexOf("IBWorkflowSystem")-1));
+	       
 			
 			if(session!=null){
 				session.removeAttribute("markerType");	

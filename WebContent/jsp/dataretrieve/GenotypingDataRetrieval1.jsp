@@ -283,7 +283,7 @@
 							    	
 							    	 <span id="map" style="visibility: hidden;">
 							    	 <%int mcount=Integer.parseInt(session.getAttribute("mapsCount").toString()); 
-							    	 System.out.println("mcount in jsp=;"+mcount);
+							    	// System.out.println("mcount in jsp=;"+mcount);
 							    	 //if(mcount>0){
 							    	 %>
 									 	<table width=100% align="left" border=0>
@@ -307,7 +307,8 @@
 								    	 			</table>
 								    	 		</td>
 								    	 	</tr>
-										 </table>									 	
+										 </table>
+										 <html:hidden property="mapsCount"/>									 	
 									<%//} else{ %>
 									<%--<table width=100% align="left" border=0>
 											<tr>
@@ -582,8 +583,21 @@ function subExport(){
 			return false;
 		}
 		if(document.forms[0].maps.value=="- Select -"){
-			alert("Map Required");
-			return false;
+			document.forms[0].mapsCount.value=0;
+			//alert(document.forms[0].mapsCount.value);
+			var msg1;
+			msg1= " Would you like to create Flapjack Project with out Map ? ";
+			var agree=confirm(msg1);
+			//alert("");
+			
+			if (agree){					
+				document.forms[0].action="export.do";
+				document.forms[0].submit();	
+			}else{
+				return false;
+			}
+		}else{
+			document.forms[0].mapsCount.value=1;
 		}
 		var expTypeValue="";
 		//if(document.forms[0].exportType)
@@ -601,6 +615,7 @@ function subExport(){
 		}else{
 			document.forms[0].exportTypeH.value=expTypeValue;
 		}
+		//document.forms[0].mapsCount.value=0;
 	}
 	document.forms[0].expType.value=temp1;
 	var len2=document.forms[0].dataType.length;
