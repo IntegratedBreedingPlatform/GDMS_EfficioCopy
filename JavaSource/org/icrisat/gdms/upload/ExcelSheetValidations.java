@@ -376,7 +376,73 @@ public class ExcelSheetValidations {
 								
 			 	}*/
 			 }		
-		 }else if(type.equalsIgnoreCase("QTL")){
+		 }else if(type.equalsIgnoreCase("MTA")){
+			 lstSheetNames.add("mta_source");
+			 lstSheetNames.add("mta_data");
+				
+			 //System.out.println("lstSheetNames=:"+lstSheetNames);
+			 
+			 for (int i=0;i<strSheetNames.length;i++){
+				 String strSN = strSheetNames[i];
+				 //System.out.println("strSN=:"+strSN);
+				 if(lstSheetNames.contains(strSN.toLowerCase())){
+					 if(!lSN.contains(strSN))
+						 lSN.add(strSN);
+				 }	
+			 }
+			 
+			 if(lstSheetNames.size()!=lSN.size())
+				 return "SheetNameNotFound";
+							
+			 //check the template fields
+			 for(int i=0;i<strSheetNames.length;i++){
+				 String strSName = strSheetNames[i].toString();
+				 if(strSName.equalsIgnoreCase("MTA_Source")){
+					 Sheet sName = workbook.getSheet(strSName);
+					 String strTempColumnNames[] = {"Institute","Principle investigator","Dataset Name","Dataset description","Genus","Method","Score","Species","Remark"};
+									
+					 for(int j=0;j<strTempColumnNames.length;j++){
+						 String strMFieldNames = (String)sName.getCell(0, j).getContents().trim();
+										
+						 if(!strTempColumnNames[j].toLowerCase().contains(strMFieldNames.toLowerCase())){
+							 hsession.setAttribute("colMsg", strMFieldNames);
+							 hsession.setAttribute("colMsg1", strTempColumnNames[j]);
+							 hsession.setAttribute("sheetName", strSName);
+							 //System.out.println("SSR Source");
+							 return "ColumnNameNotFound";
+						 }
+						 if(strMFieldNames==null || strMFieldNames==""){
+							 String strColName = escn.getColumnName(sName.getCell(0, j).getColumn());
+							 hsession.setAttribute("colposition", strColName+(sName.getCell(0, j).getRow()+1));
+							 hsession.setAttribute("sheetName", strSName);
+							 return "DelEmptyRows";
+						 }
+					 }															
+				 }
+								
+				 //SSR_DataList fields validation
+				 if(strSName.equalsIgnoreCase("MTA_Data")){
+					 Sheet sName = workbook.getSheet(strSName);
+					 String strTempColumnNames[] = {"Marker", "Chromosome", "Map-Name", "Position", "Trait", "Effect", "High value allele", "Experiment", "Score (e.g.,LOD (or) -log10 (p))", "R2"};
+					 for(int j=0;j<strTempColumnNames.length;j++){
+						 String strMFieldNames = (String)sName.getCell(j, 0).getContents().trim();
+						 if(!strTempColumnNames[j].toLowerCase().contains(strMFieldNames.toLowerCase())){
+							 hsession.setAttribute("colMsg", strMFieldNames);
+							 hsession.setAttribute("colMsg1", strTempColumnNames[j]);
+							 hsession.setAttribute("sheetName", strSName);
+							 return "ColumnNameNotFound";
+						 }
+						 if(strMFieldNames==null || strMFieldNames==""){
+							 String strColName = escn.getColumnName(sName.getCell(j, 0).getColumn());
+							 hsession.setAttribute("colposition", strColName);
+							 hsession.setAttribute("sheetName", strSName);
+							 return "DelEmptyColumns";
+						 }
+					 }
+				 }
+			 }
+			 
+		}else if(type.equalsIgnoreCase("QTL")){
 			 lstSheetNames.add("qtl_source");
 			 lstSheetNames.add("qtl_data");
 				

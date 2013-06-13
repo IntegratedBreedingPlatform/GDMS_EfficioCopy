@@ -41,13 +41,16 @@
 						genoCount=genoCount+1;	
 					} 
 					colCount=1;
-					
+					int ncount=Integer.parseInt(session.getAttribute("nExistsSize").toString());
 					%>
+					<%if(ncount>0){ %>
+					<div class="displayBoldText" align="center">From the given <%=session.getAttribute("arg1")%> <font color="red"><%=session.getAttribute("queryList") %></font> <%=session.getAttribute("arg2")%> <font color="red"><%=session.getAttribute("notExistingNamesList") %></font> not found</div>
+					<%} %>
 					<br>
 				<table border=0 width="50%" cellpadding=0 align="center">
 					<tr>
 						<td align="left" class="displaysmallText" colspan=2><html:checkbox property="chk" onclick="checkAllAcc();" > Select All </html:checkbox></td>
-						<td align="left" class="displayText" colspan=2>  Select from the list of <b><%=totalItemcount%></b>  </td>						
+						<td align="left" class="displayText" colspan=2>  Select from the list of <b><%=totalItemcount%></b> <%=session.getAttribute("arg")%> </td>						
 					</tr>
 				</table>
 				<table border=0 width="80%" align="center" cellpadding=10 cellspacing=0 >
@@ -108,9 +111,9 @@
 										<table width=60% align="left" border=0>
 										
 											<tr>
-												<th width=30%>Identify a column</th>
+												<th width=20%>Identify a column</th>
 												<td width=5%>:</td>
-												<td>
+												<td nowrap="nowrap">
 													<table width="100%">
 														<tr class="displayText">
 															<td><html:radio property="exportType" value="gid">Gid's</html:radio></td>
@@ -121,9 +124,7 @@
 								    	 	</tr>
 								    	 	<tr><td>&nbsp;</td></tr>
 											<tr>
-											<%
-											//System.out.println("%%%%%% "+maps);
-											if(!(maps.isEmpty())){%>
+											
 												<th width="40%">Please select the map</th>
 												<td width="5%" align="left">:</td>
 												<td align="left"><select name="maps" id="maps" >
@@ -132,9 +133,7 @@
 														<option value="<%=maps.get(i)%>"><%=maps.get(i)%></option>				
 													<%} %>
 												</select></td>
-												<%}else{ %>
-													<th width="40%" colspan="3" align="center"><font color="red">NO Maps!!!</font> <font color="black">Please upload Map data to create Export formats for Flapjack...</font></th>
-												<%} %>
+												
 											</tr>
 									 	</table>
 									 	<html:hidden property="mapsCount"/>
@@ -238,7 +237,7 @@
 								<%	//System.out.println("Flapjack");
 								}else if(ExportFormats.equals("Genotyping X Marker Matrix")){
 									
-									String type=session.getAttribute("datasetType").toString();
+									String type=session.getAttribute("FileType").toString();
 									//System.out.println("Type id jsp="+type);
 								%>			
 									<%if(session.getAttribute("op").toString().equalsIgnoreCase("dataset")){ %>
@@ -292,7 +291,7 @@
 											<td width="15%" align=right>
 												<img src="jsp/Images/bullet2.gif"  border=0 >
 											</td>
-											<td align="left" > 												
+											<td align="left"> 												
 												<a href="<%=path %>" target="_blank" class="link2">												
 													<b>&nbsp;&nbsp;<%=ExportFormats%></b>													
 												</a> 											

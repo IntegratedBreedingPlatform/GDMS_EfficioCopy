@@ -76,13 +76,7 @@ public class RetrieveGenotypesAction extends Action{
 		String pathWB="";
 		String filePathWB="";
 		try{
-			/*Class.forName("com.mysql.jdbc.Driver");
-			con=DriverManager.getConnection("jdbc:mysql://localhost:3306/icis","root","root");*/
-			
-			/*ServletContext context = servlet.getServletContext();
-			DataSource dataSource = (DataSource)context.getAttribute(Globals.DATA_SOURCE_KEY);
-			con=dataSource.getConnection();*/
-			
+						
 			prop.load(new FileInputStream(session.getServletContext().getRealPath("//")+"//WEB-INF//classes//DatabaseConfig.properties"));
 			String host=prop.getProperty("central.host");
 			String port=prop.getProperty("central.port");

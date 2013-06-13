@@ -97,11 +97,14 @@ public class MTADataUpload {
 			Workbook workbook=Workbook.getWorkbook(new File(mtafile));
 			String[] strSheetNames=workbook.getSheetNames();
 			
-			/*ExcelSheetValidations fv = new ExcelSheetValidations();
-			String strFv=fv.validation(workbook, request,"QTL");
+			ExcelSheetValidations fv = new ExcelSheetValidations();
+			String strFv=fv.validation(workbook, request,"MTA");
 			System.out.println("Valid="+strFv);
 			if(!strFv.equals("valid"))
-				return strFv;*/
+				return strFv;
+			
+			
+			
 			
 			for (int i=0;i<strSheetNames.length;i++){				
 				if(strSheetNames[i].equalsIgnoreCase("MTA_Source"))

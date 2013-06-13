@@ -527,7 +527,7 @@ public class RetrieveExportABHAction extends Action{
 				System.out.println("mapData:"+mapData);*/
 				if(expType.equalsIgnoreCase("flapjack")){
 					String FlapjackPath=filePath+"/Flapjack";					
-					ef.FlapjackDat(list, mapData, FlapjackPath, req, gNamesList, mListExp, qtlData, exportOpType, qtlExists);
+					ef.FlapjackDat(list, mapData, FlapjackPath, req, gNamesList, mListExp, qtlData, exportOpType, qtlExists, dType);
 					
 				}else if(expType.contains("Genotyping X Marker Matrix")){					
 					ef.Matrix(list, filePath, req, gNamesList, mListExp, sortedGMap);

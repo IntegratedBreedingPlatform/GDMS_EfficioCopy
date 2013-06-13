@@ -685,8 +685,13 @@ function errorCountFunc(){
 
 function retrieveSize(selVal,name){
 	//alert(selVal+"    "+name);
-	document.forms[0].action="getDatasetType.do?str="+selVal;
-	document.forms[0].submit();	
+	if(selVal!=""){
+		document.forms[0].action="getDatasetType.do?str="+selVal;
+		document.forms[0].submit();	
+	}else{
+		//alert("ggggg");
+		return false;
+	}	
 }
 
 

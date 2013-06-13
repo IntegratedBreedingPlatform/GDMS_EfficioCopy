@@ -6,41 +6,88 @@
 <title>GDMS</title>
 <link rel="stylesheet" type="text/css" href="<html:rewrite forward='GDMSStyleSheet'/>">
 <script>
-function chkFile(){
+function chkFile(){	
+	var chosen="";
+	var option="";
 	var selValue="";
 	if (document.forms[0].fileuploads.value == ""){
-		alert("Upload the Template file");
+		alert("Please upload the Template file");
 		document.forms[0].fileuploads.focus();
 		return false;
 	}
-		var maptype="";
+	var maptype="";
 	for(i=0;i<document.forms[0].radios.length;i++)
 		if(document.forms[0].radios[i].checked==true){
 			//alert(document.forms[0].radios[i].value);
-			if((document.forms[0].radios[i].value=="SSRGenotype")||(document.forms[0].radios[i].value=="DArt")||(document.forms[0].radios[i].value=="Mapping")||(document.forms[0].radios[i].value=="QTL")||(document.forms[0].radios[i].value=="SSRMarker")||(document.forms[0].radios[i].value=="SNPMarker")||(document.forms[0].radios[i].value=="CISPMarker")||(document.forms[0].radios[i].value=="CAPMarker")){
+			if((document.forms[0].radios[i].value=="SSRGenotype")||(document.forms[0].radios[i].value=="DArT")||(document.forms[0].radios[i].value=="Mapping")||(document.forms[0].radios[i].value=="QTL")||(document.forms[0].radios[i].value=="SSRMarker")||(document.forms[0].radios[i].value=="SNPMarker")||(document.forms[0].radios[i].value=="CISRMarker")||(document.forms[0].radios[i].value=="CAPMarker")||(document.forms[0].radios[i].value=="Map")||(document.forms[0].radios[i].value=="MTA")){
 			 	 if(document.forms[0].fileuploads.value.indexOf(".xls")== -1){
-				 	alert("Check the input file, it has to be in excel format");
+				 	alert("Please check the file, it should be in excel format");
 				 	document.forms[0].fileuploads.value="";		 	
 				 	document.forms[0].fileuploads.focus();
 				 	return false;	
 				 }
-			}else if(document.forms[0].radios[i].value=="SNPGenotype"){
+			}else if(document.forms[0].radios[i].value=="SNPGenotype"){				
+				for(o=0; o<document.forms[0].uploadSNPDataType.length; o++)					
+					if(document.forms[0].uploadSNPDataType[o].checked){
+						chosen=document.forms[0].uploadSNPDataType[o].value;
+					}
+					//alert(chosen);
+					if(chosen==""){
+						alert("Select wheter the SNP genotyping input file is in K-Bio format");					 	
+					 	return false;		
+					}
+				
 				if(document.forms[0].fileuploads.value.indexOf(".txt")== -1){
-				 	alert("Check the input file, it has to be in tab delimited text format");
+				 	alert("Please check the file. It should be in tab delimited text format");
 				 	document.forms[0].fileuploads.value="";		 	
 				 	document.forms[0].fileuploads.focus();
 				 	return false;		
 				 }
 			}
-			if(document.forms[0].radios[i].value=="Mapping"){
-				
+			if(document.forms[0].radios[i].value=="Mapping"){				
+				for(i1=0;i1<document.forms[0].opMap.length;i1++)
+					if (document.forms[0].opMap[i1].checked) {
+						chosen = document.forms[0].opMap[i1].value;
+					}
+				//alert(chosen);
+				if (chosen == "") {
+					alert("Please select whether corresponding Map exists");	
+					return false;
+				}
+				if(chosen == "yes"){
+					//alert("srikalyani")
+					if(document.forms[0].List1.value=="- Select -"){
+						alert("Please select the corresponding Map");	
+						document.forms[0].List1.focus();
+						return false;
+					}
+				}				
 				for(ii=0;ii<document.forms[0].uploadFormatType.length;ii++)
-					if(document.forms[0].uploadFormatType[ii].checked==true){
-						document.forms[0].mapType.value=document.forms[0].uploadFormatType[ii].value;					
-					}	
-				//alert(document.forms[0].mapType.value); 
+					//alert(document.forms[0].uploadFormatType[ii].checked);
+					if(document.forms[0].uploadFormatType[ii].checked){
+						option=document.forms[0].uploadFormatType[ii].value;
+					}
+					//alert(option);
+					if(option==""){
+						alert("Please select the Data Format");					 	
+					 	return false;
+					}else{
+						document.forms[0].mapType.value=option;
+					}
 			}
-
+			if(document.forms[0].radios[i].value=="Map"){
+				
+				for(ii=0;ii<document.forms[0].opMap.length;ii++)
+					if(document.forms[0].opMap[ii].checked){
+						chosen=document.forms[0].opMap[ii].value;						
+					}	
+				if(chosen==""){
+					alert("Please select whether corresponding mapping data exists");					 	
+				 	return false;
+				}
+			}
+			
+			
 			selValue=document.forms[0].radios[i].value;
 			break;
 		 }
@@ -234,6 +281,10 @@ function msg(){
 		var radList = document.getElementsByName('uploadType');
 		var radList1 = document.getElementsByName('radios');
 		var radList2 = document.getElementsByName('opMap');
+		var radList3 = document.getElementsByName('uploadSNPDataType');
+		var radList4 = document.getElementsByName('uploadFormatType');
+		var radList5 = document.getElementsByName('uploadDataType');
+		var radList6 = document.getElementsByName('opMapping');
 		for (var i = 0; i < radList.length; i++) {			
 			if(radList[i].checked && radList[i].value!=op) radList[i].checked = false;
 			//if(radList[i].checked && radList1[i].value!=op) radList[i].checked = false;
@@ -246,6 +297,19 @@ function msg(){
 		
 		for (var i = 0; i < radList2.length; i++) {
 			if(radList2[i].checked && radList2[i].value!=op) radList2[i].checked = false;
+		}
+
+		for (var i = 0; i < radList3.length; i++) {
+			if(radList3[i].checked && radList3[i].value!=op) radList3[i].checked = false;
+		}
+		for (var i = 0; i < radList4.length; i++) {
+			if(radList4[i].checked && radList4[i].value!=op) radList4[i].checked = false;
+		}
+		for (var i = 0; i < radList5.length; i++) {
+			if(radList5[i].checked && radList5[i].value!=op) radList5[i].checked = false;
+		}
+		for (var i = 0; i < radList6.length; i++) {
+			if(radList6[i].checked && radList6[i].value!=op) radList6[i].checked = false;
 		}
 
 	}
@@ -374,8 +438,8 @@ function msg(){
 					<tr><td width="6%">&nbsp;</td>
 						<td class="displayText" width="15%" align="center" nowrap="nowrap">K-BioScience Format</td>
 						<td width="15%">
-							<html:radio property="opMap" value="yes" onclick="retrieveSNP(this)">Yes</html:radio>&nbsp;
-							<html:radio property="opMap" value="no" onclick="retrieveSNP(this)">No</html:radio></td>
+							<html:radio property="uploadSNPDataType" value="yes" onclick="retrieveSNP(this)">Yes</html:radio>&nbsp;
+							<html:radio property="uploadSNPDataType" value="no" onclick="retrieveSNP(this)">No</html:radio></td>
 						<td>				
 							<span style="visibility: hidden;" id="FirstlistSNP">					
 								<table border=0>
@@ -408,7 +472,7 @@ function msg(){
 			<td colspan=1 align="left"><html:file property="fileuploads"/></td>
 		</tr>
 		<tr><td colspan=3>&nbsp;</td></tr>
-		<tr><td>&nbsp;</td><td>&nbsp;</td><td><html:submit property="dupload" onclick="return chkFile()"/></td></tr>
+		<tr><td>&nbsp;</td><td>&nbsp;</td><td><html:submit value="Submit" property="dupload" onclick="return chkFile()"/></td></tr>
 		<tr><td colspan=3>&nbsp;</td></tr>
 	<%} %>
 	
@@ -529,7 +593,7 @@ function funcShowOption(a){
 		document.getElementById('FirstlistSNP1').style.visibility='hidden';
 	}else if(a=="SNPGenotype"){
 		document.getElementById("text2").innerHTML="K-BioScience Output";
-		//document.getElementById('firstOption').style.visibility='visible';
+		document.getElementById('firstOption').style.visibility='hidden';
 		document.getElementById('option').style.visibility='hidden';
 		//document.getElementById("text2").innerHTML="Corresponding Map exists ";
 		//document.getElementById('firstOption').style.visibility='hidden';

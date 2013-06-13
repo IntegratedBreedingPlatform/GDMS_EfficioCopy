@@ -94,6 +94,8 @@ public class RetrieveSizeAction extends Action{
 			Statement stmt3=con.createStatement();
 			Statement st=con.createStatement();
 			Statement stP=con.createStatement();
+			System.out.println("...........:"+req.getParameter("ChkDataSets"));
+			//req.getSession().setAttribute("polyDet", req.getParameter("ChkDataSets"));
 			String[] qryStr=req.getParameter("ChkDataSets").toString().split("!~!");
 			String genotype=qryStr[0];
 			List<String> genotypeList=new ArrayList<String>();
@@ -108,7 +110,7 @@ public class RetrieveSizeAction extends Action{
 			datasetType=qryStr[1];
 			genotypeList.add(qryStr[0]);
 			//System.out.println("select gid from germplasm_temp where germplasm_name='"+genotype+"'");
-			
+			req.getSession().setAttribute("datasetType", datasetType);
 			ArrayList nidsList=new ArrayList();
 			List<GidNidElement> results = manager.getGidAndNidByGermplasmNames(genotypeList);
 			//System.out.println("RESULTS (getGidAndNidByGermplasmNames): " + results);

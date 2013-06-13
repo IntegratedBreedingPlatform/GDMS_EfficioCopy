@@ -52,7 +52,7 @@ public class DataUploadAction extends Action{
 			//System.out.println("result="+result);			
 		}else if(uploadType.equalsIgnoreCase("SNPGenotype")){
 			SNPGenotypingDataUpload snpupl=new SNPGenotypingDataUpload();
-			String option=req.getParameter("opMap");
+			String option=req.getParameter("uploadSNPDataType");
 			System.out.println("DatauploadingAction .java    option =:"+option);
 			if(option.equalsIgnoreCase("yes")){
 				FormFile fileKB=(FormFile)df.get("KBfileuploads");

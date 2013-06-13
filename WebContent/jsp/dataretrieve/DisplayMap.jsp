@@ -15,9 +15,9 @@
 			ArrayList mtaList=new ArrayList();
 			if(mtaCount>0){				
 				mtaList=(ArrayList)request.getSession().getAttribute("mtaMIDsList");
-				System.out.println("...mtaList=:"+mtaList);
+				//System.out.println("...mtaList=:"+mtaList);
 				mtaTraits=(HashMap)request.getSession().getAttribute("mtaTraits");
-				System.out.println("...mtaTraits..... JSP=:"+mtaTraits);
+				//System.out.println("...mtaTraits..... JSP=:"+mtaTraits);
 				mtaDetails=request.getSession().getAttribute("mtaMarkers").toString();
 			}
 			%>
@@ -71,7 +71,8 @@
 				mdata=(ArrayList)request.getSession().getAttribute("map_data");
 				String testing=request.getSession().getAttribute("finalData").toString();
 				String fromPage=session.getAttribute("fromPage").toString();
-				System.out.println("...fromPage in jsp...:"+fromPage);
+				System.out.println(showTraits+"...fromPage in jsp...:"+fromPage+"  "+session.getAttribute("resultM"));
+				session.setAttribute("result",session.getAttribute("resultM"));
 				//mtaList=(ArrayList)request.getSession().getAttribute("mtaMIDsList");
 				//System.out.println("...mtaList=:"+mtaList);
 				//mtaTraits=(HashMap)request.getSession().getAttribute("mtaTraits");
@@ -191,7 +192,7 @@
 					<br><br>
 					<input type="hidden" name="dataToExp"/>
 					<input type="hidden" name="op" value='<%=session.getAttribute("polyType") %>'/>
-					<html:button property="back" value="Back" onclick="earlierPage()"/>
+					<html:button property="back" value="Back" onclick="javascript:history.back()"/>
 					<html:button property="export" value="Export" onclick="submitPage()"/>
  				</center>
 			</logic:notEmpty>
@@ -411,8 +412,8 @@ var mapUnit=document.forms[0].mapUnit.value;
 	
 	function earlierPage(){
 		//alert(document.forms[0].elements['fromPage'].value);
-		//var map=document.forms[0].elements['fromPage'].value;			
-		document.forms[0].action="dataretrieval.do?map";		
+		var map=document.forms[0].elements['fromPage'].value;			
+		document.forms[0].action="dataretrieval.do?"+map;		
 		document.forms[0].submit();
 	}
 	

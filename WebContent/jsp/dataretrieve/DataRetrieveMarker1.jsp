@@ -12,18 +12,14 @@
 <body onload="refreshPage()">
 	<html:form action="/retrieveInfo.do" method="post">
 		<div class="heading" align="center">Marker Data Retrieval</div>
-		<!--<table width='35%' border=0 align=right>
-				<tr><td align=left nowrap class="displayBoldText" width="20%">Species</td><td><b>:</b></td><td align=left nowrap class="displayBoldText"><%=session.getAttribute("crop") %></td></tr>		
-			</table>
-		-->
-		<br>
-		<br>
-		<center>				
-					
-				<Table border=0 width="100%" height="100%" cellpadding=0 cellspacing=0>
-					<tr><td align="center">	
-					<table width=50% border=0 bgcolor="#7B6F6B" cellpadding="10" cellspacing="10">
-						<tr>
+		<center>
+		<br><br>
+		<div align="center" class="displayText"><b>Use '%' for wildcard search</b></div>
+		
+		<Table border=0 width="75%" height="80%" cellpadding=0 cellspacing=0>
+			<tr><td align="center">	
+				<table width=50% border=0 bgcolor="#7B6F6B" cellpadding="10" cellspacing="10">
+					<tr>
 						<td valign="top" width=49% nowrap="nowrap">
 							<font color="white" face="Arial" size="2"> <b>Select fields to be displayed:</b></font>
 							<br>
@@ -50,7 +46,7 @@
 						</tr>
 												
 					</table>										
-				<br>
+					<br>
 				
 					<table>
 						<tr>
@@ -63,7 +59,7 @@
 								<input type="radio" name="QuickSearch" value="accession_id" onclick="CheckPage(this)"/> GenBank Accession ID  (or)  
 								<input type="radio" name="QuickSearch" value="marker_name" onclick="CheckPage(this)"/> Marker (or)
 								<input type="radio" name="QuickSearch" value="genotype" onclick="CheckPage(this)"/> Genotype ID &nbsp;&nbsp;&nbsp;&nbsp;
-								<input type="text" name="SearchMark" onfocus="test('QuickSearch')" onclick="this.focus();this.select();"  value="Accession/Marker Name" style="COLOR:#666; FONT-SIZE: 11px"/>
+								<input type="text" name="SearchMark" onfocus="test('QuickSearch')" onclick="this.focus();this.select();"  value="Accession/Marker Name" style="COLOR:#666; FONT-SIZE: 11px" onkeypress="return ExptNameSP(event)" />
 							</td>
 						</tr>
 						<tr><td colspan=2>&nbsp;</td></tr>
@@ -97,7 +93,7 @@
 						<tr>
 							<td>&nbsp;</td>
 							<td class="displayText" >						
-								<input type="checkbox" name="main" value="Annealing" onclick="CheckPage(this)"/> Annealing Temprature Between&nbsp;
+								<input type="checkbox" name="main" value="Annealing" onclick="CheckPage(this)"/> Annealing Temperature Between&nbsp;
 								<input type="text" name="StartRange" style="COLOR: #666; FONT-SIZE: 11px" onfocus="test('Annealing')"/> and <input type="text" name="EndRange" style="COLOR: #666; FONT-SIZE: 11px" onfocus="test('Annealing')"/>
 							</td>
 						</tr>
@@ -507,5 +503,16 @@
 				for (var i = 0; i < radList1.length; i++) {
 					if(radList1[i].checked) radList1[i].checked = false;
 				}				
+			}
+			function ExptNameSP(e){
+				var myKey;
+					if (window.event){
+						myKey=window.event.keyCode;
+					}else if (e){
+						myKey=e.which;
+					}
+				if(myKey==44||myKey==96||myKey==126||myKey==47||myKey==92||myKey==46||myKey==39||myKey==34||myKey==42||myKey==124||myKey==63||myKey==60||myKey==62)
+				return false;
+
 			}
 		</script>

@@ -226,19 +226,7 @@ public class ExportToKBIOFileAction extends Action{
 	        workbook.write(outFile);
 	        outFile.close();
 	        
-	        
-	     // Transfer bytes from in to out
-	       /* byte[] oBytesWF = new byte[1024];
-	        int nLengthWF;
-	        BufferedInputStream oBuffInputStreamWF = 
-	                        new BufferedInputStream( oInStream );
-	        while ((nLengthWF = oBuffInputStreamWF.read(oBytesWF)) > 0) 
-	        {
-	            oOutStreamWF.write(oBytesWF, 0, nLength);
-	        }
-	        oInStream.close();
-	        oOutStreamWF.close();*/
-	        
+	             
 	        FileInputStream fileWF = new FileInputStream(destFile);
 	        
 	        HSSFWorkbook workbookWF = new HSSFWorkbook(fileWF);
@@ -264,12 +252,7 @@ public class ExportToKBIOFileAction extends Action{
 	        FileOutputStream outFileWF =new FileOutputStream(destFileWF);
 	        workbookWF.write(outFileWF);
 	        outFileWF.close();
-	        
-	        
-	        
-	        //System.out.println("op=:"+op);
 	       
-	       // System.out.println("done");
 	        
 	        if(rsC!=null) rsC.close();if(rsL!=null) rsL.close();if(stCen!=null) stCen.close(); if(stLoc!=null) stLoc.close();
 	        if(conn!=null)conn.close(); if(con!=null) con.close();

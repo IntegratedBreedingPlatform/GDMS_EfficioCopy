@@ -154,7 +154,8 @@ public class DataDeletionRetrievalAction extends Action{
 				//}
 					String data="";
 					//System.out.println("geno="+geno+"    qtl="+qtl+"    Map="+map);
-					if(geno.equalsIgnoreCase("no") && qtl.equalsIgnoreCase("no") && map.equalsIgnoreCase("no")){
+					//if(geno.equalsIgnoreCase("no") && qtl.equalsIgnoreCase("no") && map.equalsIgnoreCase("no")){
+					if(geno.equalsIgnoreCase("no") && qtl.equalsIgnoreCase("no") && map.equalsIgnoreCase("no")&& mta.equalsIgnoreCase("no")){
 						data="no";
 					}else{
 						data="yes";

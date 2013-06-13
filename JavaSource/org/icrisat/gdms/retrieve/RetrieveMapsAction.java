@@ -117,7 +117,7 @@ public class RetrieveMapsAction extends Action{
 			String marker="";String markersforQuery="";
 			map=df.get("maps").toString();
 			session.setAttribute("maps", map);
-			System.out.println("..............  :"+fromPage);
+			//System.out.println("..............  :"+fromPage);
 			if(fromPage.equalsIgnoreCase("polymap")){
 				//System.out.println(".....**************....."+session.getAttribute("result"));				
 				markers=(ArrayList)session.getAttribute("result");	
@@ -194,7 +194,7 @@ public class RetrieveMapsAction extends Action{
 						lstMarkers.add(rsL.getInt(1));
 		            	markersMap.put(rsL.getInt(1), rsL.getString(2));						
 					}
-					System.out.println("#############:"+marker_id);
+					//System.out.println("#############:"+marker_id);
 					marker_id=marker_id.substring(0, marker_id.length()-1);
 					
 					rs1L=stLoc.executeQuery("SELECT distinct gdms_markers_onmap.marker_id, gdms_map.map_name, gdms_markers_onmap.start_position, gdms_markers_onmap.linkage_group, gdms_map.map_unit FROM gdms_map join gdms_markers_onmap on gdms_map.map_id=gdms_markers_onmap.map_id where gdms_markers_onmap.marker_id in ("+marker_id+") and gdms_map.map_id="+mapId+" order BY gdms_map.map_name, gdms_markers_onmap.linkage_group, gdms_markers_onmap.start_position asc");
@@ -215,7 +215,7 @@ public class RetrieveMapsAction extends Action{
 			}else{
 				if(mapId>0){
 					//central
-					System.out.println("central");
+					//System.out.println("central");
 					rs3C=stCen.executeQuery("select marker_id from gdms_markers_onmap where map_id="+mapId);
 					while(rs3C.next()){
 						marker_id=marker_id+rs3C.getInt(1)+",";
@@ -239,7 +239,7 @@ public class RetrieveMapsAction extends Action{
 					}
 					//ResultSet rs2C=stCen.executeQuery("SELECT DISTINCT gdms_mapping_data.marker_name, gdms_mapping_data.map_name, gdms_mapping_data.start_position, gdms_mapping_data.linkage_group, gdms_qtl_details.trait FROM gdms_mapping_data, gdms_qtl_details WHERE gdms_mapping_data.map_name='"+mapName+"' AND gdms_mapping_data.map_id=gdms_qtl_details.map_id AND gdms_mapping_data.linkage_group=gdms_qtl_details.linkage_group AND gdms_mapping_data.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_name ASC, trait");
 					//System.out.println("SELECT DISTINCT gdms_markers_onmap.marker_id, gdms_map.map_name, gdms_markers_onmap.start_position, gdms_markers_onmap.linkage_group, gdms_qtl_details.trait FROM gdms_markers_onmap, gdms_map, gdms_qtl_details WHERE gdms_map.map_name='"+mapName+"' AND gdms_markers_onmap.map_id=gdms_qtl_details.map_id AND gdms_markers_onmap.linkage_group=gdms_qtl_details.linkage_group AND gdms_markers_onmap.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_id ASC, trait");
-					System.out.println("SELECT DISTINCT gdms_markers_onmap.marker_id, gdms_map.map_name, gdms_markers_onmap.start_position, gdms_markers_onmap.linkage_group, gdms_qtl_details.tid FROM gdms_markers_onmap, gdms_map, gdms_qtl_details WHERE gdms_map.map_name='"+mapName+"' AND gdms_markers_onmap.map_id=gdms_qtl_details.map_id AND gdms_markers_onmap.linkage_group=gdms_qtl_details.linkage_group AND gdms_markers_onmap.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_id ASC, tid");
+					//System.out.println("SELECT DISTINCT gdms_markers_onmap.marker_id, gdms_map.map_name, gdms_markers_onmap.start_position, gdms_markers_onmap.linkage_group, gdms_qtl_details.tid FROM gdms_markers_onmap, gdms_map, gdms_qtl_details WHERE gdms_map.map_name='"+mapName+"' AND gdms_markers_onmap.map_id=gdms_qtl_details.map_id AND gdms_markers_onmap.linkage_group=gdms_qtl_details.linkage_group AND gdms_markers_onmap.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_id ASC, tid");
 					rs2C=stCen.executeQuery("SELECT DISTINCT gdms_markers_onmap.marker_id, gdms_map.map_name, gdms_markers_onmap.start_position, gdms_markers_onmap.linkage_group, gdms_qtl_details.tid FROM gdms_markers_onmap, gdms_map, gdms_qtl_details WHERE gdms_map.map_name='"+mapName+"' AND gdms_markers_onmap.map_id=gdms_qtl_details.map_id AND gdms_markers_onmap.linkage_group=gdms_qtl_details.linkage_group AND gdms_markers_onmap.start_position BETWEEN gdms_qtl_details.min_position AND gdms_qtl_details.max_position ORDER BY map_name, linkage_group,start_position, marker_id ASC, tid");
 					while(rs2C.next()){
 						traitsList.add(markersMap.get(rs2C.getInt(1))+"!~!"+rs2C.getString(2)+"!~!"+rs2C.getString(3)+"!~!"+rs2C.getString(4)+"!~!"+rs2C.getString(5));
@@ -248,7 +248,7 @@ public class RetrieveMapsAction extends Action{
 					
 				}else{
 					//local
-					System.out.println("Local");
+					//System.out.println("Local");
 					rs3L=stLoc.executeQuery("select marker_id from gdms_markers_onmap where map_id="+mapId);
 					while(rs3L.next()){
 						marker_id=marker_id+rs3L.getInt(1)+",";
@@ -286,7 +286,7 @@ public class RetrieveMapsAction extends Action{
 					}					
 				}				
 			}
-			System.out.println("*********************   :"+traitsList);
+			//System.out.println("*********************   :"+traitsList);
 			
 			//System.out.println("select marker_id from gdms_mta where marker_id in("+marker_id+")");
 			//rsMTA=stCen.executeQuery("select marker_id, trait, map_id from gdms_mta where marker_id in("+marker_id+")");
@@ -424,8 +424,8 @@ public class RetrieveMapsAction extends Action{
 				req.getSession().setAttribute("mtaMarkers", mtaMarkers);
 			}
 			
-			System.out.println(traitsList.size()+".............."+traitsList);
-			System.out.println(".............."+mtaTraitsMap);
+			//System.out.println(traitsList.size()+".............."+traitsList);
+			//System.out.println(".............."+mtaTraitsMap);
 			ArrayList fList=new ArrayList();
 			
 			if(traitsList.size()>0){

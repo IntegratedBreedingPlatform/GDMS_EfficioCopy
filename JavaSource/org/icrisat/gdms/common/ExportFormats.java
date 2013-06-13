@@ -139,6 +139,12 @@ public class ExportFormats {
 					}
 				}else{
 					allele=allele2;
+					if(allele2.equals("0/0")){
+						allele=" ";
+						
+					}else{
+						allele=allele2;
+					}
 				}
 				
 				l=new Label(columns,row,allele+"");
@@ -168,7 +174,7 @@ public class ExportFormats {
 	
 	
 /**	Writing genotyping .dat file for FlapJack */
-	public void MatrixDat(ArrayList a, String mapData, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, ArrayList qtlData, String expOp, boolean qtlexists, HashMap dataMap, HashMap gList){
+	public void MatrixDat(ArrayList a, String mapData, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, ArrayList qtlData, String expOp, boolean qtlexists, HashMap dataMap, HashMap gList, String dType){
 		HashMap<String,Object> markerAlleles= new HashMap<String,Object>();
 		try{
 			boolean condition=false;
@@ -206,14 +212,33 @@ public class ExportFormats {
 							String alleleValue=markerAlleles.get(gList.get(accList.get(j).toString()).toString()+"!~!"+markList.get(k).toString()).toString();
 							//System.out.println("k=:"+k +"   "+alleleValue);
 							if(alleleValue.contains("/")){
-								String[] strAllele=alleleValue.split("/");
-								//System.out.println("strAllele[0]="+strAllele[0]+"    strAllele[1]="+strAllele[1]);
-								if(strAllele[0].equalsIgnoreCase(strAllele[1]))
-									finalData=strAllele[0];
-								else
-									finalData=strAllele[0]+"/"+strAllele[1];
+								if((alleleValue.length()==3 && alleleValue.matches("0/0"))||(alleleValue.matches("?"))){									
+									finalData="";
+								}else{
+									String[] strAllele=alleleValue.split("/");
+									//System.out.println("strAllele[0]="+strAllele[0]+"    strAllele[1]="+strAllele[1]);
+									if(strAllele[0].equalsIgnoreCase(strAllele[1]))
+										finalData=strAllele[0];
+									else
+										finalData=strAllele[0]+"/"+strAllele[1];
+								}
+							}else if(alleleValue.contains(":")){
+								if((alleleValue.length()==3 && alleleValue.matches("0:0"))||(alleleValue.matches("?"))){									
+									finalData="";
+								}else{
+									String[] strAllele=alleleValue.split(":");
+									//System.out.println("strAllele[0]="+strAllele[0]+"    strAllele[1]="+strAllele[1]);
+									if(strAllele[0].equalsIgnoreCase(strAllele[1]))
+										finalData=strAllele[0];
+									else
+										finalData=strAllele[0]+"/"+strAllele[1];
+								}
 							}else{
-								finalData=alleleValue;
+								if((alleleValue.length()==3 && alleleValue.matches("0/0"))||(alleleValue.equals("?"))){													
+									finalData="";
+								}else{
+									finalData=alleleValue;
+								}
 							}
 							fjackdat.write("\t"+finalData);
 				    		
@@ -228,14 +253,33 @@ public class ExportFormats {
 							String alleleValue=markerAlleles.get(accList.get(j).toString()+"!~!"+markList.get(k).toString()).toString();
 							//System.out.println("k=:"+k +"   "+alleleValue);
 							if(alleleValue.contains("/")){
-								String[] strAllele=alleleValue.split("/");
-								//System.out.println("strAllele[0]="+strAllele[0]+"    strAllele[1]="+strAllele[1]);
-								if(strAllele[0].equalsIgnoreCase(strAllele[1]))
-									finalData=strAllele[0];
-								else
-									finalData=strAllele[0]+"/"+strAllele[1];
+								if((alleleValue.length()==3 && alleleValue.matches("0/0"))||(alleleValue.matches("?"))){									
+									finalData="";
+								}else{
+									String[] strAllele=alleleValue.split("/");
+									//System.out.println("strAllele[0]="+strAllele[0]+"    strAllele[1]="+strAllele[1]);
+									if(strAllele[0].equalsIgnoreCase(strAllele[1]))
+										finalData=strAllele[0];
+									else
+										finalData=strAllele[0]+"/"+strAllele[1];
+								}
+							}else if(alleleValue.contains(":")){
+								if((alleleValue.length()==3 && alleleValue.matches("0:0"))||(alleleValue.matches("?"))){									
+									finalData="";
+								}else{
+									String[] strAllele=alleleValue.split(":");
+									//System.out.println("strAllele[0]="+strAllele[0]+"    strAllele[1]="+strAllele[1]);
+									if(strAllele[0].equalsIgnoreCase(strAllele[1]))
+										finalData=strAllele[0];
+									else
+										finalData=strAllele[0]+"/"+strAllele[1];
+								}
 							}else{
-								finalData=alleleValue;
+								if((alleleValue.length()==3 && alleleValue.matches("0/0"))||(alleleValue.equals("?"))){										
+									finalData="";
+								}else{
+									finalData=alleleValue;
+								}
 							}
 							fjackdat.write("\t"+finalData);
 				    		
@@ -489,18 +533,14 @@ public class ExportFormats {
 						}
 					}
 				}
-				//System.out.println(MarkerIdNameList);
 				markerId=AllelesList[1];
-				//System.out.println("marker=:"+markerId);
 				int firstindex=MarkerIdNameList.indexOf(markerId);
 
 				if(firstindex!=0){
 					firstindex=MarkerIdNameList.indexOf("!&&!"+markerId+"!&&!")+4;
 				}
 				int nextindex=MarkerIdNameList.indexOf("!&&!", firstindex);
-				//System.out.println(firstindex+"   "+nextindex);
 				MarkernameId=MarkerIdNameList.substring(firstindex,nextindex);
-				//System.out.println(MarkernameId);;
 				int totalcols=sheet.getColumns();
 
 				for(int ss=0;ss<totalcols;ss++){
@@ -545,14 +585,7 @@ public class ExportFormats {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-	}
-	
-	
-	
-	
-	
-	
-	
+	}	
 	//Matrix for SNP data
 	public void MatrixDataSNPDataset(ArrayList a, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, Map gMap){		
 		try{
@@ -614,7 +647,11 @@ public class ExportFormats {
 							   chVal=ChVal1[0]+"/"+ChVal1[1];
 						   }					
 						}else{*/
+						if(arrList6[2].length()==3 && arrList6[2].matches("0/0")){
+						   chVal="";
+					   }else{
 							chVal=arrList6[2];
+						}
 						//}
 					   //System.out.println(chVal);
 					   SNPMatrix.write("\t"+chVal);	
@@ -633,7 +670,7 @@ public class ExportFormats {
 		}
 	}
 	/**	Writing genotyping .dat file for FlapJack */
-	public void FlapjackDat(ArrayList a, String mapData, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, ArrayList qtlData, String expOp, boolean qtlexists){
+	public void FlapjackDat(ArrayList a, String mapData, String filePath,HttpServletRequest req, ArrayList accList, ArrayList markList, ArrayList qtlData, String expOp, boolean qtlexists, String dType){
 		
 		try{
 			boolean condition=false;
@@ -687,18 +724,44 @@ public class ExportFormats {
 			    		if(condition){
 			    			if(arrList6[2].contains("/")){								
 								String[] ChVal1=arrList6[2].split("/");
-								if(ChVal1[0].equalsIgnoreCase(ChVal1[1])){
-									chVal=ChVal1[0];
+								if(dType.equalsIgnoreCase("ssr")){
+									if(arrList6[2].length()==3){
+										chVal="";
+									}else{
+										if(ChVal1[0].equalsIgnoreCase(ChVal1[1])){
+											chVal=ChVal1[0];
+										}else{
+											chVal=ChVal1[0]+"/"+ChVal1[1];
+										}
+									}
 								}else{
-									chVal=ChVal1[0]+"/"+ChVal1[1];
+									if(ChVal1[0].equalsIgnoreCase(ChVal1[1])){
+										chVal=ChVal1[0];
+									}else{
+										chVal=ChVal1[0]+"/"+ChVal1[1];
+									}
 								}
 			    			}else if(arrList6[2].contains(":")){								
 								String[] ChVal1=arrList6[2].split(":");
-								if(ChVal1[0].equalsIgnoreCase(ChVal1[1])){
-									chVal=ChVal1[0];
+								if(dType.equalsIgnoreCase("ssr")){
+									if(arrList6[2].length()==3){
+										chVal="";
+									}else{
+										if(ChVal1[0].equalsIgnoreCase(ChVal1[1])){
+											chVal=ChVal1[0];
+										}else{
+											chVal=ChVal1[0]+"/"+ChVal1[1];
+										}
+									}
 								}else{
-									chVal=ChVal1[0]+"/"+ChVal1[1];
+									if(ChVal1[0].equalsIgnoreCase(ChVal1[1])){
+										chVal=ChVal1[0];
+									}else{
+										chVal=ChVal1[0]+"/"+ChVal1[1];
+									}
 								}
+							}else if(arrList6[2].contains("?")){
+								chVal="";
 							}else{
 								chVal=arrList6[2];
 							}

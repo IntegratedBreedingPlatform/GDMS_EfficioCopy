@@ -394,7 +394,7 @@ public class MappingDataUpload {
 					if(gidsCount==gnCount){			
 						
 			            gidsForQuery=gidsForQuery.substring(0, gidsForQuery.length()-1);
-			            System.out.println("GIDsMap.."+GIDsMap);
+			            //System.out.println("GIDsMap.."+GIDsMap);
 			           // Map<Object, String> sortedMap = new TreeMap<Object, String>(GIDsMap);
 			            //System.out.println("%%%%%"+sortedMap.size()+"%%%%%%%%sortedMap=:"+sortedMap);
 			            //System.out.println("%%%%%%%%%%%%%gidsForQuery=:"+gidsForQuery);
