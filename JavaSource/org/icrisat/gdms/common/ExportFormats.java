@@ -212,7 +212,7 @@ public class ExportFormats {
 							String alleleValue=markerAlleles.get(gList.get(accList.get(j).toString()).toString()+"!~!"+markList.get(k).toString()).toString();
 							//System.out.println("k=:"+k +"   "+alleleValue);
 							if(alleleValue.contains("/")){
-								if((alleleValue.length()==3 && alleleValue.matches("0/0"))||(alleleValue.matches("?"))){									
+								if((alleleValue.length()==3 && alleleValue.matches("0/0"))||(alleleValue.equals("?"))){										
 									finalData="";
 								}else{
 									String[] strAllele=alleleValue.split("/");
@@ -223,7 +223,7 @@ public class ExportFormats {
 										finalData=strAllele[0]+"/"+strAllele[1];
 								}
 							}else if(alleleValue.contains(":")){
-								if((alleleValue.length()==3 && alleleValue.matches("0:0"))||(alleleValue.matches("?"))){									
+								if((alleleValue.length()==3 && alleleValue.matches("0:0"))||(alleleValue.equals("?"))){									
 									finalData="";
 								}else{
 									String[] strAllele=alleleValue.split(":");
@@ -253,7 +253,7 @@ public class ExportFormats {
 							String alleleValue=markerAlleles.get(accList.get(j).toString()+"!~!"+markList.get(k).toString()).toString();
 							//System.out.println("k=:"+k +"   "+alleleValue);
 							if(alleleValue.contains("/")){
-								if((alleleValue.length()==3 && alleleValue.matches("0/0"))||(alleleValue.matches("?"))){									
+								if((alleleValue.length()==3 && alleleValue.matches("0/0"))||(alleleValue.equals("?"))){									
 									finalData="";
 								}else{
 									String[] strAllele=alleleValue.split("/");
@@ -264,7 +264,7 @@ public class ExportFormats {
 										finalData=strAllele[0]+"/"+strAllele[1];
 								}
 							}else if(alleleValue.contains(":")){
-								if((alleleValue.length()==3 && alleleValue.matches("0:0"))||(alleleValue.matches("?"))){									
+								if((alleleValue.length()==3 && alleleValue.matches("0:0"))||(alleleValue.equals("?"))){									
 									finalData="";
 								}else{
 									String[] strAllele=alleleValue.split(":");

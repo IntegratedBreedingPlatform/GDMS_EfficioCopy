@@ -190,9 +190,9 @@ public class QTLDataUpload {
 			
 	         for(int t=0;t<traitList.size();t++){
 	        	 Set<StandardVariable> standardVariables = om.findStandardVariablesByNameOrSynonym(traitList.get(t).toString());
-				assertTrue(standardVariables.size() == 1);
+				//assertTrue(standardVariables.size() == 1);
 				for (StandardVariable stdVar : standardVariables) {
-					System.out.println(stdVar.getId()+"   "+stdVar.getNameSynonyms()+"   "+stdVar.getName());
+					//System.out.println(stdVar.getId()+"   "+stdVar.getNameSynonyms()+"   "+stdVar.getName());
 					traitsComList.add(stdVar.getId());
 					retTraits.add(stdVar.getName());
 					map.put(stdVar.getName(), stdVar.getId());
@@ -217,6 +217,31 @@ public class QTLDataUpload {
 				retTraits.add(rsLoc.getString(2));
 				map.put(rsLoc.getString(2), rsLoc.getString(1));
 			}*/
+	         if(map.size()==0){
+	            	alertT="yes";
+		        	size=0;
+		        }
+	            if(map.size()>0){
+	            	for(int t=0;t<traitList.size();t++){
+		        	   
+	            		 if(!retTraits.contains(traitList.get(t).toString())){
+			        		   //System.out.println("does not contain:"+traitList.get(t));
+			        		   alertT="yes";
+			        		   size=map.size();
+			        		   notExisTraits=notExisTraits+traitList.get(t).toString()+", ";
+			        	   }
+	            	}
+	            }
+	            
+	            if(alertT.equalsIgnoreCase("yes")){
+		            if(size==0){
+		            	ErrMsg = "The Trait(s) provided do not exist in the database. \n Please upload the relevant information";
+		     	   	}else{
+		     	   		ErrMsg = "The following Trait(s) provided do not exist in the database. \n Please upload the relevant information. \n"+notExisTraits.substring(0,notExisTraits.length()-1);
+		     	   	}
+		            request.getSession().setAttribute("indErrMsg", ErrMsg);
+		        	return "ErrMsg";
+	            }    
 			
 			rsQL=stLoc.executeQuery("select * from gdms_qtl where qtl_name in ("+qtls+")");
 			rsQC=stCen.executeQuery("select * from gdms_qtl where qtl_name in ("+qtls+")");
@@ -227,36 +252,11 @@ public class QTLDataUpload {
 				result2.add(rsQL.getString(2));
 			}
 			if(result2.size()>0){
-				ErrMsg = "Following QTLs already exists. Please check. \n"+result2;
+				ErrMsg = "Following QTL(s) already exists. Please check. \n"+result2;
 				request.getSession().setAttribute("indErrMsg", ErrMsg);							
 				return "ErrMsg";
 			}
-            if(map.size()==0){
-            	alertT="yes";
-	        	size=0;
-	        }
-            if(map.size()>0){
-            	for(int t=0;t<traitList.size();t++){
-	        	   
-	        	   if(retTraits.contains(traitList.get(t).toString())){
-	        		   alertT="no"; 		        		  		        			   
-	        	   }else{
-	        		   alertT="yes";
-	        		   size=map.size();
-	        		   notExisTraits=notExisTraits+traitList.get(t).toString()+", ";
-	        	   }
-            	}
-            }
-            
-            if(alertT.equalsIgnoreCase("yes")){
-	            if(size==0){
-	            	ErrMsg = "The Traits provided do not exist in the database. \n Please upload the relevant information to the TraitManagementSystem ";
-	     	   	}else{
-	     	   		ErrMsg = "The following Traits provided do not exist in the database. \n Please upload the relevant information to the TraitManagementSystem. \n"+notExisTraits;
-	     	   	}
-	            request.getSession().setAttribute("indErrMsg", ErrMsg);
-	        	return "ErrMsg";
-            }         
+                
             String dname=sheetSource.getCell(1,2).getContents().trim();
             
             		
@@ -439,7 +439,7 @@ public class QTLDataUpload {
 						if(!mapIdLG.contains(sheetData.getCell(1,i).getContents().trim().toString())){
 							ExcelSheetColumnName escn =  new ExcelSheetColumnName();
 							String strColName = escn.getColumnName(sheetData.getCell(1, i).getColumn());
-							ErrMsg = "Please Check. \n Linkage Group `"+sheetData.getCell(1,i).getContents().trim()+"` at cell position "+strColName+(sheetData.getCell(1, i).getRow()+1+" in template uploaded does not match with the Linkage Grounp in Map "+hashMap.get(mapIdL.get(0)));
+							ErrMsg = "Please Check. \n Linkage Group `"+sheetData.getCell(1,i).getContents().trim()+"` at cell position "+strColName+(sheetData.getCell(1, i).getRow()+1+" in template uploaded does not match with the Linkage Group in Map "+hashMap.get(mapIdL.get(0)));
 							request.getSession().setAttribute("indErrMsg", ErrMsg);
 							return "ErrMsg";
 						}
